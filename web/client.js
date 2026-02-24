@@ -370,13 +370,26 @@ const levelEl = document.getElementById('level');
 const modeEl = document.getElementById('mode');
 const statusEl = document.getElementById('status');
 
+const oppScoreEl = document.getElementById('oppScore');
+const oppLinesEl = document.getElementById('oppLines');
+const oppStatusEl = document.getElementById('oppStatus');
+
+let lastOppScore = -1;
+let lastOppLines = -1;
+
 const btnClassic = document.getElementById('btnClassic');
 const btnOnline = document.getElementById('btnOnline');
 const btnConnect = document.getElementById('btnConnect');
 const onlineForm = document.getElementById('onlineForm');
-const wsUrlInput = document.getElementById('wsUrl');
 const roomInput = document.getElementById('room');
 const nameInput = document.getElementById('name');
+
+// Auto-detect WebSocket URL based on current page location
+function getWebSocketURL() {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
+  return `${protocol}//${host}`;
+}
 
 const blankGrid = createEmptyGrid();
 
@@ -438,18 +451,21 @@ function send(payload) {
 
 function connectOnline() {
   startOnline();
-  const url = wsUrlInput.value.trim();
+  const url = getWebSocketURL();
   const room = roomInput.value.trim() || 'default';
   const name = nameInput.value.trim() || 'Player';
 
   try {
     ws = new WebSocket(url);
-  } catch {
-    setStatus('Failed to create WebSocket');
+    console.log(`Connecting to ${url}`);
+  } catch (err) {
+    setStatus(`Failed to create WebSocket: ${err.message}`);
+    console.error(err);
     return;
   }
 
   ws.onopen = () => {
+    console.log('WebSocket connected, joining room:', room);
     setStatus('Connected. Joining room...');
     send({ type: 'join', room, name });
   };
@@ -584,6 +600,18 @@ function loop(ts) {
 
   if (game.gameOver) {
     setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
+  }
+
+  if (mode === 'online') {
+    if (opponent.score !== lastOppScore) {
+      lastOppScore = opponent.score;
+      oppScoreEl.textContent = opponent.score;
+    }
+    if (opponent.lines !== lastOppLines) {
+      lastOppLines = opponent.lines;
+      oppLinesEl.textContent = opponent.lines;
+    }
+    oppStatusEl.textContent = opponent.game_over ? 'Topped Out' : 'Playing';
   }
 
   requestAnimationFrame(loop);
