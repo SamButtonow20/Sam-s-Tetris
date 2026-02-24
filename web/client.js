@@ -489,7 +489,7 @@ function startClassic() {
   sentGameOver = false;
   onlineReady = false;
   if (ws) { ws.close(); ws = null; }
-  updatePlayerCount(1); // Classic mode is single player - only show your board
+  updatePlayerCount(4); // Show all 4 boards side by side
   setStatus('Classic mode started');
 }
 
