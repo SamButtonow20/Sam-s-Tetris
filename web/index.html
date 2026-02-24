@@ -3,37 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sam Tetris Web</title>
+  <title>Tetris - Multiplayer</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
-    <h1>Sam Tetris Web</h1>
+    <!-- Title -->
+    <div class="header">
+      <h1>TETRIS</h1>
+      <p class="subtitle">Web Multiplayer Edition</p>
+    </div>
 
+    <!-- Menu -->
     <div class="menu" id="menu">
-      <button id="btnClassic">Classic</button>
-      <button id="btnOnline">Online Room</button>
-      <div class="onlineForm" id="onlineForm">
-        <input id="wsUrl" placeholder="ws://127.0.0.1:8080" value="ws://127.0.0.1:8080" />
-        <input id="room" placeholder="room" value="sam-room-1" />
-        <input id="name" placeholder="name" value="Player" />
-        <button id="btnConnect">Connect & Play</button>
-      </div>
-      <p class="hint">Controls: ← → move, ↑ rotate, ↓ soft drop, Space hard drop</p>
+      <button id="btnClassic" class="btn btn-primary">Classic</button>
+      <button id="btnOnline" class="btn btn-primary">Online Room</button>
+      <div class="status" id="status">Ready</div>
     </div>
 
-    <div class="status" id="status">Ready</div>
+    <!-- Online Form -->
+    <div class="onlineForm" id="onlineForm">
+      <div class="form-group">
+        <label>Room Code:</label>
+        <input id="room" placeholder="e.g. sam-vs-alex" value="sam-room-1" />
+      </div>
+      <div class="form-group">
+        <label>Your Name:</label>
+        <input id="name" placeholder="Your name" value="Player" />
+      </div>
+      <button id="btnConnect" class="btn btn-accent">Connect & Play</button>
+    </div>
 
-    <div class="boards">
-      <canvas id="board" width="280" height="560"></canvas>
-      <canvas id="opp" width="280" height="560"></canvas>
-      <div class="panel">
-        <div id="score">Score: 0</div>
-        <div id="lines">Lines: 0</div>
-        <div id="level">Level: 1</div>
-        <div id="mode">Mode: Classic</div>
+    <!-- Game Area -->
+    <div class="gameContainer">
+      <div class="gameArea">
+        <div class="boardWrapper">
+          <h3>YOU</h3>
+          <canvas id="board" width="280" height="560"></canvas>
+          <div class="boardOverlay" id="boardOverlay"></div>
+        </div>
+
+        <div class="panel">
+          <div class="stat">
+            <span class="label">Score</span>
+            <span id="score" class="value">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Lines</span>
+            <span id="lines" class="value">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Level</span>
+            <span id="level" class="value">1</span>
+          </div>
+          <div class="stat">
+            <span class="label">Mode</span>
+            <span id="mode" class="value">Classic</span>
+          </div>
+          <div style="border-top: 1px solid #4a4a6a; margin: 8px 0; padding-top: 8px; font-size: 12px; color: #b8b8d6;">
+            <div><strong>Controls:</strong></div>
+            <div>← → : Move</div>
+            <div>↑ : Rotate</div>
+            <div>↓ : Soft Drop</div>
+            <div>Space : Hard Drop</div>
+          </div>
+        </div>
+
+        <div class="boardWrapper">
+          <h3>OPPONENT</h3>
+          <canvas id="opp" width="280" height="560"></canvas>
+        </div>
       </div>
     </div>
+
+    <!-- Particle Container -->
+    <div id="particleContainer" class="particleContainer"></div>
   </div>
 
   <script src="client.js"></script>

@@ -36,6 +36,87 @@ class RNG {
   }
 }
 
+class Particle {
+  constructor(x, y, vx, vy, color, life = 800) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.life = life;
+    this.maxLife = life;
+  }
+
+  update(dt) {
+    this.x += this.vx * dt / 1000;
+    this.y += this.vy * dt / 1000;
+    this.vy += 200 * dt / 1000;
+    this.life -= dt;
+  }
+
+  isDead() {
+    return this.life <= 0;
+  }
+
+  getOpacity() {
+    return Math.max(0, this.life / this.maxLife);
+  }
+
+  draw(ctx) {
+    const alpha = this.getOpacity();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+let particles = [];
+
+function createLineParticles(rows, cols) {
+  const colors = Object.values(COLORS).filter(c => c !== '#0b0b16');
+  for (let r of rows) {
+    for (let c = 0; c < cols; c++) {
+      const x = (c + 0.5) * CELL + Math.random() * 10 - 5;
+      const y = (r + 0.5) * CELL + Math.random() * 10 - 5;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 100 + Math.random() * 200;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed - 100;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      particles.push(new Particle(x, y, vx, vy, color, 600 + Math.random() * 400));
+    }
+  }
+}
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update(dt);
+    if (particles[i].isDead()) {
+      particles.splice(i, 1);
+    }
+  }
+}
+
+function drawParticles(ctx) {
+  ctx.save();
+  for (let p of particles) {
+    const alpha = p.getOpacity();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function rotate(shape) {
   const out = [];
   for (let c = 0; c < 4; c++) {
@@ -190,6 +271,7 @@ class Game {
 
     if (cleared > 0) {
       this.combo += 1;
+      createLineParticles(clearedRows, COLS);
       this.grid = this.grid.filter((_, idx) => !clearedRows.includes(idx));
       while (this.grid.length < ROWS) this.grid.unshift(Array(COLS).fill('.'));
     } else {
@@ -459,6 +541,7 @@ function loop(ts) {
 
   if (!game.gameOver && (mode === 'classic' || (mode === 'online' && onlineReady))) {
     game.update(dt);
+    updateParticles(dt);
 
     if (mode === 'online') {
       if (game.lastAttack > 0) send({ type: 'attack', amount: game.lastAttack });
@@ -472,10 +555,13 @@ function loop(ts) {
         send({ type: 'gameover' });
       }
     }
+  } else {
+    updateParticles(dt);
   }
 
   drawGrid(bctx, game.grid);
   if (!game.gameOver) drawPiece(bctx, game.current);
+  drawParticles(bctx);
 
   if (mode === 'online') {
     drawGrid(octx, opponent.grid);
@@ -521,10 +607,9 @@ window.addEventListener('keyup', (e) => {
 
 btnClassic.addEventListener('click', startClassic);
 btnOnline.addEventListener('click', () => {
-  onlineForm.style.display = onlineForm.style.display === 'none' ? 'flex' : 'none';
+  onlineForm.classList.toggle('active');
 });
 btnConnect.addEventListener('click', connectOnline);
 
-onlineForm.style.display = 'none';
 startClassic();
 requestAnimationFrame(loop);
