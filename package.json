@@ -1,0 +1,16 @@
+{
+  "name": "sam-tetris",
+  "version": "1.0.0",
+  "description": "Multiplayer Tetris game",
+  "private": true,
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "start": "npm --prefix web start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["tetris", "game", "multiplayer"],
+  "author": "Sam",
+  "license": "MIT"
+}
