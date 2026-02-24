@@ -399,6 +399,7 @@ const oppLinesEls = [document.getElementById('lines2'), document.getElementById(
 const oppStatusEls = [document.getElementById('status2'), document.getElementById('status3'), document.getElementById('status4')];
 const oppNameEls = [document.getElementById('player2Name'), document.getElementById('player3Name'), document.getElementById('player4Name')];
 
+const gameArea = document.getElementById('gameArea');
 const btnClassic = document.getElementById('btnClassic');
 const btnOnline = document.getElementById('btnOnline');
 const btnConnect = document.getElementById('btnConnect');
@@ -488,7 +489,7 @@ function startClassic() {
   sentGameOver = false;
   onlineReady = false;
   if (ws) { ws.close(); ws = null; }
-  updatePlayerCount(2); // Show 2 boards by default in classic mode
+  updatePlayerCount(1); // Classic mode is single player - only show your board
   setStatus('Classic mode started');
 }
 
