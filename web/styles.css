@@ -1,0 +1,58 @@
+:root {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  font-family: Consolas, monospace;
+  background: radial-gradient(circle at top, #120833, #04040c);
+  color: #eee;
+}
+.app {
+  max-width: 980px;
+  margin: 18px auto;
+  padding: 12px;
+}
+h1 {
+  margin: 0 0 12px;
+}
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+button, input {
+  background: #17172a;
+  color: #fff;
+  border: 1px solid #484878;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+button:hover { border-color: #8080ff; cursor: pointer; }
+.onlineForm { display: flex; gap: 8px; flex-wrap: wrap; }
+.hint { margin: 0; color: #b8b8d6; }
+.status {
+  margin: 8px 0 12px;
+  color: #90d0ff;
+  min-height: 20px;
+}
+.boards {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+canvas {
+  background: #0b0b16;
+  border: 2px solid #6f65ff;
+  border-radius: 8px;
+}
+.panel {
+  min-width: 180px;
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  background: #0e0e1c;
+  border: 1px solid #3f3f66;
+  border-radius: 8px;
+}

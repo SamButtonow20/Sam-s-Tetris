@@ -1,0 +1,19 @@
+{
+  "name": "sam-tetris-web",
+  "version": "1.0.0",
+  "description": "Multiplayer Tetris game",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "server": "node server.js 8080",
+    "prod": "NODE_ENV=production node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

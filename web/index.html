@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sam Tetris Web</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <h1>Sam Tetris Web</h1>
+
+    <div class="menu" id="menu">
+      <button id="btnClassic">Classic</button>
+      <button id="btnOnline">Online Room</button>
+      <div class="onlineForm" id="onlineForm">
+        <input id="wsUrl" placeholder="ws://127.0.0.1:8080" value="ws://127.0.0.1:8080" />
+        <input id="room" placeholder="room" value="sam-room-1" />
+        <input id="name" placeholder="name" value="Player" />
+        <button id="btnConnect">Connect & Play</button>
+      </div>
+      <p class="hint">Controls: ← → move, ↑ rotate, ↓ soft drop, Space hard drop</p>
+    </div>
+
+    <div class="status" id="status">Ready</div>
+
+    <div class="boards">
+      <canvas id="board" width="280" height="560"></canvas>
+      <canvas id="opp" width="280" height="560"></canvas>
+      <div class="panel">
+        <div id="score">Score: 0</div>
+        <div id="lines">Lines: 0</div>
+        <div id="level">Level: 1</div>
+        <div id="mode">Mode: Classic</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="client.js"></script>
+</body>
+</html>

@@ -1,0 +1,530 @@
+const CELL = 28;
+const COLS = 10;
+const ROWS = 20;
+const BOARD_W = COLS * CELL;
+const BOARD_H = ROWS * CELL;
+
+const TETROMINOES = {
+  I: ['....', '1111', '....', '....'],
+  O: ['.22.', '.22.', '....', '....'],
+  T: ['.333', '..3.', '....', '....'],
+  S: ['..44', '.44.', '....', '....'],
+  Z: ['.55.', '..55', '....', '....'],
+  J: ['.6..', '.666', '....', '....'],
+  L: ['...7', '.777', '....', '....']
+};
+
+const COLORS = {
+  '.': '#0b0b16',
+  '1': '#00ffff',
+  '2': '#ffd650',
+  '3': '#dc3cff',
+  '4': '#00ffaa',
+  '5': '#ff4678',
+  '6': '#78aaff',
+  '7': '#ffa03c',
+  '8': '#868686'
+};
+
+class RNG {
+  constructor(seed = Date.now() % 2147483647) {
+    this.state = seed <= 0 ? 1 : seed;
+  }
+  next() {
+    this.state = (this.state * 48271) % 2147483647;
+    return this.state / 2147483647;
+  }
+}
+
+function rotate(shape) {
+  const out = [];
+  for (let c = 0; c < 4; c++) {
+    let row = '';
+    for (let r = 3; r >= 0; r--) row += shape[r][c];
+    out.push(row);
+  }
+  return out;
+}
+
+function createEmptyGrid() {
+  return Array.from({ length: ROWS }, () => Array(COLS).fill('.'));
+}
+
+class Game {
+  constructor(seed = null) {
+    this.seed = seed ?? Math.floor(Math.random() * 1_000_000);
+    this.rng = new RNG(this.seed);
+    this.reset();
+  }
+
+  reset() {
+    this.grid = createEmptyGrid();
+    this.score = 0;
+    this.lines = 0;
+    this.level = 1;
+    this.combo = -1;
+    this.backToBack = false;
+    this.gameOver = false;
+    this.lastAttack = 0;
+    this.bag = [];
+    this.next = this.makePiece(this.nextKind());
+    this.current = this.makePiece(this.nextKind());
+    this.spawn(this.current);
+    this.fallMs = 0;
+    this.lockDelayMs = 500;
+    this.groundedMs = 0;
+    this.softDrop = false;
+    this.lastMoveWasRotate = false;
+  }
+
+  nextKind() {
+    if (this.bag.length === 0) {
+      this.bag = Object.keys(TETROMINOES);
+      for (let i = this.bag.length - 1; i > 0; i--) {
+        const j = Math.floor(this.rng.next() * (i + 1));
+        [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
+      }
+    }
+    return this.bag.pop();
+  }
+
+  makePiece(kind) {
+    const rotations = [TETROMINOES[kind]];
+    for (let i = 1; i < 4; i++) rotations.push(rotate(rotations[i - 1]));
+    return { kind, rotation: 0, x: 3, y: 0, rotations };
+  }
+
+  spawn(piece) {
+    piece.x = 3;
+    piece.y = 0;
+    piece.rotation = 0;
+    this.current = piece;
+    this.lastMoveWasRotate = false;
+    this.groundedMs = 0;
+    if (this.collide(this.current, 0, 0)) this.gameOver = true;
+  }
+
+  shape(piece, rot = piece.rotation) {
+    return piece.rotations[(rot + 4) % 4];
+  }
+
+  collide(piece, dx, dy, rot = piece.rotation) {
+    const s = this.shape(piece, rot);
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const v = s[r][c];
+        if (v === '.') continue;
+        const nx = piece.x + c + dx;
+        const ny = piece.y + r + dy;
+        if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+        if (ny >= 0 && this.grid[ny][nx] !== '.') return true;
+      }
+    }
+    return false;
+  }
+
+  move(dx, dy) {
+    if (!this.collide(this.current, dx, dy)) {
+      this.current.x += dx;
+      this.current.y += dy;
+      this.groundedMs = 0;
+      this.lastMoveWasRotate = false;
+      return true;
+    }
+    return false;
+  }
+
+  rotateCurrent() {
+    const newRot = (this.current.rotation + 1) % 4;
+    const kicks = [[0, 0], [-1, 0], [1, 0], [-2, 0], [2, 0], [0, -1]];
+    for (const [dx, dy] of kicks) {
+      if (!this.collide(this.current, dx, dy, newRot)) {
+        this.current.x += dx;
+        this.current.y += dy;
+        this.current.rotation = newRot;
+        this.lastMoveWasRotate = true;
+        this.groundedMs = 0;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  hardDrop() {
+    while (!this.collide(this.current, 0, 1)) this.current.y += 1;
+    this.groundedMs = this.lockDelayMs;
+  }
+
+  detectTSpin() {
+    if (this.current.kind !== 'T' || !this.lastMoveWasRotate) return false;
+    const cx = this.current.x + 2;
+    const cy = this.current.y + 1;
+    const corners = [[cx - 1, cy - 1], [cx + 1, cy - 1], [cx - 1, cy + 1], [cx + 1, cy + 1]];
+    let blocked = 0;
+    for (const [x, y] of corners) {
+      if (x < 0 || x >= COLS || y < 0 || y >= ROWS) blocked++;
+      else if (this.grid[y][x] !== '.') blocked++;
+    }
+    return blocked >= 3;
+  }
+
+  lockPiece() {
+    this.lastAttack = 0;
+    const s = this.shape(this.current);
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const v = s[r][c];
+        if (v === '.') continue;
+        const x = this.current.x + c;
+        const y = this.current.y + r;
+        if (y >= 0 && y < ROWS && x >= 0 && x < COLS) this.grid[y][x] = v;
+      }
+    }
+
+    const tSpin = this.detectTSpin();
+    const clearedRows = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (this.grid[r].every((x) => x !== '.')) clearedRows.push(r);
+    }
+    const cleared = clearedRows.length;
+
+    if (cleared > 0) {
+      this.combo += 1;
+      this.grid = this.grid.filter((_, idx) => !clearedRows.includes(idx));
+      while (this.grid.length < ROWS) this.grid.unshift(Array(COLS).fill('.'));
+    } else {
+      this.combo = -1;
+    }
+
+    let base = 0;
+    let attack = 0;
+    if (tSpin) {
+      base = [0, 800, 1200, 1600][cleared] || 0;
+      attack = [0, 2, 4, 6][cleared] || 0;
+    } else {
+      base = [0, 100, 300, 500, 800][cleared] || 0;
+      attack = [0, 0, 1, 2, 4][cleared] || 0;
+    }
+
+    const b2bEligible = (tSpin && cleared > 0) || cleared === 4;
+    if (b2bEligible) {
+      if (this.backToBack) {
+        base = Math.floor(base * 1.5);
+        attack += 1;
+      }
+      this.backToBack = true;
+    } else if (cleared > 0) {
+      this.backToBack = false;
+    }
+
+    const comboBonus = Math.max(0, this.combo) * 50;
+    attack += Math.max(0, this.combo - 1);
+
+    const perfectClear = cleared > 0 && this.grid.every((row) => row.every((x) => x === '.'));
+    if (perfectClear) {
+      base += 2000;
+      attack += 6;
+    }
+
+    this.lines += cleared;
+    this.level = 1 + Math.floor(this.lines / 10);
+    this.score += (base + comboBonus) * this.level;
+    this.lastAttack = attack;
+
+    this.spawn(this.next);
+    this.next = this.makePiece(this.nextKind());
+  }
+
+  addGarbage(n) {
+    for (let i = 0; i < n; i++) {
+      const hole = Math.floor(this.rng.next() * COLS);
+      const row = Array(COLS).fill('8');
+      row[hole] = '.';
+      this.grid.shift();
+      this.grid.push(row);
+    }
+  }
+
+  update(dtMs) {
+    if (this.gameOver) return;
+    this.lastAttack = 0;
+
+    const speed = this.softDrop ? 45 : Math.max(80, 700 - (this.level - 1) * 45);
+    this.fallMs += dtMs;
+
+    while (this.fallMs >= speed) {
+      this.fallMs -= speed;
+      if (!this.collide(this.current, 0, 1)) {
+        this.current.y += 1;
+        this.groundedMs = 0;
+      } else {
+        this.groundedMs += speed;
+        if (this.groundedMs >= this.lockDelayMs) {
+          this.lockPiece();
+          break;
+        }
+      }
+    }
+  }
+
+  snapshot() {
+    return {
+      grid: this.grid.map((r) => r.join('')),
+      score: this.score,
+      lines: this.lines,
+      game_over: this.gameOver
+    };
+  }
+}
+
+const boardCanvas = document.getElementById('board');
+const oppCanvas = document.getElementById('opp');
+const bctx = boardCanvas.getContext('2d');
+const octx = oppCanvas.getContext('2d');
+
+const scoreEl = document.getElementById('score');
+const linesEl = document.getElementById('lines');
+const levelEl = document.getElementById('level');
+const modeEl = document.getElementById('mode');
+const statusEl = document.getElementById('status');
+
+const btnClassic = document.getElementById('btnClassic');
+const btnOnline = document.getElementById('btnOnline');
+const btnConnect = document.getElementById('btnConnect');
+const onlineForm = document.getElementById('onlineForm');
+const wsUrlInput = document.getElementById('wsUrl');
+const roomInput = document.getElementById('room');
+const nameInput = document.getElementById('name');
+
+const blankGrid = createEmptyGrid();
+
+function buildGridOverlay() {
+  const layer = document.createElement('canvas');
+  layer.width = BOARD_W;
+  layer.height = BOARD_H;
+  const ctx = layer.getContext('2d');
+  ctx.fillStyle = '#0b0b16';
+  ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+  ctx.strokeStyle = '#1f1f35';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
+    }
+  }
+  return layer;
+}
+
+const gridOverlay = buildGridOverlay();
+
+let mode = 'classic';
+let game = new Game();
+let ws = null;
+let onlineReady = false;
+let opponent = { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Opponent' };
+let snapshotMs = 0;
+let sentGameOver = false;
+
+let lastScore = -1;
+let lastLines = -1;
+let lastLevel = -1;
+
+function setStatus(text) { statusEl.textContent = text; }
+
+function startClassic() {
+  mode = 'classic';
+  modeEl.textContent = 'Mode: Classic';
+  game = new Game();
+  sentGameOver = false;
+  onlineReady = false;
+  if (ws) { ws.close(); ws = null; }
+  setStatus('Classic mode started');
+}
+
+function startOnline() {
+  mode = 'online';
+  modeEl.textContent = 'Mode: Online';
+  game = new Game();
+  sentGameOver = false;
+  onlineReady = false;
+  opponent = { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Opponent' };
+}
+
+function send(payload) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify(payload));
+}
+
+function connectOnline() {
+  startOnline();
+  const url = wsUrlInput.value.trim();
+  const room = roomInput.value.trim() || 'default';
+  const name = nameInput.value.trim() || 'Player';
+
+  try {
+    ws = new WebSocket(url);
+  } catch {
+    setStatus('Failed to create WebSocket');
+    return;
+  }
+
+  ws.onopen = () => {
+    setStatus('Connected. Joining room...');
+    send({ type: 'join', room, name });
+  };
+
+  ws.onmessage = (evt) => {
+    let msg;
+    try { msg = JSON.parse(evt.data); } catch { return; }
+
+    if (msg.type === 'waiting') {
+      onlineReady = false;
+      setStatus('Waiting for opponent...');
+    } else if (msg.type === 'start') {
+      const seed = Number(msg.seed || Math.floor(Math.random() * 1_000_000));
+      game = new Game(seed);
+      sentGameOver = false;
+      onlineReady = true;
+      opponent.name = msg.opponent || 'Opponent';
+      setStatus(`Match started vs ${opponent.name}`);
+    } else if (msg.type === 'snapshot') {
+      if (Array.isArray(msg.grid) && msg.grid.length === ROWS) {
+        const parsed = [];
+        let ok = true;
+        for (const row of msg.grid) {
+          if (typeof row !== 'string' || row.length !== COLS) { ok = false; break; }
+          parsed.push(row.split(''));
+        }
+        if (ok) opponent.grid = parsed;
+      }
+      opponent.score = Number(msg.score || opponent.score);
+      opponent.lines = Number(msg.lines || opponent.lines);
+      opponent.game_over = Boolean(msg.game_over || false);
+    } else if (msg.type === 'attack') {
+      const amt = Number(msg.amount || 0);
+      if (amt > 0) game.addGarbage(amt);
+    } else if (msg.type === 'gameover') {
+      opponent.game_over = true;
+      setStatus('Opponent topped out');
+    } else if (msg.type === 'error') {
+      setStatus(`Server error: ${msg.message || 'unknown'}`);
+    } else if (msg.type === 'opponent_left') {
+      onlineReady = false;
+      setStatus('Opponent left');
+    }
+  };
+
+  ws.onclose = () => {
+    onlineReady = false;
+    setStatus('Disconnected from server');
+  };
+
+  ws.onerror = () => {
+    onlineReady = false;
+    setStatus('WebSocket error');
+  };
+}
+
+function drawCell(ctx, x, y, v) {
+  ctx.fillStyle = COLORS[v] || '#fff';
+  ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+}
+
+function drawGrid(ctx, grid) {
+  ctx.drawImage(gridOverlay, 0, 0);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const v = grid[r][c];
+      if (v !== '.') drawCell(ctx, c, r, v);
+    }
+  }
+}
+
+function drawPiece(ctx, piece) {
+  const shape = piece.rotations[piece.rotation];
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const v = shape[r][c];
+      if (v === '.') continue;
+      const x = piece.x + c;
+      const y = piece.y + r;
+      if (y >= 0) drawCell(ctx, x, y, v);
+    }
+  }
+}
+
+let lastTs = performance.now();
+function loop(ts) {
+  const dt = Math.min(50, ts - lastTs);
+  lastTs = ts;
+
+  if (!game.gameOver && (mode === 'classic' || (mode === 'online' && onlineReady))) {
+    game.update(dt);
+
+    if (mode === 'online') {
+      if (game.lastAttack > 0) send({ type: 'attack', amount: game.lastAttack });
+      snapshotMs += dt;
+      if (snapshotMs >= 200) {
+        snapshotMs = 0;
+        send({ type: 'snapshot', ...game.snapshot() });
+      }
+      if (game.gameOver && !sentGameOver) {
+        sentGameOver = true;
+        send({ type: 'gameover' });
+      }
+    }
+  }
+
+  drawGrid(bctx, game.grid);
+  if (!game.gameOver) drawPiece(bctx, game.current);
+
+  if (mode === 'online') {
+    drawGrid(octx, opponent.grid);
+  } else {
+    drawGrid(octx, blankGrid);
+  }
+
+  if (game.score !== lastScore) {
+    lastScore = game.score;
+    scoreEl.textContent = `Score: ${game.score}`;
+  }
+  if (game.lines !== lastLines) {
+    lastLines = game.lines;
+    linesEl.textContent = `Lines: ${game.lines}`;
+  }
+  if (game.level !== lastLevel) {
+    lastLevel = game.level;
+    levelEl.textContent = `Level: ${game.level}`;
+  }
+
+  if (game.gameOver) {
+    setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
+  }
+
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('keydown', (e) => {
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
+  if (game.gameOver) return;
+  if (mode === 'online' && !onlineReady) return;
+
+  if (e.key === 'ArrowLeft') game.move(-1, 0);
+  else if (e.key === 'ArrowRight') game.move(1, 0);
+  else if (e.key === 'ArrowUp') game.rotateCurrent();
+  else if (e.key === ' ') game.hardDrop();
+  else if (e.key === 'ArrowDown') game.softDrop = true;
+});
+
+window.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowDown') game.softDrop = false;
+});
+
+btnClassic.addEventListener('click', startClassic);
+btnOnline.addEventListener('click', () => {
+  onlineForm.style.display = onlineForm.style.display === 'none' ? 'flex' : 'none';
+});
+btnConnect.addEventListener('click', connectOnline);
+
+onlineForm.style.display = 'none';
+startClassic();
+requestAnimationFrame(loop);
