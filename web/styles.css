@@ -149,7 +149,135 @@ body::before {
   display: flex;
 }
 
-/* Buttons */
+/* Welcome Page */
+.welcomePage {
+  display: none;
+  padding: 40px 20px;
+  text-align: center;
+  animation: smoothFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.welcomePage.active {
+  display: block;
+}
+
+.welcomeContent {
+  max-width: 600px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, rgba(21, 29, 58, 0.8), rgba(10, 15, 35, 0.9));
+  border: 2px solid var(--color-accent-cyan);
+  border-radius: 8px;
+  padding: 40px;
+  box-shadow: 0 0 30px rgba(0, 217, 255, 0.3),
+              inset 0 0 20px rgba(0, 217, 255, 0.05);
+}
+
+.welcomeContent h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: var(--color-accent-cyan);
+  text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+}
+
+.welcomeInfo {
+  text-align: left;
+  color: var(--color-text-dim);
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.welcomeInfo p {
+  margin: 12px 0;
+}
+
+.welcomeInfo ul {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.welcomeInfo li {
+  padding: 8px 0;
+  font-size: 0.95rem;
+}
+
+/* Pause Menu */
+.pauseMenu {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  animation: fadeInOverlay 0.3s ease-out;
+}
+
+.pauseMenu.active {
+  display: flex;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+.pauseContent {
+  background: linear-gradient(135deg, rgba(21, 29, 58, 0.95), rgba(10, 15, 35, 1));
+  border: 2px solid var(--color-accent-purple);
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(131, 56, 236, 0.4),
+              inset 0 0 20px rgba(131, 56, 236, 0.1);
+  max-width: 400px;
+  animation: slideInPause 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInPause {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pauseContent h2 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: var(--color-accent-purple);
+  text-shadow: 0 0 20px rgba(131, 56, 236, 0.5);
+}
+
+.pauseContent p {
+  color: var(--color-text-dim);
+  margin-bottom: 30px;
+  font-size: 0.95rem;
+}
+
+.pauseButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pauseButtons .btn {
+  width: 100%;
+}
+
+
 .btn {
   padding: 8px 16px;
   border: 1px solid var(--color-accent-cyan);

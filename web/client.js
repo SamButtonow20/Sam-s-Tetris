@@ -447,6 +447,13 @@ const btnBackFromLeaderboard = document.getElementById('btnBackFromLeaderboard')
 const btnClearLeaderboard = document.getElementById('btnClearLeaderboard');
 const leaderboardEntries = document.getElementById('leaderboardEntries');
 
+const welcomePage = document.getElementById('welcomePage');
+const btnStartMenu = document.getElementById('btnStartMenu');
+const pauseMenu = document.getElementById('pauseMenu');
+const btnResume = document.getElementById('btnResume');
+const btnBackToMenu = document.getElementById('btnBackToMenu');
+const btnLeaderboardPause = document.getElementById('btnLeaderboardPause');
+
 let lastOppScores = [-1, -1, -1];
 let lastOppLines = [-1, -1, -1];
 
@@ -478,6 +485,7 @@ function buildGridOverlay() {
 const gridOverlay = buildGridOverlay();
 
 let mode = 'classic';
+let isPaused = false;
 let game = new Game();
 let ws = null;
 let onlineReady = false;
@@ -517,8 +525,49 @@ let lastLevel = -1;
 
 function setStatus(text) { statusEl.textContent = text; }
 
+function togglePause() {
+  if (mode !== 'classic' && mode !== 'online') return;
+  isPaused = !isPaused;
+  if (isPaused) {
+    pauseMenu.classList.add('active');
+    setStatus('Game Paused');
+  } else {
+    pauseMenu.classList.remove('active');
+    setStatus('Resumed');
+  }
+}
+
+function resumeGame() {
+  isPaused = false;
+  pauseMenu.classList.remove('active');
+  setStatus('Game Resumed');
+}
+
+function backToMenuFromGame() {
+  isPaused = false;
+  pauseMenu.classList.remove('active');
+  if (ws) { ws.close(); ws = null; }
+  mode = 'classic';
+  game.gameOver = true;
+  menu.classList.add('active');
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.remove('active');
+  welcomePage.classList.remove('active');
+  setStatus('Ready');
+}
+
+function showLeaderboardFromPause() {
+  pauseMenu.classList.remove('active');
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.add('active');
+  displayLeaderboard();
+}
+
+function setStatus(text) { statusEl.textContent = text; }
+
 function startClassic() {
   mode = 'classic';
+  isPaused = false;
   modeEl.textContent = 'Mode: Classic';
   game = new Game();
   sentGameOver = false;
@@ -527,6 +576,7 @@ function startClassic() {
   updatePlayerCount(1); // Solo mode - show only player 1 board
   menu.classList.remove('active');
   leaderboardPage.classList.remove('active');
+  welcomePage.classList.remove('active');
   gameContainer.style.display = 'flex';
   lastTs = performance.now();
   requestAnimationFrame(loop);
@@ -893,7 +943,8 @@ function loop(ts) {
   const dt = Math.min(50, ts - lastTs);
   lastTs = ts;
 
-  if (!game.gameOver && (mode === 'classic' || (mode === 'online' && onlineReady))) {
+  // Skip game logic updates if paused, but still render
+  if (!isPaused && !game.gameOver && (mode === 'classic' || (mode === 'online' && onlineReady))) {
     game.update(dt);
     updateParticles(dt);
 
@@ -909,7 +960,7 @@ function loop(ts) {
         send({ type: 'gameover' });
       }
     }
-  } else if (mode === 'classic') {
+  } else if (!isPaused && mode === 'classic') {
     updateParticles(dt);
     if (game.gameOver && !sentGameOver) {
       sentGameOver = true;
@@ -923,7 +974,7 @@ function loop(ts) {
         timestamp: Date.now()
       });
     }
-  } else {
+  } else if (!isPaused) {
     updateParticles(dt);
   }
 
@@ -998,9 +1049,19 @@ function loop(ts) {
 }
 
 window.addEventListener('keydown', (e) => {
+  // Allow ESC at any time to pause/resume
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if ((mode === 'classic' || mode === 'online') && !game.gameOver) {
+      togglePause();
+    }
+    return;
+  }
+  
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
   if (game.gameOver) return;
   if (mode === 'online' && !onlineReady) return;
+  if (isPaused) return;
 
   if (e.key === 'ArrowLeft') game.move(-1, 0);
   else if (e.key === 'ArrowRight') game.move(1, 0);
@@ -1084,9 +1145,23 @@ btnClearLeaderboard.addEventListener('click', () => {
   }
 });
 
+// Welcome page buttons
+btnStartMenu.addEventListener('click', () => {
+  welcomePage.classList.remove('active');
+  menu.classList.add('active');
+});
+
+// Pause menu buttons
+btnResume.addEventListener('click', resumeGame);
+btnBackToMenu.addEventListener('click', backToMenuFromGame);
+btnLeaderboardPause.addEventListener('click', showLeaderboardFromPause);
+
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
   updatePlayerCount(1);
-  menu.classList.add('active');
+  welcomePage.classList.add('active');
+  menu.classList.remove('active');
   gameContainer.style.display = 'none';
+  leaderboardPage.classList.remove('active');
+  pauseMenu.classList.remove('active');
 });

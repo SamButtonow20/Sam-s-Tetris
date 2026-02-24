@@ -14,12 +14,45 @@
       <p class="subtitle">Web Multiplayer Edition</p>
     </div>
 
+    <!-- Welcome Page -->
+    <div class="welcomePage" id="welcomePage">
+      <div class="welcomeContent">
+        <h2>Welcome to Tetris</h2>
+        <div class="welcomeInfo">
+          <p><strong>The Classic Falling Blocks Game</strong></p>
+          <p>Stack the colorful Tetris pieces to complete lines and gain points. Challenge yourself in Classic mode, or play with friends in multiplayer Online mode.</p>
+          <ul>
+            <li>⌨️ <strong>Classic Mode:</strong> Solo gameplay - clear as many lines as possible</li>
+            <li>👥 <strong>Online Mode:</strong> Play 1v1 or up to 4 players with friends</li>
+            <li>🏆 <strong>Leaderboard:</strong> Track your high scores and compete</li>
+          </ul>
+          <p style="margin-top: 20px; font-size: 0.9rem; opacity: 0.8;">
+            <strong>Controls:</strong> ← → Move • ↑ Rotate • Space Hard Drop • ↓ Soft Drop • ESC Pause
+          </p>
+        </div>
+        <button id="btnStartMenu" class="btn btn-accent">Let's Play!</button>
+      </div>
+    </div>
+
     <!-- Menu -->
     <div class="menu" id="menu">
       <button id="btnClassic" class="btn btn-primary">Classic</button>
       <button id="btnOnline" class="btn btn-primary">Online Room</button>
       <button id="btnLeaderboard" class="btn btn-primary">Leaderboard</button>
       <div class="status" id="status">Ready</div>
+    </div>
+
+    <!-- Pause Menu Overlay -->
+    <div class="pauseMenu" id="pauseMenu">
+      <div class="pauseContent">
+        <h2>PAUSED</h2>
+        <p>Press ESC to resume or choose:</p>
+        <div class="pauseButtons">
+          <button id="btnResume" class="btn btn-accent">Resume Game (ESC)</button>
+          <button id="btnBackToMenu" class="btn btn-primary">Back to Menu</button>
+          <button id="btnLeaderboardPause" class="btn btn-primary">View Leaderboard</button>
+        </div>
+      </div>
     </div>
 
     <!-- Online Form -->
