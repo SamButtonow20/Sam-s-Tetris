@@ -18,6 +18,7 @@
     <div class="menu" id="menu">
       <button id="btnClassic" class="btn btn-primary">Classic</button>
       <button id="btnOnline" class="btn btn-primary">Online Room</button>
+      <button id="btnLeaderboard" class="btn btn-primary">Leaderboard</button>
       <div class="status" id="status">Ready</div>
     </div>
 
@@ -70,6 +71,25 @@
           <button id="btnStartGame" class="btn btn-accent">Start Game</button>
           <div class="waitingForPlayers" id="waitingForPlayers">Waiting for other players...</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Page -->
+    <div class="leaderboardPage" id="leaderboardPage">
+      <div class="leaderboardContent">
+        <h2>🏆 LEADERBOARD 🏆</h2>
+        <div class="leaderboardTable">
+          <div class="leaderboardHeader">
+            <div class="rankCol">Rank</div>
+            <div class="nameCol">Player</div>
+            <div class="scoreCol">Score</div>
+            <div class="linesCol">Lines</div>
+            <div class="timeCol">Time</div>
+          </div>
+          <div id="leaderboardEntries" class="leaderboardEntries"></div>
+        </div>
+        <button id="btnBackFromLeaderboard" class="btn btn-accent">Back to Menu</button>
+        <button id="btnClearLeaderboard" class="btn btn-secondary">Clear Scores</button>
       </div>
     </div>
 

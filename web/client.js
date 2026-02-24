@@ -341,7 +341,7 @@ class Game {
     const timeDifficulty = Math.floor(this.elapsedMs / 60000); // Difficulty tier every minute
     const totalLevel = this.level + timeDifficulty;
     
-    const speed = this.softDrop ? 100 : Math.max(80, 700 - (totalLevel - 1) * 45);
+    const speed = this.softDrop ? 200 : Math.max(80, 700 - (totalLevel - 1) * 45);
     this.fallMs += dtMs;
 
     while (this.fallMs >= speed) {
@@ -438,6 +438,12 @@ const lobbyRoom = document.getElementById('lobbyRoom');
 const playersList = document.getElementById('playersList');
 const btnStartGame = document.getElementById('btnStartGame');
 const waitingForPlayers = document.getElementById('waitingForPlayers');
+
+const leaderboardPage = document.getElementById('leaderboardPage');
+const btnLeaderboard = document.getElementById('btnLeaderboard');
+const btnBackFromLeaderboard = document.getElementById('btnBackFromLeaderboard');
+const btnClearLeaderboard = document.getElementById('btnClearLeaderboard');
+const leaderboardEntries = document.getElementById('leaderboardEntries');
 
 let lastOppScores = [-1, -1, -1];
 let lastOppLines = [-1, -1, -1];
@@ -887,6 +893,20 @@ function loop(ts) {
         send({ type: 'gameover' });
       }
     }
+  } else if (mode === 'classic') {
+    updateParticles(dt);
+    if (game.gameOver && !sentGameOver) {
+      sentGameOver = true;
+      const playerName = nameInput.value || 'Player';
+      const gameTime = game.getElapsedTimeFormatted();
+      saveLeaderboard({
+        name: playerName,
+        score: game.score,
+        lines: game.lines,
+        time: gameTime,
+        timestamp: Date.now()
+      });
+    }
   } else {
     updateParticles(dt);
   }
@@ -977,6 +997,60 @@ window.addEventListener('keyup', (e) => {
   if (e.key === 'ArrowDown') game.softDrop = false;
 });
 
+function loadLeaderboard() {
+  const scores = JSON.parse(localStorage.getItem('tetrisLeaderboard') || '[]');
+  return scores;
+}
+
+function saveLeaderboard(entry) {
+  let scores = loadLeaderboard();
+  scores.push(entry);
+  scores.sort((a, b) => b.score - a.score);
+  scores = scores.slice(0, 50); // Keep top 50
+  localStorage.setItem('tetrisLeaderboard', JSON.stringify(scores));
+}
+
+function displayLeaderboard() {
+  const scores = loadLeaderboard();
+  leaderboardEntries.innerHTML = '';
+  
+  if (scores.length === 0) {
+    leaderboardEntries.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-text-dim);">No scores yet. Play a game to get on the leaderboard!</div>';
+    return;
+  }
+  
+  scores.forEach((entry, idx) => {
+    const div = document.createElement('div');
+    div.className = 'leaderboardEntry';
+    if (idx === 0) div.classList.add('top1');
+    else if (idx === 1) div.classList.add('top2');
+    else if (idx === 2) div.classList.add('top3');
+    
+    div.innerHTML = `
+      <div class="rankCol">${idx + 1}</div>
+      <div class="nameCol">${entry.name || 'Anonymous'}</div>
+      <div class="scoreCol">${entry.score}</div>
+      <div class="linesCol">${entry.lines}</div>
+      <div class="timeCol">${entry.time}</div>
+    `;
+    leaderboardEntries.appendChild(div);
+  });
+}
+
+function showLeaderboard() {
+  menu.classList.remove('active');
+  onlineForm.classList.remove('active');
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.add('active');
+  displayLeaderboard();
+}
+
+function hideLeaderboard() {
+  leaderboardPage.classList.remove('active');
+  menu.classList.add('active');
+  gameContainer.style.display = 'flex';
+}
+
 btnClassic.addEventListener('click', startClassic);
 btnOnline.addEventListener('click', () => {
   onlineForm.classList.toggle('active');
@@ -984,4 +1058,12 @@ btnOnline.addEventListener('click', () => {
 btnConnect.addEventListener('click', connectOnline);
 btnStartGame.addEventListener('click', () => {
   send({ type: 'startgame' });
+});
+btnLeaderboard.addEventListener('click', showLeaderboard);
+btnBackFromLeaderboard.addEventListener('click', hideLeaderboard);
+btnClearLeaderboard.addEventListener('click', () => {
+  if (confirm('Are you sure you want to clear all scores? This cannot be undone.')) {
+    localStorage.removeItem('tetrisLeaderboard');
+    displayLeaderboard();
+  }
 });
