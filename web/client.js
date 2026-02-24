@@ -354,7 +354,13 @@ class Game {
       grid: this.grid.map((r) => r.join('')),
       score: this.score,
       lines: this.lines,
-      game_over: this.gameOver
+      game_over: this.gameOver,
+      piece: this.gameOver ? null : {
+        kind: this.current.kind,
+        rotation: this.current.rotation,
+        x: this.current.x,
+        y: this.current.y
+      }
     };
   }
 }
@@ -415,7 +421,7 @@ let mode = 'classic';
 let game = new Game();
 let ws = null;
 let onlineReady = false;
-let opponent = { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Opponent' };
+let opponent = { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Opponent', piece: null };
 let snapshotMs = 0;
 let sentGameOver = false;
 
@@ -497,6 +503,7 @@ function connectOnline() {
       opponent.score = Number(msg.score || opponent.score);
       opponent.lines = Number(msg.lines || opponent.lines);
       opponent.game_over = Boolean(msg.game_over || false);
+      if (msg.piece) opponent.piece = msg.piece;
     } else if (msg.type === 'attack') {
       const amt = Number(msg.amount || 0);
       if (amt > 0) game.addGarbage(amt);
@@ -550,6 +557,30 @@ function drawPiece(ctx, piece) {
   }
 }
 
+function drawOpponentPiece(ctx, oppPiece) {
+  if (!oppPiece) return;
+  const kind = oppPiece.kind;
+  const rotation = oppPiece.rotation;
+  const x = oppPiece.x;
+  const y = oppPiece.y;
+  
+  const shape = TETROMINOES[kind];
+  if (!shape) return;
+  
+  let rotShape = shape;
+  for (let i = 0; i < rotation; i++) rotShape = rotate(rotShape);
+  
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const v = rotShape[r][c];
+      if (v === '.') continue;
+      const col = x + c;
+      const row = y + r;
+      if (row >= 0) drawCell(ctx, col, row, v);
+    }
+  }
+}
+
 let lastTs = performance.now();
 function loop(ts) {
   const dt = Math.min(50, ts - lastTs);
@@ -581,6 +612,7 @@ function loop(ts) {
 
   if (mode === 'online') {
     drawGrid(octx, opponent.grid);
+    if (opponent.piece) drawOpponentPiece(octx, opponent.piece);
   } else {
     drawGrid(octx, blankGrid);
   }

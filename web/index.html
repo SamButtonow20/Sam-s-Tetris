@@ -23,15 +23,27 @@
 
     <!-- Online Form -->
     <div class="onlineForm" id="onlineForm">
-      <div class="form-group">
-        <label>Room Code:</label>
-        <input id="room" placeholder="e.g. sam-vs-alex" value="sam-room-1" />
+      <div class="formStep">
+        <div class="stepNumber">1</div>
+        <div class="stepContent">
+          <label>Room Code</label>
+          <input id="room" placeholder="e.g. sam-vs-alex" value="sam-room-1" />
+          <span class="formHint">Share this code with your friend</span>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Your Name:</label>
-        <input id="name" placeholder="Your name" value="Player" />
+
+      <div class="formStep">
+        <div class="stepNumber">2</div>
+        <div class="stepContent">
+          <label>Your Name</label>
+          <input id="name" placeholder="Your name" value="Player" />
+          <span class="formHint">So your friend knows who you are</span>
+        </div>
       </div>
-      <button id="btnConnect" class="btn btn-accent">Connect & Play</button>
+
+      <button id="btnConnect" class="btn btn-accent" style="grid-column: 1 / -1;">
+        Connect & Play
+      </button>
     </div>
 
     <!-- Game Area -->
