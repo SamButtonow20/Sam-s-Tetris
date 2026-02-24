@@ -156,6 +156,7 @@ class Game {
     this.groundedMs = 0;
     this.softDrop = false;
     this.lastMoveWasRotate = false;
+    this.elapsedMs = 0; // Track total game time for difficulty progression
   }
 
   nextKind() {
@@ -330,8 +331,17 @@ class Game {
   update(dtMs) {
     if (this.gameOver) return;
     this.lastAttack = 0;
-
-    const speed = this.softDrop ? 100 : Math.max(80, 700 - (this.level - 1) * 45);
+    
+    // Track elapsed time for progressive difficulty
+    this.elapsedMs += dtMs;
+    
+    // Speed calculation with both level and time-based progression
+    // Base speed from level + additional difficulty from elapsed time
+    // Every 60 seconds adds difficulty equivalent to ~1 level
+    const timeDifficulty = Math.floor(this.elapsedMs / 60000); // Difficulty tier every minute
+    const totalLevel = this.level + timeDifficulty;
+    
+    const speed = this.softDrop ? 100 : Math.max(80, 700 - (totalLevel - 1) * 45);
     this.fallMs += dtMs;
 
     while (this.fallMs >= speed) {
@@ -367,6 +377,17 @@ class Game {
       }
     };
   }
+
+  getElapsedTimeFormatted() {
+    const totalSeconds = Math.floor(this.elapsedMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  getTimeBonus() {
+    return Math.floor(this.elapsedMs / 60000);
+  }
 }
 
 const boardCanvas = document.getElementById('board');
@@ -391,6 +412,7 @@ const nextCtxes = [nextCtx, next2Ctx, next3Ctx, next4Ctx];
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
+const timeBadgeEl = document.getElementById('timeBadge');
 const modeEl = document.getElementById('mode');
 const statusEl = document.getElementById('status');
 
@@ -860,7 +882,17 @@ function loop(ts) {
   }
   if (game.level !== lastLevel) {
     lastLevel = game.level;
-    levelEl.textContent = `Level: ${game.level}`;
+    const timeBonus = game.getTimeBonus();
+    const totalLevel = game.level + timeBonus;
+    levelEl.textContent = totalLevel;
+    if (timeBonus > 0) {
+      levelEl.title = `Level ${game.level} + ${timeBonus} time bonus = ${totalLevel}`;
+    }
+  }
+
+  // Update elapsed time display (every frame)
+  if (timeBadgeEl) {
+    timeBadgeEl.textContent = game.getElapsedTimeFormatted();
   }
 
   if (game.gameOver) {
