@@ -1,4 +1,4 @@
-const CELL = 28;
+const CELL = 14;
 const COLS = 10;
 const ROWS = 20;
 const BOARD_W = COLS * CELL;

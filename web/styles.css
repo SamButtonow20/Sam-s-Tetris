@@ -94,27 +94,28 @@ body::before {
 }
 
 .app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 8px;
+  max-width: 100%;
+  margin: 0;
+  padding: 2px;
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
 }
 
 /* Header */
 .header {
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   animation: float 3s ease-in-out infinite;
   flex-shrink: 0;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 2.2rem;
+  font-size: 1.6rem;
   font-weight: bold;
   color: var(--color-accent-cyan);
   text-shadow: 0 0 10px var(--color-accent-cyan),
@@ -125,9 +126,9 @@ body::before {
 }
 
 .subtitle {
-  margin: 2px 0 0;
+  margin: 0px 0 0;
   color: var(--color-accent-pink);
-  font-size: 0.7rem;
+  font-size: 0.5rem;
   letter-spacing: 2px;
   text-transform: uppercase;
   text-shadow: 0 0 8px var(--color-accent-pink);
@@ -136,8 +137,8 @@ body::before {
 /* Menu */
 .menu {
   display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 4px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
@@ -402,9 +403,6 @@ body::before {
   box-shadow: 0 0 15px rgba(131, 56, 236, 0.4);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9rem;
-}
 
 .stepContent {
   display: flex;
@@ -461,13 +459,12 @@ input:focus {
 .gameArea {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 4px;
   justify-content: center;
   align-items: start;
-  max-width: 1100px;
-  margin: 0 auto;
   width: 100%;
-  padding: 8px;
+  margin: 0;
+  padding: 4px;
 }
 
 /* Keep 2x2 layout for all player counts */
@@ -494,8 +491,8 @@ input:focus {
 .playerBoard {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px;
+  gap: 2px;
+  padding: 4px;
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.6), rgba(21, 29, 58, 0.6));
   border: 1px solid rgba(0, 217, 255, 0.2);
   border-radius: 3px;
@@ -504,6 +501,7 @@ input:focus {
   align-items: center;
   justify-content: flex-start;
   min-height: fit-content;
+  flex-wrap: wrap;
 }
 
 .boardHeader {
@@ -511,15 +509,15 @@ input:focus {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  gap: 4px;
-  padding-bottom: 3px;
+  gap: 2px;
+  padding-bottom: 1px;
   border-bottom: 1px solid rgba(131, 56, 236, 0.2);
 }
 
 .playerTitle {
   margin: 0;
   color: var(--color-accent-cyan);
-  font-size: 0.7rem;
+  font-size: 0.5rem;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   flex: 1;
@@ -550,7 +548,7 @@ input:focus {
   gap: 8px;
   justify-content: center;
   width: 100%;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
 }
 
 .footerStat {
@@ -569,7 +567,7 @@ input:focus {
 
 .footerValue {
   color: var(--color-accent-green);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: bold;
   font-family: 'Courier New', monospace;
   text-shadow: 0 0 8px var(--color-accent-green);
@@ -579,8 +577,8 @@ input:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 4px;
+  gap: 1px;
+  padding: 2px;
   background: rgba(131, 56, 236, 0.1);
   border: 1px solid rgba(131, 56, 236, 0.3);
   border-radius: 2px;
@@ -588,19 +586,19 @@ input:focus {
 }
 
 .controlsFooter {
-  padding: 6px 8px;
+  padding: 3px 4px;
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.8), rgba(21, 29, 58, 0.8));
   border-top: 1px solid rgba(131, 56, 236, 0.2);
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 0.5rem;
   color: var(--color-text-dim);
   flex-shrink: 0;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .controlsContent {
-  max-width: 900px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -691,13 +689,11 @@ input:focus {
 
 .nextLabel {
   color: var(--color-accent-purple);
-  font-size: 0.65rem;
+  font-size: 0.45rem;
   font-weight: bold;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: 4px;
-}
-}
+  margin-bottom: 1px;
 }
 
 .oppNextSection {
