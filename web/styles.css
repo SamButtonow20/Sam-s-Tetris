@@ -153,52 +153,152 @@ body::before {
 .welcomePage {
   display: none;
   padding: 40px 20px;
-  text-align: center;
+  min-height: 100vh;
   animation: smoothFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .welcomePage.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcomeContainer {
+  max-width: 1200px;
+  width: 100%;
+  text-align: center;
+}
+
+.welcomeTitle {
+  font-size: 3.5rem;
+  color: var(--color-accent-cyan);
+  text-shadow: 0 0 30px rgba(0, 217, 255, 0.6);
+  margin-bottom: 8px;
+  letter-spacing: 4px;
+  font-weight: 900;
+}
+
+.welcomeSubtitle {
+  font-size: 1rem;
+  color: var(--color-accent-purple);
+  text-shadow: 0 0 15px rgba(131, 56, 236, 0.4);
+  margin-bottom: 50px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.gameMode {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+  margin-bottom: 40px;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.modeCard {
+  background: linear-gradient(135deg, rgba(21, 29, 58, 0.7), rgba(10, 15, 35, 0.85));
+  border: 2px solid var(--color-accent-cyan);
+  border-radius: 12px;
+  padding: 35px 25px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.2),
+              inset 0 0 15px rgba(0, 217, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.modeCard:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: var(--color-accent-green);
+  box-shadow: 0 0 40px rgba(0, 217, 255, 0.5),
+              0 8px 20px rgba(0, 217, 255, 0.3),
+              inset 0 0 20px rgba(0, 217, 255, 0.1);
+}
+
+.modeCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+  z-index: 0;
+}
+
+.modeCard:hover::before {
+  left: 100%;
+}
+
+.modeCard > * {
+  position: relative;
+  z-index: 1;
+}
+
+.modeIcon {
+  font-size: 3rem;
+  margin-bottom: 15px;
   display: block;
 }
 
-.welcomeContent {
-  max-width: 600px;
-  margin: 0 auto;
-  background: linear-gradient(135deg, rgba(21, 29, 58, 0.8), rgba(10, 15, 35, 0.9));
-  border: 2px solid var(--color-accent-cyan);
-  border-radius: 8px;
-  padding: 40px;
-  box-shadow: 0 0 30px rgba(0, 217, 255, 0.3),
-              inset 0 0 20px rgba(0, 217, 255, 0.05);
-}
-
-.welcomeContent h2 {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
+.modeName {
+  font-size: 1.8rem;
   color: var(--color-accent-cyan);
-  text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+  margin-bottom: 12px;
+  text-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
 }
 
-.welcomeInfo {
-  text-align: left;
+.modeDescription {
   color: var(--color-text-dim);
-  line-height: 1.6;
-  margin-bottom: 30px;
-}
-
-.welcomeInfo p {
-  margin: 12px 0;
-}
-
-.welcomeInfo ul {
-  list-style: none;
-  padding: 0;
-  margin: 20px 0;
-}
-
-.welcomeInfo li {
-  padding: 8px 0;
   font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  min-height: 60px;
+}
+
+.modeFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--color-accent-green);
+  text-align: left;
+}
+
+.modeFeatures span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.welcomeControls {
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+  opacity: 0.8;
+  margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+  .gameMode {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .welcomeTitle {
+    font-size: 2.5rem;
+  }
+  
+  .modeCard {
+    padding: 25px 20px;
+  }
+  
+  .modeName {
+    font-size: 1.5rem;
+  }
 }
 
 /* Pause Menu */

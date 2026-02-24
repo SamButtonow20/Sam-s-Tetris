@@ -424,8 +424,6 @@ const oppNameEls = [document.getElementById('player2Name'), document.getElementB
 const gameArea = document.getElementById('gameArea');
 const gameContainer = document.querySelector('.gameContainer');
 const menu = document.getElementById('menu');
-const btnClassic = document.getElementById('btnClassic');
-const btnOnline = document.getElementById('btnOnline');
 const btnConnect = document.getElementById('btnConnect');
 const onlineForm = document.getElementById('onlineForm');
 const roomInput = document.getElementById('room');
@@ -442,13 +440,14 @@ const btnStartGame = document.getElementById('btnStartGame');
 const waitingForPlayers = document.getElementById('waitingForPlayers');
 
 const leaderboardPage = document.getElementById('leaderboardPage');
-const btnLeaderboard = document.getElementById('btnLeaderboard');
 const btnBackFromLeaderboard = document.getElementById('btnBackFromLeaderboard');
 const btnClearLeaderboard = document.getElementById('btnClearLeaderboard');
 const leaderboardEntries = document.getElementById('leaderboardEntries');
 
 const welcomePage = document.getElementById('welcomePage');
-const btnStartMenu = document.getElementById('btnStartMenu');
+const cardClassic = document.getElementById('cardClassic');
+const cardOnline = document.getElementById('cardOnline');
+const cardLeaderboard = document.getElementById('cardLeaderboard');
 const pauseMenu = document.getElementById('pauseMenu');
 const btnResume = document.getElementById('btnResume');
 const btnBackToMenu = document.getElementById('btnBackToMenu');
@@ -558,10 +557,11 @@ function backToMenuFromGame() {
   if (ws) { ws.close(); ws = null; }
   mode = 'classic';
   game.gameOver = true;
-  menu.classList.add('active');
+  welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
-  welcomePage.classList.remove('active');
+  menu.classList.remove('active');
+  onlineForm.classList.remove('active');
   setStatus('Ready');
 }
 
@@ -598,10 +598,11 @@ function gameOverBackToMenu() {
   if (ws) { ws.close(); ws = null; }
   mode = 'classic';
   game.gameOver = true;
-  menu.classList.add('active');
+  welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
-  welcomePage.classList.remove('active');
+  menu.classList.remove('active');
+  onlineForm.classList.remove('active');
   setStatus('Ready');
 }
 
@@ -1180,31 +1181,35 @@ function showLeaderboard() {
 
 function hideLeaderboard() {
   leaderboardPage.classList.remove('active');
-  menu.classList.add('active');
+  welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
 }
 
-btnClassic.addEventListener('click', startClassic);
-btnOnline.addEventListener('click', () => {
-  onlineForm.classList.toggle('active');
+// Card click handlers from welcome page
+cardClassic.addEventListener('click', startClassic);
+cardOnline.addEventListener('click', () => {
+  welcomePage.classList.remove('active');
+  menu.classList.remove('active');
+  onlineForm.classList.add('active');
 });
+cardLeaderboard.addEventListener('click', () => {
+  welcomePage.classList.remove('active');
+  menu.classList.remove('active');
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.add('active');
+  displayLeaderboard();
+});
+
 btnConnect.addEventListener('click', connectOnline);
 btnStartGame.addEventListener('click', () => {
   send({ type: 'startgame' });
 });
-btnLeaderboard.addEventListener('click', showLeaderboard);
 btnBackFromLeaderboard.addEventListener('click', hideLeaderboard);
 btnClearLeaderboard.addEventListener('click', () => {
   if (confirm('Are you sure you want to clear all scores? This cannot be undone.')) {
     localStorage.removeItem('tetrisLeaderboard');
     displayLeaderboard();
   }
-});
-
-// Welcome page buttons
-btnStartMenu.addEventListener('click', () => {
-  welcomePage.classList.remove('active');
-  menu.classList.add('active');
 });
 
 // Pause menu buttons

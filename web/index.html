@@ -14,31 +14,58 @@
       <p class="subtitle">Web Multiplayer Edition</p>
     </div>
 
-    <!-- Welcome Page -->
+    <!-- Welcome Page with Game Mode Cards -->
     <div class="welcomePage" id="welcomePage">
-      <div class="welcomeContent">
-        <h2>Welcome to Tetris</h2>
-        <div class="welcomeInfo">
-          <p><strong>The Classic Falling Blocks Game</strong></p>
-          <p>Stack the colorful Tetris pieces to complete lines and gain points. Challenge yourself in Classic mode, or play with friends in multiplayer Online mode.</p>
-          <ul>
-            <li>⌨️ <strong>Classic Mode:</strong> Solo gameplay - clear as many lines as possible</li>
-            <li>👥 <strong>Online Mode:</strong> Play 1v1 or up to 4 players with friends</li>
-            <li>🏆 <strong>Leaderboard:</strong> Track your high scores and compete</li>
-          </ul>
-          <p style="margin-top: 20px; font-size: 0.9rem; opacity: 0.8;">
-            <strong>Controls:</strong> ← → Move • ↑ Rotate • Space Hard Drop • ↓ Soft Drop • ESC Pause
-          </p>
+      <div class="welcomeContainer">
+        <h1 class="welcomeTitle">TETRIS</h1>
+        <p class="welcomeSubtitle">Web Multiplayer Edition</p>
+        
+        <div class="gameMode" id="gameModeSelector">
+          <!-- Classic Card -->
+          <div class="modeCard" id="cardClassic">
+            <div class="modeIcon">🎮</div>
+            <h2 class="modeName">Classic</h2>
+            <p class="modeDescription">Solo gameplay at your own pace. Clear lines, climb the leaderboard, and master the game.</p>
+            <div class="modeFeatures">
+              <span>✓ Single Player</span>
+              <span>✓ Focus Mode</span>
+              <span>✓ Track Stats</span>
+            </div>
+          </div>
+
+          <!-- Online Multiplayer Card -->
+          <div class="modeCard" id="cardOnline">
+            <div class="modeIcon">👥</div>
+            <h2 class="modeName">Online Multiplayer</h2>
+            <p class="modeDescription">Battle up to 4 players online. Share a room code with friends and compete in real-time.</p>
+            <div class="modeFeatures">
+              <span>✓ 1v1 to 4-Player</span>
+              <span>✓ Real-time Sync</span>
+              <span>✓ Attack Power-ups</span>
+            </div>
+          </div>
+
+          <!-- Leaderboard Card -->
+          <div class="modeCard" id="cardLeaderboard">
+            <div class="modeIcon">🏆</div>
+            <h2 class="modeName">Leaderboard</h2>
+            <p class="modeDescription">View top scores and track your progress. Compete globally for the highest scores.</p>
+            <div class="modeFeatures">
+              <span>✓ Top 50 Scores</span>
+              <span>✓ Rankings</span>
+              <span>✓ Best Times</span>
+            </div>
+          </div>
         </div>
-        <button id="btnStartMenu" class="btn btn-accent">Let's Play!</button>
+
+        <p class="welcomeControls">
+          <strong>Controls:</strong> ← → Move • ↑ Rotate • Space Hard Drop • ↓ Soft Drop • ESC Pause
+        </p>
       </div>
     </div>
 
-    <!-- Menu -->
+    <!-- Menu (hidden, kept for compatibility) -->
     <div class="menu" id="menu">
-      <button id="btnClassic" class="btn btn-primary">Classic</button>
-      <button id="btnOnline" class="btn btn-primary">Online Room</button>
-      <button id="btnLeaderboard" class="btn btn-primary">Leaderboard</button>
       <div class="status" id="status">Ready</div>
     </div>
 
