@@ -528,6 +528,8 @@ function startClassic() {
   menu.classList.remove('active');
   leaderboardPage.classList.remove('active');
   gameContainer.style.display = 'flex';
+  lastTs = performance.now();
+  requestAnimationFrame(loop);
   setStatus('Classic mode started');
 }
 
@@ -702,6 +704,9 @@ function connectOnline() {
       menu.classList.remove('active');
       leaderboardPage.classList.remove('active');
       gameContainer.style.display = 'flex';
+      
+      lastTs = performance.now();
+      requestAnimationFrame(loop);
       
       setStatus(`Match started (${oppCount + 1} players): ${oppNames}`);
     } else if (msg.type === 'snapshot') {
