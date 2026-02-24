@@ -993,6 +993,14 @@ const roomStartLevel = document.getElementById('roomStartLevel');
 const roomGarbageMult = document.getElementById('roomGarbageMult');
 const roomSpeedMult = document.getElementById('roomSpeedMult');
 const roomSettingsPanel = document.getElementById('roomSettingsPanel');
+// Replay playback controls
+const replayControlsBar = document.getElementById('replayControlsBar');
+const replayPauseBtn = document.getElementById('replayPauseBtn');
+const replaySpeedBtn = document.getElementById('replaySpeedBtn');
+const replaySkipBtn = document.getElementById('replaySkipBtn');
+const replayMenuBtn = document.getElementById('replayMenuBtn');
+const replayProgressText = document.getElementById('replayProgressText');
+const replayProgressFill = document.getElementById('replayProgressFill');
 
 let lastOppScores = [-1, -1, -1];
 let lastOppLines = [-1, -1, -1];
@@ -1186,6 +1194,7 @@ function backToMenuFromGame() {
   replayPlayer = null;
   aiOpponent = null;
   aiGame = null;
+  if (replayControlsBar) replayControlsBar.style.display = 'none';
   welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
@@ -1239,6 +1248,7 @@ function gameOverBackToMenu() {
   replayPlayer = null;
   aiOpponent = null;
   aiGame = null;
+  if (replayControlsBar) replayControlsBar.style.display = 'none';
   welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
@@ -1866,10 +1876,13 @@ function loop(ts) {
       sound.stopMusic();
       updateStatsOnGameEnd(game);
     }
-  } else if (!isPaused && mode === 'replay') {
-    // Replay playback
+  } else if (mode === 'replay') {
+    // Replay playback (not affected by isPaused — uses its own pause)
     if (replayPlayer && !replayPlayer.finished) {
       replayPlayer.update(dt);
+      updateReplayControls();
+    } else if (replayPlayer && replayPlayer.finished) {
+      updateReplayControls();
     }
     updateParticles(dt);
   } else if (!isPaused) {
@@ -1943,8 +1956,12 @@ function loop(ts) {
   updatePieceStatsDisplay();
   updateB2BIndicator();
 
-  if (game.gameOver) {
-    setStatus(mode === 'online' ? 'Game over (you topped out)' : mode === 'ai' ? 'Game over' : 'Game over');
+  if (game.gameOver || (mode === 'replay' && replayPlayer && replayPlayer.finished)) {
+    if (mode === 'replay') {
+      setStatus('Replay finished');
+    } else {
+      setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
+    }
     if (!shownGameOver) {
       shownGameOver = true;
       if (mode !== 'replay') showGameOver();
@@ -1992,7 +2009,14 @@ window.addEventListener('keydown', (e) => {
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
   if (game.gameOver) return;
   if (mode === 'online' && !onlineReady) return;
-  if (mode === 'replay') return; // No input during replay
+  if (mode === 'replay') {
+    // Replay-specific keyboard shortcuts
+    if (e.key === ' ') { e.preventDefault(); toggleReplayPause(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); cycleReplaySpeed(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); /* reverse speed not supported, just ignore */ }
+    else if (e.key === 'End') { e.preventDefault(); skipReplay(); }
+    return;
+  }
   if (isPaused) return;
 
   if (e.key === 'ArrowLeft') game.move(-1, 0);
@@ -2216,13 +2240,83 @@ function startReplay(idx) {
   gameContainer.style.display = 'flex';
   if (gameChatBox) gameChatBox.style.display = 'none';
   if (spectatorBanner) spectatorBanner.style.display = 'none';
+  if (replayControlsBar) replayControlsBar.style.display = 'flex';
   modeEl.textContent = 'Mode: Replay';
   const p1Title = document.querySelector('#player1Board .playerTitle');
   if (p1Title) p1Title.textContent = 'Replay: ' + (data.name || 'Untitled');
+  updateReplayControls();
   
   lastTs = performance.now();
   requestAnimationFrame(loop);
   setStatus('Playing replay...');
+}
+
+function updateReplayControls() {
+  if (!replayPlayer) return;
+  if (replayPauseBtn) replayPauseBtn.textContent = replayPlayer.paused ? '▶' : '⏸';
+  if (replaySpeedBtn) replaySpeedBtn.textContent = replayPlayer.speed + 'x';
+  // Progress
+  const totalTime = replayPlayer.data.inputs.length > 0 ? replayPlayer.data.inputs[replayPlayer.data.inputs.length - 1].t : 0;
+  const pct = totalTime > 0 ? Math.min(100, (replayPlayer.elapsed / totalTime) * 100) : 0;
+  if (replayProgressFill) replayProgressFill.style.width = pct + '%';
+  const sec = Math.floor(replayPlayer.elapsed / 1000);
+  const min = Math.floor(sec / 60);
+  if (replayProgressText) replayProgressText.textContent = min + ':' + String(sec % 60).padStart(2, '0');
+}
+
+function toggleReplayPause() {
+  if (!replayPlayer) return;
+  replayPlayer.paused = !replayPlayer.paused;
+  updateReplayControls();
+  setStatus(replayPlayer.paused ? 'Replay paused' : 'Replay playing');
+}
+
+function cycleReplaySpeed() {
+  if (!replayPlayer) return;
+  const speeds = [1, 2, 4, 8];
+  const idx = speeds.indexOf(replayPlayer.speed);
+  replayPlayer.speed = speeds[(idx + 1) % speeds.length];
+  updateReplayControls();
+  setStatus('Replay speed: ' + replayPlayer.speed + 'x');
+}
+
+function skipReplay() {
+  if (!replayPlayer) return;
+  // Fast-forward: execute all remaining inputs instantly
+  while (replayPlayer.inputIdx < replayPlayer.data.inputs.length) {
+    const input = replayPlayer.data.inputs[replayPlayer.inputIdx];
+    switch (input.a) {
+      case 'left': replayPlayer.game.move(-1, 0); break;
+      case 'right': replayPlayer.game.move(1, 0); break;
+      case 'rotate': replayPlayer.game.rotateCurrent(); break;
+      case 'drop': replayPlayer.game.hardDrop(); break;
+      case 'softOn': replayPlayer.game.softDrop = true; break;
+      case 'softOff': replayPlayer.game.softDrop = false; break;
+    }
+    replayPlayer.inputIdx++;
+    // Run game update between inputs to process locks etc.
+    if (replayPlayer.inputIdx < replayPlayer.data.inputs.length) {
+      const nextT = replayPlayer.data.inputs[replayPlayer.inputIdx].t;
+      const gap = nextT - replayPlayer.elapsed;
+      if (gap > 0) replayPlayer.game.update(gap);
+      replayPlayer.elapsed = nextT;
+    }
+  }
+  replayPlayer.finished = true;
+  updateReplayControls();
+  setStatus('Replay finished');
+}
+
+function exitReplay() {
+  mode = 'classic';
+  replayPlayer = null;
+  if (replayControlsBar) replayControlsBar.style.display = 'none';
+  game.gameOver = true;
+  gameContainer.style.display = 'none';
+  welcomePage.classList.add('active');
+  const p1Title = document.querySelector('#player1Board .playerTitle');
+  if (p1Title) p1Title.textContent = 'You';
+  setStatus('Ready');
 }
 
 // ==================== SOUND CONTROLS ====================
@@ -2300,6 +2394,12 @@ if (btnExportReplay) btnExportReplay.addEventListener('click', () => {
   a.download = 'tetris-replays.json';
   a.click();
 });
+// Replay playback controls
+if (replayPauseBtn) replayPauseBtn.addEventListener('click', toggleReplayPause);
+if (replaySpeedBtn) replaySpeedBtn.addEventListener('click', cycleReplaySpeed);
+if (replaySkipBtn) replaySkipBtn.addEventListener('click', skipReplay);
+if (replayMenuBtn) replayMenuBtn.addEventListener('click', exitReplay);
+
 if (btnImportReplay) btnImportReplay.addEventListener('click', () => {
   const input = document.createElement('input');
   input.type = 'file';
