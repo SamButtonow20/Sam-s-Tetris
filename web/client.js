@@ -380,6 +380,13 @@ const oppScoreEl = document.getElementById('oppScore');
 const oppLinesEl = document.getElementById('oppLines');
 const oppStatusEl = document.getElementById('oppStatus');
 
+const btnClassic = document.getElementById('btnClassic');
+const btnOnline = document.getElementById('btnOnline');
+const btnConnect = document.getElementById('btnConnect');
+const onlineForm = document.getElementById('onlineForm');
+const roomInput = document.getElementById('room');
+const nameInput = document.getElementById('name');
+
 const formWrapper = onlineForm.querySelector('.formWrapper');
 const connectingState = document.getElementById('connectingState');
 const waitingState = document.getElementById('waitingState');
@@ -387,13 +394,6 @@ const sharedRoom = document.getElementById('sharedRoom');
 
 let lastOppScore = -1;
 let lastOppLines = -1;
-
-const btnClassic = document.getElementById('btnClassic');
-const btnOnline = document.getElementById('btnOnline');
-const btnConnect = document.getElementById('btnConnect');
-const onlineForm = document.getElementById('onlineForm');
-const roomInput = document.getElementById('room');
-const nameInput = document.getElementById('name');
 
 // Auto-detect WebSocket URL based on current page location
 function getWebSocketURL() {
