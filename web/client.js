@@ -437,6 +437,8 @@ const sharedRoom = document.getElementById('sharedRoom');
 const lobbyRoom = document.getElementById('lobbyRoom');
 const playersList = document.getElementById('playersList');
 const btnStartGame = document.getElementById('btnStartGame');
+const btnBackFromOnline = document.getElementById('btnBackFromOnline');
+const btnLeaveLobby = document.getElementById('btnLeaveLobby');
 const waitingForPlayers = document.getElementById('waitingForPlayers');
 
 const leaderboardPage = document.getElementById('leaderboardPage');
@@ -1203,6 +1205,28 @@ cardLeaderboard.addEventListener('click', () => {
 btnConnect.addEventListener('click', connectOnline);
 btnStartGame.addEventListener('click', () => {
   send({ type: 'startgame' });
+});
+btnBackFromOnline.addEventListener('click', () => {
+  if (ws) { ws.close(); ws = null; }
+  onlineForm.classList.remove('active');
+  connectingState.classList.remove('active');
+  waitingState.classList.remove('active');
+  lobbyState.classList.remove('active');
+  formWrapper.classList.remove('hidden');
+  btnConnect.disabled = false;
+  btnConnect.classList.remove('loading');
+  welcomePage.classList.add('active');
+});
+btnLeaveLobby.addEventListener('click', () => {
+  if (ws) { ws.close(); ws = null; }
+  onlineForm.classList.remove('active');
+  connectingState.classList.remove('active');
+  waitingState.classList.remove('active');
+  lobbyState.classList.remove('active');
+  formWrapper.classList.remove('hidden');
+  btnConnect.disabled = false;
+  btnConnect.classList.remove('loading');
+  welcomePage.classList.add('active');
 });
 btnBackFromLeaderboard.addEventListener('click', hideLeaderboard);
 btnClearLeaderboard.addEventListener('click', () => {
