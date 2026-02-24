@@ -93,35 +93,39 @@ body::before {
 .app {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 6px 8px;
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 /* Header */
 .header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 6px;
   animation: float 3s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 3.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
   color: var(--color-accent-cyan);
   text-shadow: 0 0 10px var(--color-accent-cyan),
                0 0 20px var(--color-accent-purple),
                0 0 40px rgba(131, 56, 236, 0.5);
-  letter-spacing: 6px;
+  letter-spacing: 3px;
   font-style: italic;
 }
 
 .subtitle {
-  margin: 12px 0 0;
+  margin: 2px 0 0;
   color: var(--color-accent-pink);
-  font-size: 0.85rem;
-  letter-spacing: 3px;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
   text-transform: uppercase;
   text-shadow: 0 0 8px var(--color-accent-pink);
 }
@@ -129,22 +133,23 @@ body::before {
 /* Menu */
 .menu {
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 8px;
+  margin-bottom: 6px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Buttons */
 .btn {
-  padding: 12px 24px;
-  border: 2px solid var(--color-accent-cyan);
+  padding: 6px 12px;
+  border: 1px solid var(--color-accent-cyan);
   background: rgba(0, 217, 255, 0.05);
   color: var(--color-accent-cyan);
-  border-radius: 4px;
+  border-radius: 3px;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   text-transform: uppercase;
@@ -233,13 +238,13 @@ body::before {
 
 /* Status */
 .status {
-  padding: 10px 16px;
+  padding: 4px 8px;
   background: rgba(0, 217, 255, 0.08);
   border: 1px solid var(--color-accent-green);
-  border-radius: 4px;
+  border-radius: 3px;
   color: var(--color-accent-green);
-  font-size: 0.85rem;
-  min-height: 24px;
+  font-size: 0.65rem;
+  min-height: auto;
   display: flex;
   align-items: center;
   box-shadow: 0 0 10px rgba(6, 255, 165, 0.2);
@@ -445,22 +450,24 @@ input:focus {
   animation: float 4s ease-out infinite;
   animation-delay: 0.5s;
   will-change: transform;
-  min-height: calc(100vh - 220px);
+  flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .gameArea {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 8px;
   justify-content: center;
-  align-items: stretch;
+  align-items: center;
   flex: 1;
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
-  padding: 16px;
+  padding: 6px;
+  overflow: hidden;
 }
 
 .playerCard {
@@ -479,11 +486,11 @@ input:focus {
 .playerBoard {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  gap: 4px;
+  padding: 6px;
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.6), rgba(21, 29, 58, 0.6));
   border: 1px solid rgba(0, 217, 255, 0.2);
-  border-radius: 4px;
+  border-radius: 3px;
   animation: smoothFade 0.4s ease-out;
   will-change: transform;
   align-items: center;
@@ -496,16 +503,16 @@ input:focus {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  gap: 8px;
-  padding-bottom: 8px;
+  gap: 4px;
+  padding-bottom: 3px;
   border-bottom: 1px solid rgba(131, 56, 236, 0.2);
 }
 
 .playerTitle {
   margin: 0;
   color: var(--color-accent-cyan);
-  font-size: 0.9rem;
-  letter-spacing: 1px;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   flex: 1;
 }
@@ -513,9 +520,9 @@ input:focus {
 .levelBadge, .statusBadge {
   background: rgba(6, 255, 165, 0.2);
   color: var(--color-accent-green);
-  padding: 3px 8px;
-  border-radius: 3px;
-  font-size: 0.65rem;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 0.5rem;
   text-transform: uppercase;
   font-weight: bold;
   white-space: nowrap;
@@ -532,29 +539,29 @@ input:focus {
 
 .boardFooter {
   display: flex;
-  gap: 16px;
+  gap: 8px;
   justify-content: center;
   width: 100%;
-  font-size: 0.8rem;
+  font-size: 0.65rem;
 }
 
 .footerStat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .footerLabel {
   color: var(--color-text-dim);
-  font-size: 0.7rem;
+  font-size: 0.55rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .footerValue {
   color: var(--color-accent-green);
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   font-weight: bold;
   font-family: 'Courier New', monospace;
   text-shadow: 0 0 8px var(--color-accent-green);
@@ -564,28 +571,29 @@ input:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px;
+  gap: 2px;
+  padding: 4px;
   background: rgba(131, 56, 236, 0.1);
   border: 1px solid rgba(131, 56, 236, 0.3);
-  border-radius: 3px;
+  border-radius: 2px;
   width: 100%;
 }
 
 .controlsFooter {
-  padding: 12px 16px;
+  padding: 4px 8px;
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.8), rgba(21, 29, 58, 0.8));
   border-top: 1px solid rgba(131, 56, 236, 0.2);
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--color-text-dim);
+  flex-shrink: 0;
 }
 
 .controlsContent {
   max-width: 900px;
   margin: 0 auto;
   display: flex;
-  gap: 20px;
+  gap: 12px;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
@@ -594,7 +602,7 @@ input:focus {
 .controlsGroup {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   align-items: center;
 }
 
@@ -602,11 +610,13 @@ input:focus {
   color: var(--color-accent-cyan);
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  font-size: 0.6rem;
 }
 
 .controlRow {
   color: var(--color-text-dim);
+  font-size: 0.6rem;
 }
 
 .modeDisplay {
@@ -672,11 +682,12 @@ input:focus {
 
 .nextLabel {
   color: var(--color-accent-purple);
-  font-size: 0.75rem;
+  font-size: 0.55rem;
   font-weight: bold;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+}
 }
 
 .oppNextSection {
