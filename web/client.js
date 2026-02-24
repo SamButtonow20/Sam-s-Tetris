@@ -213,7 +213,7 @@ class SoundManager {
     this.oceanSource.buffer = this.oceanBuffer;
     this.oceanSource.loop = true;
     this.oceanSource.connect(this.oceanGain);
-    this.oceanSource.start(0);
+    this.oceanSource.start(0, 10); // skip first 10s of silence
   }
   _stopOceanMusic() {
     if (this.oceanSource) {
