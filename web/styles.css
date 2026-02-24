@@ -449,13 +449,28 @@ input:focus {
 }
 
 .gameArea {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 20px;
-  justify-items: center;
-  align-items: start;
-  max-width: 650px;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 1000px;
   margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.mainPlayer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.opponentsList {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 580px;
 }
 
 .playerCard {
@@ -468,6 +483,82 @@ input:focus {
   border-radius: 4px;
   animation: smoothFade 0.4s ease-out;
   will-change: transform;
+}
+
+.opponentCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: linear-gradient(135deg, rgba(15, 21, 51, 0.5), rgba(21, 29, 58, 0.5));
+  border: 1px solid rgba(255, 0, 110, 0.15);
+  border-radius: 3px;
+  animation: smoothFade 0.4s ease-out;
+  will-change: transform;
+}
+
+.oppHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(131, 56, 236, 0.2);
+}
+
+.oppHeader h3 {
+  margin: 0;
+  color: var(--color-accent-pink);
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px var(--color-accent-pink);
+}
+
+.oppStatus {
+  background: rgba(6, 255, 165, 0.2);
+  color: var(--color-accent-green);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.oppStats {
+  display: flex;
+  gap: 8px;
+  font-size: 0.7rem;
+}
+
+.nextPieceSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  background: rgba(131, 56, 236, 0.1);
+  border: 1px solid rgba(131, 56, 236, 0.3);
+  border-radius: 3px;
+}
+
+.nextLabel {
+  color: var(--color-accent-purple);
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.oppNextSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(131, 56, 236, 0.08);
+  border: 1px solid rgba(131, 56, 236, 0.2);
+  border-radius: 2px;
 }
 
 .boardWrapper {
@@ -494,15 +585,12 @@ input:focus {
 }
 
 .controlsPanel {
-  grid-column: 1 / -1;
-  padding: 16px;
+  padding: 12px;
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.6), rgba(21, 29, 58, 0.6));
   border: 1px solid rgba(255, 0, 110, 0.2);
-  border-radius: 4px;
-  text-align: center;
+  border-radius: 3px;
+  text-align: left;
   color: var(--color-text-dim);
-  font-size: 0.85rem;
-  line-height: 1.4;
 }
 
 /* Canvas */
@@ -588,9 +676,24 @@ canvas:hover {
   }
 
   .gameArea {
-    grid-template-columns: 1fr;
-    max-width: 300px;
+    flex-direction: column;
+    max-width: 100%;
     gap: 12px;
+  }
+
+  .mainPlayer {
+    align-items: center;
+  }
+
+  .opponentsList {
+    flex-direction: row;
+    max-height: none;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .opponentCard {
+    flex: 0 1 calc(50% - 6px);
   }
 
   .panel {
@@ -607,9 +710,23 @@ canvas:hover {
     padding: 8px;
   }
 
-  canvas {
+  #board {
+    max-width: 200px;
+    height: auto;
+  }
+
+  #board2, #board3, #board4 {
     width: 100%;
     height: auto;
-    max-width: 280px;
+  }
+
+  #nextBoard {
+    max-width: 100px;
+    height: auto;
+  }
+
+  #nextBoard2, #nextBoard3, #nextBoard4 {
+    width: 100%;
+    height: auto;
   }
 }

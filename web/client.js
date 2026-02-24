@@ -360,6 +360,10 @@ class Game {
         rotation: this.current.rotation,
         x: this.current.x,
         y: this.current.y
+      },
+      next: this.gameOver ? null : {
+        kind: this.next.kind,
+        rotation: this.next.rotation
       }
     };
   }
@@ -369,11 +373,20 @@ const boardCanvas = document.getElementById('board');
 const board2Canvas = document.getElementById('board2');
 const board3Canvas = document.getElementById('board3');
 const board4Canvas = document.getElementById('board4');
+const nextCanvas = document.getElementById('nextBoard');
+const next2Canvas = document.getElementById('nextBoard2');
+const next3Canvas = document.getElementById('nextBoard3');
+const next4Canvas = document.getElementById('nextBoard4');
 const bctx = boardCanvas.getContext('2d');
 const octx2 = board2Canvas.getContext('2d');
 const octx3 = board3Canvas.getContext('2d');
 const octx4 = board4Canvas.getContext('2d');
+const nextCtx = nextCanvas.getContext('2d');
+const next2Ctx = next2Canvas.getContext('2d');
+const next3Ctx = next3Canvas.getContext('2d');
+const next4Ctx = next4Canvas.getContext('2d');
 const octxes = [octx2, octx3, octx4];
+const nextCtxes = [nextCtx, next2Ctx, next3Ctx, next4Ctx];
 
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
@@ -433,7 +446,7 @@ let game = new Game();
 let ws = null;
 let onlineReady = false;
 let playerSlot = -1;
-let opponents = [{grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 2', piece: null}, {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 3', piece: null}, {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 4', piece: null}];
+let opponents = [{grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 2', piece: null, next: null}, {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 3', piece: null, next: null}, {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 4', piece: null, next: null}];
 let snapshotMs = 0;
 let sentGameOver = false;
 
@@ -455,7 +468,7 @@ function startClassic() {
 
 function resetOpponents() {
   for (let i = 0; i < 3; i++) {
-    opponents[i] = {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player ' + (i + 2), piece: null};
+    opponents[i] = {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player ' + (i + 2), piece: null, next: null};
     oppScoreEls[i].textContent = '0';
     oppLinesEls[i].textContent = '0';
     oppStatusEls[i].textContent = 'Ready';
@@ -561,6 +574,7 @@ function connectOnline() {
         opponents[oppIdx].lines = Number(msg.lines || opponents[oppIdx].lines);
         opponents[oppIdx].game_over = Boolean(msg.game_over || false);
         if (msg.piece) opponents[oppIdx].piece = msg.piece;
+        if (msg.next) opponents[oppIdx].next = msg.next;
       }
     } else if (msg.type === 'attack') {
       const amt = Number(msg.amount || 0);
@@ -663,6 +677,65 @@ function drawOpponentPiece(ctx, oppPiece) {
   }
 }
 
+function drawNextPiece(ctx, piece, canvasW, canvasH) {
+  if (!piece) return;
+  
+  let shape;
+  let rotation = 0;
+  
+  // Handle different piece formats
+  if (piece.rotations) {
+    // Full piece object from game
+    shape = piece.rotations[piece.rotation];
+    rotation = piece.rotation;
+  } else if (piece.kind) {
+    // Simple piece info from opponent (just kind and rotation)
+    const kind = piece.kind;
+    const rot = piece.rotation || 0;
+    if (!TETROMINOES[kind]) return;
+    
+    let rotShape = TETROMINOES[kind];
+    for (let i = 0; i < rot; i++) rotShape = rotate(rotShape);
+    shape = rotShape;
+    rotation = rot;
+  } else {
+    return;
+  }
+  
+  if (!shape) return;
+  
+  // Clear the canvas
+  ctx.fillStyle = '#0b0b16';
+  ctx.fillRect(0, 0, canvasW, canvasH);
+  
+  // Draw grid
+  const smallCell = canvasW / 4;
+  ctx.strokeStyle = '#1f1f35';
+  for (let i = 0; i <= 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * smallCell, 0);
+    ctx.lineTo(i * smallCell, canvasH);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, i * smallCell);
+    ctx.lineTo(canvasW, i * smallCell);
+    ctx.stroke();
+  }
+  
+  // Draw piece centered
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const v = shape[r][c];
+      if (v !== '.') {
+        ctx.fillStyle = COLORS[v] || '#fff';
+        const x = c * smallCell + 1;
+        const y = r * smallCell + 1;
+        ctx.fillRect(x, y, smallCell - 2, smallCell - 2);
+      }
+    }
+  }
+}
+
 let lastTs = performance.now();
 function loop(ts) {
   const dt = Math.min(50, ts - lastTs);
@@ -691,11 +764,19 @@ function loop(ts) {
   drawGrid(bctx, game.grid);
   if (!game.gameOver) drawPiece(bctx, game.current);
   drawParticles(bctx);
+  
+  // Draw next piece for player
+  drawNextPiece(nextCtx, game.next, nextCanvas.width, nextCanvas.height);
 
   if (mode === 'online') {
     for (let i = 0; i < 3; i++) {
       drawGrid(octxes[i], opponents[i].grid);
       if (opponents[i].piece) drawOpponentPiece(octxes[i], opponents[i].piece);
+      // Draw opponent next piece previews
+      if (opponents[i].next && i < nextCtxes.length - 1) {
+        const nextPreviewSize = (i === 0) ? nextCanvas.width : next2Canvas.width;
+        drawNextPiece(nextCtxes[i + 1], opponents[i].next, nextPreviewSize, nextPreviewSize);
+      }
     }
   } else {
     for (let i = 0; i < 3; i++) {

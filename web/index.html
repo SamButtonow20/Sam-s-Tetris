@@ -63,11 +63,15 @@
     <!-- Game Area -->
     <div class="gameContainer">
       <div class="gameArea">
-        <!-- Top Left: You -->
-        <div class="playerCard">
-          <div class="boardWrapper">
+        <!-- LEFT: Main Player -->
+        <div class="mainPlayer">
+          <div class="playerCard">
             <h3>You</h3>
             <canvas id="board" width="280" height="560"></canvas>
+            <div class="nextPieceSection">
+              <div class="nextLabel">NEXT</div>
+              <canvas id="nextBoard" width="140" height="140" style="border: 2px solid var(--color-accent-green); margin-top: 6px;"></canvas>
+            </div>
           </div>
           <div class="playerStats">
             <div class="stat">
@@ -83,86 +87,88 @@
               <span id="level" class="value">1</span>
             </div>
           </div>
-        </div>
-
-        <!-- Top Right: Player 2 -->
-        <div class="playerCard" id="player2Card">
-          <div class="boardWrapper">
-            <h3 id="player2Name">Player 2</h3>
-            <canvas id="board2" width="280" height="560"></canvas>
-          </div>
-          <div class="playerStats">
-            <div class="stat">
-              <span class="label">Score</span>
-              <span id="score2" class="value">0</span>
+          <div class="controlsPanel">
+            <div style="font-size: 0.75rem; line-height: 1.4; color: var(--color-text-dim);">
+              <div><strong style="color: var(--color-accent-cyan);">Controls</strong></div>
+              <div>← → Move | ↑ Rotate</div>
+              <div>↓ Drop | Space Hard</div>
             </div>
-            <div class="stat">
-              <span class="label">Lines</span>
-              <span id="lines2" class="value">0</span>
-            </div>
-            <div class="stat">
-              <span class="label">Status</span>
-              <span id="status2" class="value" style="font-size: 0.8rem;">Ready</span>
+            <div style="margin-top: 8px; font-size: 0.7rem; color: var(--color-text-dim);">
+              <div id="mode" style="color: var(--color-accent-green);">Mode: Classic</div>
             </div>
           </div>
         </div>
 
-        <!-- Bottom Left: Player 3 -->
-        <div class="playerCard" id="player3Card">
-          <div class="boardWrapper">
-            <h3 id="player3Name">Player 3</h3>
-            <canvas id="board3" width="280" height="560"></canvas>
+        <!-- RIGHT: Opponents -->
+        <div class="opponentsList">
+          <!-- Player 2 -->
+          <div class="opponentCard" id="player2Card">
+            <div class="oppHeader">
+              <h3 id="player2Name" style="margin: 0; flex: 1;">Player 2</h3>
+              <span id="status2" class="oppStatus">Ready</span>
+            </div>
+            <canvas id="board2" width="200" height="400"></canvas>
+            <div class="oppNextSection">
+              <div class="nextLabel">NEXT</div>
+              <canvas id="nextBoard2" width="100" height="100"></canvas>
+            </div>
+            <div class="oppStats">
+              <div class="stat">
+                <span class="label">Sc:</span>
+                <span id="score2" class="value">0</span>
+              </div>
+              <div class="stat">
+                <span class="label">Ln:</span>
+                <span id="lines2" class="value">0</span>
+              </div>
+            </div>
           </div>
-          <div class="playerStats">
-            <div class="stat">
-              <span class="label">Score</span>
-              <span id="score3" class="value">0</span>
-            </div>
-            <div class="stat">
-              <span class="label">Lines</span>
-              <span id="lines3" class="value">0</span>
-            </div>
-            <div class="stat">
-              <span class="label">Status</span>
-              <span id="status3" class="value" style="font-size: 0.8rem;">Ready</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- Bottom Right: Player 4 -->
-        <div class="playerCard" id="player4Card">
-          <div class="boardWrapper">
-            <h3 id="player4Name">Player 4</h3>
-            <canvas id="board4" width="280" height="560"></canvas>
+          <!-- Player 3 -->
+          <div class="opponentCard" id="player3Card">
+            <div class="oppHeader">
+              <h3 id="player3Name" style="margin: 0; flex: 1;">Player 3</h3>
+              <span id="status3" class="oppStatus">Ready</span>
+            </div>
+            <canvas id="board3" width="200" height="400"></canvas>
+            <div class="oppNextSection">
+              <div class="nextLabel">NEXT</div>
+              <canvas id="nextBoard3" width="100" height="100"></canvas>
+            </div>
+            <div class="oppStats">
+              <div class="stat">
+                <span class="label">Sc:</span>
+                <span id="score3" class="value">0</span>
+              </div>
+              <div class="stat">
+                <span class="label">Ln:</span>
+                <span id="lines3" class="value">0</span>
+              </div>
+            </div>
           </div>
-          <div class="playerStats">
-            <div class="stat">
-              <span class="label">Score</span>
-              <span id="score4" class="value">0</span>
-            </div>
-            <div class="stat">
-              <span class="label">Lines</span>
-              <span id="lines4" class="value">0</span>
-            </div>
-            <div class="stat">
-              <span class="label">Status</span>
-              <span id="status4" class="value" style="font-size: 0.8rem;">Ready</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Controls Panel (Center) -->
-      <div class="controlsPanel">
-        <div style="font-size: 0.85rem; line-height: 1.6; color: var(--color-text-dim);">
-          <div><strong style="color: var(--color-accent-cyan);">Controls:</strong></div>
-          <div>← → : Move</div>
-          <div>↑ : Rotate</div>
-          <div>↓ : Soft Drop</div>
-          <div>Space : Hard Drop</div>
-        </div>
-        <div style="margin-top: 12px; font-size: 0.8rem; color: var(--color-text-dim);">
-          <div id="mode" style="color: var(--color-accent-green);">Mode: Classic</div>
+          <!-- Player 4 -->
+          <div class="opponentCard" id="player4Card">
+            <div class="oppHeader">
+              <h3 id="player4Name" style="margin: 0; flex: 1;">Player 4</h3>
+              <span id="status4" class="oppStatus">Ready</span>
+            </div>
+            <canvas id="board4" width="200" height="400"></canvas>
+            <div class="oppNextSection">
+              <div class="nextLabel">NEXT</div>
+              <canvas id="nextBoard4" width="100" height="100"></canvas>
+            </div>
+            <div class="oppStats">
+              <div class="stat">
+                <span class="label">Sc:</span>
+                <span id="score4" class="value">0</span>
+              </div>
+              <div class="stat">
+                <span class="label">Ln:</span>
+                <span id="lines4" class="value">0</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
