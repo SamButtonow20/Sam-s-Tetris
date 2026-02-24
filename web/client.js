@@ -422,6 +422,8 @@ const oppStatusEls = [document.getElementById('status2'), document.getElementByI
 const oppNameEls = [document.getElementById('player2Name'), document.getElementById('player3Name'), document.getElementById('player4Name')];
 
 const gameArea = document.getElementById('gameArea');
+const gameContainer = document.querySelector('.gameContainer');
+const menu = document.getElementById('menu');
 const btnClassic = document.getElementById('btnClassic');
 const btnOnline = document.getElementById('btnOnline');
 const btnConnect = document.getElementById('btnConnect');
@@ -523,6 +525,9 @@ function startClassic() {
   onlineReady = false;
   if (ws) { ws.close(); ws = null; }
   updatePlayerCount(1); // Solo mode - show only player 1 board
+  menu.classList.remove('active');
+  leaderboardPage.classList.remove('active');
+  gameContainer.style.display = 'flex';
   setStatus('Classic mode started');
 }
 
@@ -692,6 +697,12 @@ function connectOnline() {
       waitingState.classList.remove('active');
       connectingState.classList.remove('active');
       formWrapper.classList.remove('hidden');
+      
+      // Hide menu and show game
+      menu.classList.remove('active');
+      leaderboardPage.classList.remove('active');
+      gameContainer.style.display = 'flex';
+      
       setStatus(`Match started (${oppCount + 1} players): ${oppNames}`);
     } else if (msg.type === 'snapshot') {
       const playerIdx = Number(msg.player || 0);
@@ -1048,7 +1059,7 @@ function showLeaderboard() {
 function hideLeaderboard() {
   leaderboardPage.classList.remove('active');
   menu.classList.add('active');
-  gameContainer.style.display = 'flex';
+  gameContainer.style.display = 'none';
 }
 
 btnClassic.addEventListener('click', startClassic);
@@ -1066,4 +1077,11 @@ btnClearLeaderboard.addEventListener('click', () => {
     localStorage.removeItem('tetrisLeaderboard');
     displayLeaderboard();
   }
+});
+
+// Initialize on page load
+window.addEventListener('DOMContentLoaded', () => {
+  updatePlayerCount(1);
+  menu.classList.add('active');
+  gameContainer.style.display = 'none';
 });

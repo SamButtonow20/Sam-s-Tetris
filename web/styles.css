@@ -136,13 +136,17 @@ body::before {
 
 /* Menu */
 .menu {
-  display: flex;
+  display: none;
   gap: 6px;
   margin-bottom: 4px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.menu.active {
+  display: flex;
 }
 
 /* Buttons */
