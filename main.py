@@ -1,504 +1,415 @@
 import pygame
 import random
 import sys
-import math
 
-# Configuration
-CELL = 30
+# Configuration - EXACT SAME AS WEB
+CELL = 28
 COLS = 10
 ROWS = 20
-WIDTH = CELL * COLS
-HEIGHT = CELL * ROWS
+BOARD_W = COLS * CELL
+BOARD_H = ROWS * CELL
 FPS = 60
 
+WIDTH = BOARD_W + 200
+HEIGHT = BOARD_H
+
+# Colors - EXACT SAME AS WEB
+COLORS_MAP = {
+    '.': (11, 11, 22),      # Background dark
+    '1': (0, 255, 255),     # I - cyan
+    '2': (255, 214, 80),    # O - amber
+    '3': (220, 60, 255),    # T - magenta
+    '4': (0, 255, 170),     # S - green
+    '5': (255, 70, 120),    # Z - red/pink
+    '6': (120, 170, 255),   # J - blue
+    '7': (255, 160, 60),    # L - orange
+    '8': (134, 134, 134),   # Garbage gray
+}
+
 pygame.init()
-screen = pygame.display.set_mode((WIDTH + 150, HEIGHT))
-pygame.display.set_caption('Tetris')
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption('Tetris - Web Version (Desktop)')
 clock = pygame.time.Clock()
-font = pygame.font.SysFont('Consolas', 20)
+font_small = pygame.font.SysFont('Consolas', 16)
+font_medium = pygame.font.SysFont('Consolas', 20)
+font_large = pygame.font.SysFont('Consolas', 24)
 
-# --- NEW: Game states ---
-STATE_START = "start"
-STATE_PLAYING = "playing"
-STATE_PAUSED = "paused"
-STATE_GAMEOVER = "gameover"
-
+# Tetrominoes - EXACT SAME AS WEB
 TETROMINOES = {
-    'I': [[
-        '....',
-        '1111',
-        '....',
-        '....'
-    ]],
-    'O': [[
-        '.22.',
-        '.22.',
-        '....',
-        '....'
-    ]],
-    'T': [[
-        '.333',
-        '..3.',
-        '....',
-        '....'
-    ]],
-    'S': [[
-        '..44',
-        '.44.',
-        '....',
-        '....'
-    ]],
-    'Z': [[
-        '.55.',
-        '..55',
-        '....',
-        '....'
-    ]],
-    'J': [[
-        '.6..',
-        '.666',
-        '....',
-        '....'
-    ]],
-    'L': [[
-        '...7',
-        '.777',
-        '....',
-        '....'
-    ]]
+    'I': ['....', '1111', '....', '....'],
+    'O': ['.22.', '.22.', '....', '....'],
+    'T': ['.333', '..3.', '....', '....'],
+    'S': ['..44', '.44.', '....', '....'],
+    'Z': ['.55.', '..55', '....', '....'],
+    'J': ['.6..', '.666', '....', '....'],
+    'L': ['...7', '.777', '....', '....']
 }
 
-COLORS = {
-    '1': (0, 255, 255),    # I - neon cyan (brighter)
-    '2': (255, 220, 80),   # O - neon amber (more saturated)
-    '3': (220, 60, 255),   # T - neon magenta (punchier)
-    '4': (0, 255, 170),    # S - neon green (brighter)
-    '5': (255, 70, 120),   # Z - neon red/pink (richer)
-    '6': (120, 170, 255),  # J - neon blue (brighter)
-    '7': (255, 160, 60)    # L - neon orange (warmer)
-}
+
+
+class RNG:
+    """EXACT replica of web RNG"""
+    def __init__(self, seed=None):
+        if seed is None:
+            seed = random.randint(1, 2147483646)
+        self.state = seed if seed > 0 else 1
+    
+    def next(self):
+        self.state = (self.state * 48271) % 2147483647
+        return self.state / 2147483647
 
 
 def rotate(shape):
-    """Rotate a 4x4 shape 90 degrees clockwise."""
-    return [''.join(row[col] for row in shape[::-1]) for col in range(4)]
+    """Rotate a 4x4 shape 90 degrees clockwise - EXACT replica"""
+    out = []
+    for c in range(4):
+        row = ''
+        for r in range(3, -1, -1):
+            row += shape[r][c]
+        out.append(row)
+    return out
 
 
-class Piece:
-    def __init__(self, kind=None):
-        if kind is None:
-            kind = random.choice(list(TETROMINOES.keys()))
-        self.kind = kind
-        self.rotation = 0
-        base = TETROMINOES[kind][0]
-        # Precompute rotations
-        self.rotations = [base]
-        for _ in range(3):
-            self.rotations.append(rotate(self.rotations[-1]))
-        self.x = COLS // 2 - 2
-        self.y = 0
-        self.fall_progress = 0  # pixels progressed toward next row
-        # rotation animation
-        self.rotating = False
-        self.rot_from = self.rotation
-        self.rot_to = self.rotation
-        self.rot_progress = 0.0
-
-    def shape(self):
-        return self.rotations[self.rotation % 4]
-
-    def start_rotation(self, new_rot):
-        if self.rotating:
-            return
-        self.rot_from = self.rotation
-        self.rot_to = new_rot % 4
-        self.rot_progress = 0.0
-        self.rotating = True
-
-    def cells(self):
-        s = self.shape()
-        for r in range(4):
-            for c in range(4):
-                v = s[r][c]
-                if v != '.':
-                    yield (self.x + c, self.y + r, v)
+def create_empty_grid():
+    """Create empty grid"""
+    return [['.' for _ in range(COLS)] for _ in range(ROWS)]
 
 
-class Board:
-    def __init__(self):
-        self.grid = [['.' for _ in range(COLS)] for _ in range(ROWS)]
+class Game:
+    """EXACT replica of web Game class"""
+    def __init__(self, seed=None):
+        if seed is None:
+            seed = random.randint(1, 1000000)
+        self.seed = seed
+        self.rng = RNG(self.seed)
+        self.reset()
+    
+    def reset(self):
+        self.grid = create_empty_grid()
         self.score = 0
-        self.level = 1
         self.lines = 0
-        self.lock_bounces = []
-
-    def inside(self, x, y):
-        return 0 <= x < COLS and y < ROWS
-
-    def collision(self, piece, dx=0, dy=0, rotation=None):
-        rot = piece.rotation if rotation is None else rotation
-        s = piece.rotations[rot % 4]
+        self.level = 1
+        self.combo = -1
+        self.back_to_back = False
+        self.game_over = False
+        self.last_attack = 0
+        self.bag = []
+        self.next = self.make_piece(self.next_kind())
+        self.current = self.make_piece(self.next_kind())
+        self.spawn(self.current)
+        self.fall_ms = 0
+        self.lock_delay_ms = 500
+        self.grounded_ms = 0
+        self.soft_drop = False
+        self.last_move_was_rotate = False
+    
+    def next_kind(self):
+        if not self.bag:
+            self.bag = list(TETROMINOES.keys())
+            # Shuffle using RNG
+            for i in range(len(self.bag) - 1, 0, -1):
+                j = int(self.rng.next() * (i + 1))
+                self.bag[i], self.bag[j] = self.bag[j], self.bag[i]
+        return self.bag.pop()
+    
+    def make_piece(self, kind):
+        rotations = [TETROMINOES[kind]]
+        for _ in range(3):
+            rotations.append(rotate(rotations[-1]))
+        return {
+            'kind': kind,
+            'rotation': 0,
+            'x': 3,
+            'y': 0,
+            'rotations': rotations
+        }
+    
+    def spawn(self, piece):
+        piece['x'] = 3
+        piece['y'] = 0
+        piece['rotation'] = 0
+        self.current = piece
+        self.last_move_was_rotate = False
+        self.grounded_ms = 0
+        if self.collide(self.current, 0, 0):
+            self.game_over = True
+    
+    def shape(self, piece, rot=None):
+        if rot is None:
+            rot = piece['rotation']
+        return piece['rotations'][(rot + 4) % 4]
+    
+    def collide(self, piece, dx, dy, rot=None):
+        if rot is None:
+            rot = piece['rotation']
+        s = self.shape(piece, rot)
         for r in range(4):
             for c in range(4):
                 v = s[r][c]
                 if v == '.':
                     continue
-                nx = piece.x + c + dx
-                ny = piece.y + r + dy
+                nx = piece['x'] + c + dx
+                ny = piece['y'] + r + dy
                 if nx < 0 or nx >= COLS or ny >= ROWS:
                     return True
                 if ny >= 0 and self.grid[ny][nx] != '.':
                     return True
         return False
-
-    def lock(self, piece):
-        for x, y, v in piece.cells():
-            if 0 <= y < ROWS and 0 <= x < COLS:
-                self.grid[y][x] = v
-        cleared_rows = self.clear_lines()
+    
+    def move(self, dx, dy):
+        if not self.collide(self.current, dx, dy):
+            self.current['x'] += dx
+            self.current['y'] += dy
+            self.grounded_ms = 0
+            self.last_move_was_rotate = False
+            return True
+        return False
+    
+    def rotate_current(self):
+        new_rot = (self.current['rotation'] + 1) % 4
+        kicks = [[0, 0], [-1, 0], [1, 0], [-2, 0], [2, 0], [0, -1]]
+        for dx, dy in kicks:
+            if not self.collide(self.current, dx, dy, new_rot):
+                self.current['x'] += dx
+                self.current['y'] += dy
+                self.current['rotation'] = new_rot
+                self.last_move_was_rotate = True
+                self.grounded_ms = 0
+                return True
+        return False
+    
+    def hard_drop(self):
+        while not self.collide(self.current, 0, 1):
+            self.current['y'] += 1
+        self.grounded_ms = self.lock_delay_ms
+    
+    def detect_t_spin(self):
+        if self.current['kind'] != 'T' or not self.last_move_was_rotate:
+            return False
+        cx = self.current['x'] + 2
+        cy = self.current['y'] + 1
+        corners = [[cx - 1, cy - 1], [cx + 1, cy - 1], [cx - 1, cy + 1], [cx + 1, cy + 1]]
+        blocked = 0
+        for x, y in corners:
+            if x < 0 or x >= COLS or y < 0 or y >= ROWS:
+                blocked += 1
+            elif self.grid[y][x] != '.':
+                blocked += 1
+        return blocked >= 3
+    
+    def lock_piece(self):
+        self.last_attack = 0
+        s = self.shape(self.current)
+        for r in range(4):
+            for c in range(4):
+                v = s[r][c]
+                if v == '.':
+                    continue
+                x = self.current['x'] + c
+                y = self.current['y'] + r
+                if 0 <= y < ROWS and 0 <= x < COLS:
+                    self.grid[y][x] = v
+        
+        t_spin = self.detect_t_spin()
+        cleared_rows = []
+        for r in range(ROWS):
+            if all(cell != '.' for cell in self.grid[r]):
+                cleared_rows.append(r)
         cleared = len(cleared_rows)
+        
+        if cleared > 0:
+            self.combo += 1
+            self.grid = [row for idx, row in enumerate(self.grid) if idx not in cleared_rows]
+            while len(self.grid) < ROWS:
+                self.grid.insert(0, ['.' for _ in range(COLS)])
+        else:
+            self.combo = -1
+        
+        base = 0
+        attack = 0
+        if t_spin:
+            base = [0, 800, 1200, 1600][cleared if cleared < 4 else 0]
+            attack = [0, 2, 4, 6][cleared if cleared < 4 else 0]
+        else:
+            base = [0, 100, 300, 500, 800][cleared if cleared < 5 else 0]
+            attack = [0, 0, 1, 2, 4][cleared if cleared < 5 else 0]
+        
+        b2b_eligible = (t_spin and cleared > 0) or cleared == 4
+        if b2b_eligible:
+            if self.back_to_back:
+                base = int(base * 1.5)
+                attack += 1
+            self.back_to_back = True
+        elif cleared > 0:
+            self.back_to_back = False
+        
+        combo_bonus = max(0, self.combo) * 50
+        attack += max(0, self.combo - 1)
+        
+        perfect_clear = cleared > 0 and all(all(cell == '.' for cell in row) for row in self.grid)
+        if perfect_clear:
+            base += 2000
+            attack += 6
+        
         self.lines += cleared
-        self.score += [0, 40, 100, 300, 1200][cleared] * self.level
-        return cleared_rows
+        self.level = 1 + self.lines // 10
+        self.score += (base + combo_bonus) * self.level
+        self.last_attack = attack
+        
+        self.spawn(self.next)
+        self.next = self.make_piece(self.next_kind())
+    
+    def update(self, dt_ms):
+        if self.game_over:
+            return
+        self.last_attack = 0
+        
+        speed = 45 if self.soft_drop else max(80, 700 - (self.level - 1) * 45)
+        self.fall_ms += dt_ms
+        
+        while self.fall_ms >= speed:
+            self.fall_ms -= speed
+            if not self.collide(self.current, 0, 1):
+                self.current['y'] += 1
+                self.grounded_ms = 0
+            else:
+                self.grounded_ms += speed
+                if self.grounded_ms >= self.lock_delay_ms:
+                    self.lock_piece()
+                    break
 
-    def clear_lines(self):
-        cleared_rows = [i for i, row in enumerate(self.grid) if all(cell != '.' for cell in row)]
-        if not cleared_rows:
-            return []
-        new_grid = [row for row in self.grid if any(cell == '.' for cell in row)]
-        while len(new_grid) < ROWS:
-            new_grid.insert(0, ['.' for _ in range(COLS)])
-        self.grid = new_grid
-        return cleared_rows
+
+def draw_cell(surface, x, y, color_key):
+    """Draw a single cell"""
+    color = COLORS_MAP.get(color_key, (255, 255, 255))
+    rect = pygame.Rect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2)
+    pygame.draw.rect(surface, color, rect)
 
 
-def lighter_color(col, amt=30):
-    return tuple(min(255, c + amt) for c in col)
-
-
-def darker_color(col, amt=30):
-    return tuple(max(0, c - amt) for c in col)
-
-
-def draw_board(surf, board, offset_x=0):
-    top = (6, 0, 24)
-    bottom = (2, 0, 48)
-    for y in range(HEIGHT):
-        t = y / HEIGHT
-        r = int(top[0] + (bottom[0] - top[0]) * t)
-        g = int(top[1] + (bottom[1] - top[1]) * t)
-        b = int(top[2] + (bottom[2] - top[2]) * t)
-        pygame.draw.line(surf, (r, g, b), (offset_x, y), (offset_x + WIDTH, y))
-
-    vignette = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    for i in range(200):
-        a = int(120 * (i / 200))
-        pygame.draw.rect(vignette, (0, 0, 0, a), (-i, -i, WIDTH + i * 2, HEIGHT + i * 2), 1)
-    surf.blit(vignette, (offset_x, 0))
-
+def draw_grid_background(surface):
+    """Draw grid background"""
+    surface.fill(COLORS_MAP['.'])
     for r in range(ROWS):
         for c in range(COLS):
-            cell = board.grid[r][c]
-            offy = 0
-            for b in board.lock_bounces:
-                if b.x == c and b.y == r:
-                    offy += b.offset()
-            rect = pygame.Rect(offset_x + c * CELL, r * CELL + int(offy), CELL, CELL)
-            pygame.draw.rect(surf, (24, 24, 30), rect, 1)
-            if cell != '.':
-                color = COLORS[cell]
-                inner = rect.inflate(-4, -4)
-                pygame.draw.rect(surf, darker_color(color, 10), inner)
-                glow = pygame.Surface((inner.width, inner.height), pygame.SRCALPHA)
-                gc = lighter_color(color, 40)
-                glow.fill((gc[0], gc[1], gc[2], 160))
-                surf.blit(glow, inner.topleft)
-                pygame.draw.rect(surf, lighter_color(color, 40), inner, 1)
-
-
-def draw_piece(surf, piece, offset_x=0):
-    local = pygame.Surface((CELL * 4, CELL * 4), pygame.SRCALPHA)
-    for r in range(4):
-        for c in range(4):
-            ch = piece.shape()[r][c]
-            if ch == '.':
-                continue
-            color = COLORS[ch]
             rect = pygame.Rect(c * CELL, r * CELL, CELL, CELL)
-            inner = rect.inflate(-4, -4)
-            pygame.draw.rect(local, darker_color(color, 10), inner)
-            glow = pygame.Surface((inner.width, inner.height), pygame.SRCALPHA)
-            gc = lighter_color(color, 40)
-            glow.fill((gc[0], gc[1], gc[2], 150))
-            local.blit(glow, inner.topleft)
-            pygame.draw.rect(local, lighter_color(color, 40), inner, 1)
-
-    angle = 0
-    if getattr(piece, 'rotating', False):
-        t = piece.rot_progress
-        et = (1 - math.cos(t * math.pi)) / 2
-        diff = (piece.rot_to - piece.rot_from) % 4
-        if diff == 3:
-            diff = -1
-        angle = 90 * diff * et
-        if t >= 1.0:
-            piece.rotating = False
-            piece.rotation = piece.rot_to
-            piece.rot_progress = 0.0
-
-    if abs(angle) > 0.01:
-        rotated = pygame.transform.rotate(local, -angle)
-        rw, rh = rotated.get_size()
-        px = offset_x + piece.x * CELL + (CELL * 4) // 2 - rw // 2
-        py = piece.y * CELL + int(getattr(piece, 'fall_progress', 0)) + (CELL * 4) // 2 - rh // 2
-        surf.blit(rotated, (px, py))
-    else:
-        px = offset_x + piece.x * CELL
-        py = piece.y * CELL + int(getattr(piece, 'fall_progress', 0))
-        surf.blit(local, (px, py))
+            pygame.draw.rect(surface, (31, 31, 53), rect, 1)
 
 
-class Bounce:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.t = 0.0
-        self.dur = 0.45
-
-    def update(self, dt):
-        self.t += dt
-        return self.t < self.dur
-
-    def offset(self):
-        p = self.t / self.dur
-        return -abs(math.sin(p * math.pi) * 8) * (1 - p)
+def draw_grid(surface, grid):
+    """Draw grid cells"""
+    for r in range(ROWS):
+        for c in range(COLS):
+            v = grid[r][c]
+            if v != '.':
+                draw_cell(surface, c, r, v)
 
 
-class Particle:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        angle = random.uniform(0, math.pi * 2)
-        speed = random.uniform(50, 220)
-        self.vx = math.cos(angle) * speed
-        self.vy = math.sin(angle) * speed - 120
-        self.life = random.uniform(0.4, 0.9)
-        self.age = 0
-        self.size = random.uniform(2, 5)
-        self.color = (255, 220, 120)
-        self.col = None
-
-    def update(self, dt):
-        self.age += dt
-        if self.age >= self.life:
-            return False
-        self.vy += 400 * dt
-        self.x += self.vx * dt
-        self.y += self.vy * dt
-        return True
-
-    def draw(self, surf):
-        alpha = max(0, int(255 * (1 - self.age / self.life)))
-        base = self.col if self.col is not None else self.color
-        col = (base[0], base[1], base[2], alpha)
-        s = pygame.Surface((int(self.size), int(self.size)), pygame.SRCALPHA)
-        s.fill(col)
-        surf.blit(s, (self.x - self.size / 2, self.y - self.size / 2))
-
-
-def draw_ui(surf, board, next_piece):
-    x0 = WIDTH + 10
-    surf.fill((10, 10, 10), (WIDTH, 0, 150, HEIGHT))
-    surf.blit(font.render(f'Score: {board.score}', True, (255, 255, 255)), (x0, 10))
-    surf.blit(font.render(f'Lines: {board.lines}', True, (255, 255, 255)), (x0, 40))
-    surf.blit(font.render(f'Level: {board.level}', True, (255, 255, 255)), (x0, 70))
-
-    surf.blit(font.render('Next:', True, (255, 255, 255)), (x0, 110))
+def draw_piece(surface, piece):
+    """Draw falling piece"""
+    shape = piece['rotations'][piece['rotation']]
     for r in range(4):
         for c in range(4):
-            v = next_piece.shape()[r][c]
-            rect = pygame.Rect(x0 + c * CELL, 140 + r * CELL, CELL, CELL)
-            pygame.draw.rect(surf, (50, 50, 50), rect, 1)
-            if v != '.':
-                pygame.draw.rect(surf, COLORS[v], rect.inflate(-2, -2))
+            v = shape[r][c]
+            if v == '.':
+                continue
+            x = piece['x'] + c
+            y = piece['y'] + r
+            if y >= 0:
+                draw_cell(surface, x, y, v)
 
 
-# --- NEW: overlay helper for START/PAUSE/GAMEOVER ---
-def draw_center_overlay(surf, title, subtitle=None):
-    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 160))
-    surf.blit(overlay, (0, 0))
-
-    title_surf = font.render(title, True, (255, 255, 255))
-    surf.blit(title_surf, (WIDTH // 2 - title_surf.get_width() // 2, HEIGHT // 2 - 30))
-
-    if subtitle:
-        sub_surf = font.render(subtitle, True, (200, 200, 200))
-        surf.blit(sub_surf, (WIDTH // 2 - sub_surf.get_width() // 2, HEIGHT // 2 + 5))
-
-
-# --- UPDATED MAIN ---
 def main():
-    board = Board()
-    current = Piece()
-    next_piece = Piece()
-    particles = []
-
-    fall_speed = 500  # ms per cell
+    """Main game loop"""
+    game = Game()
     running = True
-
-    state = STATE_START
-
+    paused = False
+    
+    # Create board surface
+    board_surface = pygame.Surface((BOARD_W, BOARD_H))
+    
     while running:
-        dt = clock.tick(FPS)
-
+        dt = clock.tick(FPS) / 1000.0 * 1000  # Convert to ms
+        
+        # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
             elif event.type == pygame.KEYDOWN:
-                # START SCREEN
-                if state == STATE_START:
-                    if event.key == pygame.K_SPACE:
-                        state = STATE_PLAYING
-                    elif event.key == pygame.K_ESCAPE:
-                        running = False
-                    continue
-
-                # GAME OVER: ESC quits
-                if state == STATE_GAMEOVER:
-                    if event.key == pygame.K_ESCAPE:
-                        running = False
-                    continue
-
-                # ESC toggles pause while playing
                 if event.key == pygame.K_ESCAPE:
-                    if state == STATE_PLAYING:
-                        state = STATE_PAUSED
-                    elif state == STATE_PAUSED:
-                        state = STATE_PLAYING
-                    continue
-
-                # ignore gameplay input while paused
-                if state == STATE_PAUSED:
-                    continue
-
-                # gameplay input
-                if event.key == pygame.K_LEFT:
-                    if not board.collision(current, dx=-1):
-                        current.x -= 1
-                elif event.key == pygame.K_RIGHT:
-                    if not board.collision(current, dx=1):
-                        current.x += 1
-                elif event.key == pygame.K_DOWN:
-                    if not board.collision(current, dy=1):
-                        current.y += 1
-                        current.fall_progress = 0
-                elif event.key == pygame.K_UP:
-                    new_rot = (current.rotation + 1) % 4
-                    if not board.collision(current, rotation=new_rot):
-                        current.start_rotation(new_rot)
-                elif event.key == pygame.K_SPACE:
-                    # hard drop
-                    while not board.collision(current, dy=1):
-                        current.y += 1
-                    current.fall_progress = 0
-
-                    cleared_rows = board.lock(current)
-                    if cleared_rows:
-                        for r in cleared_rows:
-                            for _ in range(18):
-                                px = random.uniform(0, WIDTH)
-                                py = r * CELL + CELL / 2
-                                particles.append(Particle(px, py))
-
-                    for x, y, v in current.cells():
-                        if 0 <= y < ROWS:
-                            board.lock_bounces.append(Bounce(x, y))
-                            for _ in range(6):
-                                px = x * CELL + random.uniform(0, CELL)
-                                py = y * CELL + random.uniform(0, CELL)
-                                p = Particle(px, py)
-                                p.col = COLORS[v]
-                                particles.append(p)
-
-        # UPDATE only when playing
-        if state == STATE_PLAYING:
-            keys = pygame.key.get_pressed()
-            soft_drop = keys[pygame.K_DOWN]
-
-            active_speed = max(50, fall_speed - (board.level - 1) * 30)
-            if soft_drop:
-                active_speed = max(20, active_speed // 6)
-
-            pixels_per_ms = CELL / active_speed
-
-            if not board.collision(current, dy=1):
-                current.fall_progress += pixels_per_ms * dt
-                if current.fall_progress >= CELL:
-                    current.y += 1
-                    current.fall_progress -= CELL
-            else:
-                current.fall_progress = 0
-                cleared_rows = board.lock(current)
-
-                if cleared_rows:
-                    for r in cleared_rows:
-                        for _ in range(18):
-                            px = random.uniform(0, WIDTH)
-                            py = r * CELL + CELL / 2
-                            particles.append(Particle(px, py))
-
-                    for x, y, v in current.cells():
-                        if 0 <= y < ROWS:
-                            board.lock_bounces.append(Bounce(x, y))
-                            for _ in range(6):
-                                px = x * CELL + random.uniform(0, CELL)
-                                py = y * CELL + random.uniform(0, CELL)
-                                p = Particle(px, py)
-                                p.col = COLORS[v]
-                                particles.append(p)
-
-                current = next_piece
-                next_piece = Piece()
-                current.fall_progress = 0
-
-                if board.collision(current):
-                    state = STATE_GAMEOVER
-
-            # rotation progress
-            rotate_ms = 180.0
-            if getattr(current, 'rotating', False):
-                current.rot_progress += dt / rotate_ms
-                if current.rot_progress >= 1.0:
-                    current.rot_progress = 1.0
-                    current.rotating = False
-                    current.rotation = current.rot_to
-
-        # particles + bounces update (keep these running even on pause/start; remove if you want frozen pause)
-        ndt = dt / 1000.0
-        particles = [p for p in particles if p.update(ndt)]
-        board.lock_bounces = [b for b in board.lock_bounces if b.update(ndt)]
-
-        # DRAW
+                    running = False
+                elif event.key == pygame.K_p:
+                    paused = not paused
+                elif not game.game_over and not paused:
+                    if event.key == pygame.K_LEFT:
+                        game.move(-1, 0)
+                    elif event.key == pygame.K_RIGHT:
+                        game.move(1, 0)
+                    elif event.key == pygame.K_UP:
+                        game.rotate_current()
+                    elif event.key == pygame.K_DOWN:
+                        game.soft_drop = True
+                    elif event.key == pygame.K_SPACE:
+                        game.hard_drop()
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_DOWN:
+                    game.soft_drop = False
+        
+        # Update game
+        if not game.game_over and not paused:
+            game.update(dt)
+        
+        # Draw board
+        draw_grid_background(board_surface)
+        draw_grid(board_surface, game.grid)
+        if not game.game_over:
+            draw_piece(board_surface, game.current)
+        
+        # Draw to screen
         screen.fill((0, 0, 0))
-        draw_board(screen, board)
-        draw_piece(screen, current)
-        for p in particles:
-            p.draw(screen)
-        draw_ui(screen, board, next_piece)
-
-        if state == STATE_START:
-            draw_center_overlay(screen, "TETRIS", "Press SPACE to start (ESC to quit)")
-        elif state == STATE_PAUSED:
-            draw_center_overlay(screen, "PAUSED", "Press ESC to resume")
-        elif state == STATE_GAMEOVER:
-            draw_center_overlay(screen, "GAME OVER", "Press ESC to quit")
-
+        screen.blit(board_surface, (0, 0))
+        
+        # Draw info panel
+        info_x = BOARD_W + 20
+        texts = [
+            ("TETRIS", 24, (255, 255, 255)),
+            ("", 16, (255, 255, 255)),
+            (f"Score: {game.score}", 16, (0, 255, 255)),
+            (f"Lines: {game.lines}", 16, (0, 255, 255)),
+            (f"Level: {game.level}", 16, (0, 255, 255)),
+            ("", 16, (255, 255, 255)),
+            ("Controls:", 16, (220, 60, 255)),
+            ("← → Move", 14, (255, 255, 255)),
+            ("↑ Rotate", 14, (255, 255, 255)),
+            ("↓ Soft Drop", 14, (255, 255, 255)),
+            ("Space Hard Drop", 14, (255, 255, 255)),
+            ("P Pause", 14, (255, 255, 255)),
+            ("ESC Quit", 14, (255, 255, 255)),
+        ]
+        
+        y = 20
+        for text, size, color in texts:
+            if size == 24:
+                surf = font_large.render(text, True, color)
+            elif size == 20:
+                surf = font_medium.render(text, True, color)
+            else:
+                surf = font_small.render(text, True, color)
+            screen.blit(surf, (info_x, y))
+            y += size + 5
+        
+        # Draw status
+        if paused:
+            pause_text = font_large.render("PAUSED", True, (255, 0, 0))
+            text_rect = pause_text.get_rect(center=(BOARD_W // 2, BOARD_H // 2))
+            screen.blit(pause_text, text_rect)
+        elif game.game_over:
+            gameover_text = font_large.render("GAME OVER", True, (255, 0, 0))
+            text_rect = gameover_text.get_rect(center=(BOARD_W // 2, BOARD_H // 2))
+            screen.blit(gameover_text, text_rect)
+        
         pygame.display.flip()
-
+    
     pygame.quit()
-    sys.exit()
 
 
 if __name__ == '__main__':
