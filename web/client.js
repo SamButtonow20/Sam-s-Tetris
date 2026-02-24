@@ -50,6 +50,64 @@ const THEMES = {
 let currentThemeName = localStorage.getItem('tetrisTheme') || 'neon';
 let COLORS = { ...THEMES[currentThemeName].colors };
 
+// ==================== THEME SOUNDTRACK DEFINITIONS ====================
+const THEME_MUSIC = {
+  neon: {
+    // Synthwave driving bassline — dark & pulsing
+    notes: [82, 82, 110, 131, 110, 82, 98, 131, 82, 82, 110, 131, 147, 131, 110, 98],
+    type: 'sawtooth',
+    tempo: 180,       // ms per note
+    noteLen: 0.16,    // seconds
+    volume: 0.10,
+    // Add a sub-bass layer for that synthwave thump
+    subBass: true,
+    subNotes: [41, 41, 55, 65, 55, 41, 49, 65, 41, 41, 55, 65, 73, 65, 55, 49],
+    subVol: 0.06
+  },
+  retro: {
+    // Korobeiniki-inspired melody — the classic Tetris vibe (8-bit)
+    notes: [
+      330, 247, 262, 294, 262, 247, 220, 220, 262, 330, 294, 262,
+      247, 262, 294, 330, 262, 220, 220, 220,
+      294, 349, 440, 392, 349, 330, 262, 330, 294, 262,
+      247, 262, 294, 330, 262, 220, 220, 0
+    ],
+    type: 'square',
+    tempo: 150,
+    noteLen: 0.13,
+    volume: 0.07,
+    subBass: false
+  },
+  pastel: {
+    // Gentle music-box melody — soft & dreamy
+    notes: [
+      523, 659, 784, 1047, 784, 659, 523, 0,
+      587, 698, 880, 1047, 880, 698, 587, 0,
+      523, 784, 1047, 1319, 1047, 784, 659, 0,
+      440, 523, 659, 784, 659, 523, 440, 0
+    ],
+    type: 'sine',
+    tempo: 280,
+    noteLen: 0.25,
+    volume: 0.06,
+    subBass: false
+  },
+  monochrome: {
+    // Minimal ambient — sparse, haunting, slow
+    notes: [131, 0, 156, 0, 196, 0, 262, 0, 196, 0, 156, 0, 131, 0, 0, 0],
+    type: 'triangle',
+    tempo: 500,
+    noteLen: 0.45,
+    volume: 0.05,
+    subBass: false
+  },
+  ocean: {
+    // Custom WAV file — loaded separately
+    file: 'TerrariaMusic.wav',
+    volume: 0.35
+  }
+};
+
 // ==================== SOUND MANAGER ====================
 class SoundManager {
   constructor() {
@@ -60,6 +118,13 @@ class SoundManager {
     this.musicInterval = null;
     this.initialized = false;
     this.masterGain = null;
+    // Ocean WAV playback state
+    this.oceanBuffer = null;
+    this.oceanSource = null;
+    this.oceanGain = null;
+    this.oceanLoading = false;
+    // Track which theme's music is currently playing
+    this.currentMusicTheme = null;
   }
   init() {
     if (this.initialized) return;
@@ -69,7 +134,18 @@ class SoundManager {
       this.masterGain.gain.value = this.volume;
       this.masterGain.connect(this.ctx.destination);
       this.initialized = true;
+      // Pre-load ocean WAV in background
+      this._preloadOceanAudio();
     } catch (e) { console.warn('Web Audio not supported'); }
+  }
+  _preloadOceanAudio() {
+    if (this.oceanBuffer || this.oceanLoading) return;
+    this.oceanLoading = true;
+    fetch(THEME_MUSIC.ocean.file)
+      .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.arrayBuffer(); })
+      .then(buf => this.ctx.decodeAudioData(buf))
+      .then(decoded => { this.oceanBuffer = decoded; this.oceanLoading = false; console.log('Ocean soundtrack loaded'); })
+      .catch(e => { console.warn('Could not load ocean soundtrack:', e); this.oceanLoading = false; });
   }
   resume() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
   tone(freq, duration, type = 'square', vol = 0.3) {
@@ -125,33 +201,120 @@ class SoundManager {
   playB2B() { this.tone(600, 0.1, 'sine', 0.15); setTimeout(() => this.tone(800, 0.15, 'sine', 0.2), 80); }
   playGarbage() { this.noise(0.15, 0.2); this.tone(60, 0.2, 'sine', 0.25); }
   playAchievement() { [660, 880, 1100].forEach((f, i) => setTimeout(() => this.tone(f, 0.2, 'triangle', 0.2), i * 100)); }
-  startMusic() {
-    if (!this.ctx || !this.musicEnabled || this.musicInterval) return;
-    this.resume();
-    const notes = [131, 165, 175, 196, 175, 165, 131, 147];
+
+  // ---------- Ocean WAV playback ----------
+  _startOceanMusic() {
+    if (!this.ctx || !this.oceanBuffer) return;
+    this._stopOceanMusic();
+    this.oceanGain = this.ctx.createGain();
+    this.oceanGain.gain.value = THEME_MUSIC.ocean.volume * this.volume;
+    this.oceanGain.connect(this.masterGain);
+    this.oceanSource = this.ctx.createBufferSource();
+    this.oceanSource.buffer = this.oceanBuffer;
+    this.oceanSource.loop = true;
+    this.oceanSource.connect(this.oceanGain);
+    this.oceanSource.start(0);
+  }
+  _stopOceanMusic() {
+    if (this.oceanSource) {
+      try { this.oceanSource.stop(); } catch (e) { /* already stopped */ }
+      this.oceanSource.disconnect();
+      this.oceanSource = null;
+    }
+    if (this.oceanGain) { this.oceanGain.disconnect(); this.oceanGain = null; }
+  }
+
+  // ---------- Procedural synth music ----------
+  _startSynthMusic(themeName) {
+    const cfg = THEME_MUSIC[themeName];
+    if (!cfg || !cfg.notes || !this.ctx) return;
     let noteIdx = 0;
     const playNote = () => {
       if (!this.musicEnabled || !this.ctx) { this.stopMusic(); return; }
-      const osc = this.ctx.createOscillator();
-      osc.type = 'triangle';
-      osc.frequency.value = notes[noteIdx % notes.length];
-      const g = this.ctx.createGain();
-      g.gain.value = this.volume * 0.08;
-      g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
-      osc.connect(g);
-      g.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.35);
+      const freq = cfg.notes[noteIdx % cfg.notes.length];
+      if (freq > 0) {
+        // Main melody voice
+        const osc = this.ctx.createOscillator();
+        osc.type = cfg.type;
+        osc.frequency.value = freq;
+        const g = this.ctx.createGain();
+        g.gain.value = this.volume * cfg.volume;
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + cfg.noteLen);
+        osc.connect(g);
+        g.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + cfg.noteLen);
+      }
+      // Optional sub-bass layer (neon synthwave thump)
+      if (cfg.subBass && cfg.subNotes) {
+        const subFreq = cfg.subNotes[noteIdx % cfg.subNotes.length];
+        if (subFreq > 0) {
+          const osc2 = this.ctx.createOscillator();
+          osc2.type = 'sine';
+          osc2.frequency.value = subFreq;
+          const g2 = this.ctx.createGain();
+          g2.gain.value = this.volume * cfg.subVol;
+          g2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + cfg.noteLen * 1.2);
+          osc2.connect(g2);
+          g2.connect(this.masterGain);
+          osc2.start();
+          osc2.stop(this.ctx.currentTime + cfg.noteLen * 1.2);
+        }
+      }
       noteIdx++;
     };
     playNote();
-    this.musicInterval = setInterval(playNote, 400);
+    this.musicInterval = setInterval(playNote, cfg.tempo);
   }
-  stopMusic() { if (this.musicInterval) { clearInterval(this.musicInterval); this.musicInterval = null; } }
+
+  // ---------- Public music API ----------
+  startMusic() {
+    if (!this.ctx || !this.musicEnabled) return;
+    // If music is already playing for the current theme, don't restart
+    if (this.currentMusicTheme === currentThemeName && (this.musicInterval || this.oceanSource)) return;
+    this.stopMusic();
+    this.resume();
+    this.currentMusicTheme = currentThemeName;
+
+    if (currentThemeName === 'ocean') {
+      if (this.oceanBuffer) {
+        this._startOceanMusic();
+      } else {
+        // WAV still loading — retry when loaded
+        const checkLoad = setInterval(() => {
+          if (this.oceanBuffer) {
+            clearInterval(checkLoad);
+            if (this.musicEnabled && currentThemeName === 'ocean' && !this.oceanSource) {
+              this._startOceanMusic();
+            }
+          }
+        }, 500);
+        // Give up after 30s
+        setTimeout(() => clearInterval(checkLoad), 30000);
+      }
+    } else {
+      this._startSynthMusic(currentThemeName);
+    }
+  }
+  stopMusic() {
+    if (this.musicInterval) { clearInterval(this.musicInterval); this.musicInterval = null; }
+    this._stopOceanMusic();
+    this.currentMusicTheme = null;
+  }
+  /** Call when theme changes — seamlessly switches the soundtrack */
+  switchThemeMusic() {
+    if (!this.musicEnabled) return;
+    // Only restart if music is supposed to be playing
+    const wasPlaying = this.musicInterval || this.oceanSource;
+    this.stopMusic();
+    if (wasPlaying) this.startMusic();
+  }
   setVolume(v) {
     this.volume = v;
     localStorage.setItem('tetrisVolume', String(v));
     if (this.masterGain) this.masterGain.gain.value = v;
+    // Update ocean gain node in real-time
+    if (this.oceanGain) this.oceanGain.gain.value = THEME_MUSIC.ocean.volume * v;
   }
   toggleSound() { this.enabled = !this.enabled; localStorage.setItem('tetrisSoundEnabled', String(this.enabled)); return this.enabled; }
   toggleMusic() {
@@ -1070,6 +1233,9 @@ function applyTheme(name) {
 
   // Update piece stats colors
   updatePieceStatsColors();
+
+  // Switch soundtrack to match this theme
+  sound.switchThemeMusic();
 }
 
 function updatePieceStatsColors() {
