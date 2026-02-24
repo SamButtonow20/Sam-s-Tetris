@@ -331,7 +331,7 @@ class Game {
     if (this.gameOver) return;
     this.lastAttack = 0;
 
-    const speed = this.softDrop ? 45 : Math.max(80, 700 - (this.level - 1) * 45);
+    const speed = this.softDrop ? 100 : Math.max(80, 700 - (this.level - 1) * 45);
     this.fallMs += dtMs;
 
     while (this.fallMs >= speed) {
