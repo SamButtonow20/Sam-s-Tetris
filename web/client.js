@@ -380,6 +380,11 @@ const oppScoreEl = document.getElementById('oppScore');
 const oppLinesEl = document.getElementById('oppLines');
 const oppStatusEl = document.getElementById('oppStatus');
 
+const formWrapper = onlineForm.querySelector('.formWrapper');
+const connectingState = document.getElementById('connectingState');
+const waitingState = document.getElementById('waitingState');
+const sharedRoom = document.getElementById('sharedRoom');
+
 let lastOppScore = -1;
 let lastOppLines = -1;
 
@@ -461,18 +466,27 @@ function connectOnline() {
   const room = roomInput.value.trim() || 'default';
   const name = nameInput.value.trim() || 'Player';
 
+  // Show connecting state
+  btnConnect.disabled = true;
+  btnConnect.classList.add('loading');
+  formWrapper.classList.add('hidden');
+  connectingState.classList.add('active');
+
   try {
     ws = new WebSocket(url);
     console.log(`Connecting to ${url}`);
   } catch (err) {
     setStatus(`Failed to create WebSocket: ${err.message}`);
     console.error(err);
+    btnConnect.disabled = false;
+    btnConnect.classList.remove('loading');
+    formWrapper.classList.remove('hidden');
+    connectingState.classList.remove('active');
     return;
   }
 
   ws.onopen = () => {
     console.log('WebSocket connected, joining room:', room);
-    setStatus('Connected. Joining room...');
     send({ type: 'join', room, name });
   };
 
@@ -482,6 +496,10 @@ function connectOnline() {
 
     if (msg.type === 'waiting') {
       onlineReady = false;
+      // Show waiting state
+      connectingState.classList.remove('active');
+      waitingState.classList.add('active');
+      sharedRoom.textContent = room;
       setStatus('Waiting for opponent...');
     } else if (msg.type === 'start') {
       const seed = Number(msg.seed || Math.floor(Math.random() * 1_000_000));
@@ -489,6 +507,10 @@ function connectOnline() {
       sentGameOver = false;
       onlineReady = true;
       opponent.name = msg.opponent || 'Opponent';
+      // Hide form states
+      waitingState.classList.remove('active');
+      connectingState.classList.remove('active');
+      formWrapper.classList.remove('hidden');
       setStatus(`Match started vs ${opponent.name}`);
     } else if (msg.type === 'snapshot') {
       if (Array.isArray(msg.grid) && msg.grid.length === ROWS) {
@@ -512,6 +534,11 @@ function connectOnline() {
       setStatus('Opponent topped out');
     } else if (msg.type === 'error') {
       setStatus(`Server error: ${msg.message || 'unknown'}`);
+      btnConnect.disabled = false;
+      btnConnect.classList.remove('loading');
+      formWrapper.classList.remove('hidden');
+      connectingState.classList.remove('active');
+      waitingState.classList.remove('active');
     } else if (msg.type === 'opponent_left') {
       onlineReady = false;
       setStatus('Opponent left');
@@ -521,11 +548,21 @@ function connectOnline() {
   ws.onclose = () => {
     onlineReady = false;
     setStatus('Disconnected from server');
+    btnConnect.disabled = false;
+    btnConnect.classList.remove('loading');
+    formWrapper.classList.remove('hidden');
+    connectingState.classList.remove('active');
+    waitingState.classList.remove('active');
   };
 
   ws.onerror = () => {
     onlineReady = false;
     setStatus('WebSocket error');
+    btnConnect.disabled = false;
+    btnConnect.classList.remove('loading');
+    formWrapper.classList.remove('hidden');
+    connectingState.classList.remove('active');
+    waitingState.classList.remove('active');
   };
 }
 

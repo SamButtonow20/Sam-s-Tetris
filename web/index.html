@@ -23,27 +23,41 @@
 
     <!-- Online Form -->
     <div class="onlineForm" id="onlineForm">
-      <div class="formStep">
-        <div class="stepNumber">1</div>
-        <div class="stepContent">
-          <label>Room Code</label>
-          <input id="room" placeholder="e.g. sam-vs-alex" value="sam-room-1" />
-          <span class="formHint">Share this code with your friend</span>
+      <div class="formWrapper">
+        <div class="formStep">
+          <div class="stepNumber">1</div>
+          <div class="stepContent">
+            <label>Room Code</label>
+            <input id="room" placeholder="e.g. sam-vs-alex" value="sam-room-1" />
+            <span class="formHint">Share this code with your friend</span>
+          </div>
         </div>
+
+        <div class="formStep">
+          <div class="stepNumber">2</div>
+          <div class="stepContent">
+            <label>Your Name</label>
+            <input id="name" placeholder="Your name" value="Player" />
+            <span class="formHint">So your friend knows who you are</span>
+          </div>
+        </div>
+
+        <button id="btnConnect" class="btn btn-accent" style="grid-column: 1 / -1;">
+          <span class="btnText">Connect & Play</span>
+          <span class="btnLoader"></span>
+        </button>
       </div>
 
-      <div class="formStep">
-        <div class="stepNumber">2</div>
-        <div class="stepContent">
-          <label>Your Name</label>
-          <input id="name" placeholder="Your name" value="Player" />
-          <span class="formHint">So your friend knows who you are</span>
-        </div>
+      <div class="connectingState" id="connectingState">
+        <div class="connectingSpinner"></div>
+        <div class="connectingText">Connecting...</div>
       </div>
 
-      <button id="btnConnect" class="btn btn-accent" style="grid-column: 1 / -1;">
-        Connect & Play
-      </button>
+      <div class="waitingState" id="waitingState">
+        <div class="waitingPulse"></div>
+        <div class="waitingText">Waiting for opponent...</div>
+        <div class="waitingHint">Opponent joining room <strong id="sharedRoom"></strong></div>
+      </div>
     </div>
 
     <!-- Game Area -->
