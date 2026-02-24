@@ -454,6 +454,14 @@ const btnResume = document.getElementById('btnResume');
 const btnBackToMenu = document.getElementById('btnBackToMenu');
 const btnLeaderboardPause = document.getElementById('btnLeaderboardPause');
 
+const gameOverMenu = document.getElementById('gameOverMenu');
+const finalScore = document.getElementById('finalScore');
+const finalLines = document.getElementById('finalLines');
+const finalTime = document.getElementById('finalTime');
+const btnPlayAgain = document.getElementById('btnPlayAgain');
+const btnGameOverBackToMenu = document.getElementById('btnGameOverBackToMenu');
+const btnLeaderboardGameOver = document.getElementById('btnLeaderboardGameOver');
+
 let lastOppScores = [-1, -1, -1];
 let lastOppLines = [-1, -1, -1];
 
@@ -518,6 +526,7 @@ function updatePlayerCount(totalPlayers) {
 }
 let snapshotMs = 0;
 let sentGameOver = false;
+let shownGameOver = false;
 
 let lastScore = -1;
 let lastLines = -1;
@@ -563,11 +572,52 @@ function showLeaderboardFromPause() {
   displayLeaderboard();
 }
 
+function showGameOver() {
+  gameOverMenu.classList.add('active');
+  finalScore.textContent = game.score;
+  finalLines.textContent = game.lines;
+  finalTime.textContent = game.getElapsedTimeFormatted();
+  setStatus('Game Over');
+}
+
+function hideGameOver() {
+  gameOverMenu.classList.remove('active');
+}
+
+function playAgain() {
+  hideGameOver();
+  if (mode === 'classic') {
+    startClassic();
+  } else if (mode === 'online') {
+    startOnline();
+  }
+}
+
+function gameOverBackToMenu() {
+  hideGameOver();
+  if (ws) { ws.close(); ws = null; }
+  mode = 'classic';
+  game.gameOver = true;
+  menu.classList.add('active');
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.remove('active');
+  welcomePage.classList.remove('active');
+  setStatus('Ready');
+}
+
+function showLeaderboardFromGameOver() {
+  hideGameOver();
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.add('active');
+  displayLeaderboard();
+}
+
 function setStatus(text) { statusEl.textContent = text; }
 
 function startClassic() {
   mode = 'classic';
   isPaused = false;
+  shownGameOver = false;
   modeEl.textContent = 'Mode: Classic';
   game = new Game();
   sentGameOver = false;
@@ -577,6 +627,7 @@ function startClassic() {
   menu.classList.remove('active');
   leaderboardPage.classList.remove('active');
   welcomePage.classList.remove('active');
+  gameOverMenu.classList.remove('active');
   gameContainer.style.display = 'flex';
   lastTs = performance.now();
   requestAnimationFrame(loop);
@@ -633,6 +684,7 @@ function resetOpponents() {
 function startOnline() {
   mode = 'online';
   resetOpponents();
+  shownGameOver = false;
   modeEl.textContent = 'Mode: Online';
   game = new Game();
   sentGameOver = false;
@@ -1026,6 +1078,10 @@ function loop(ts) {
 
   if (game.gameOver) {
     setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
+    if (!shownGameOver) {
+      shownGameOver = true;
+      showGameOver();
+    }
     if (mode === 'online') {
       checkWinner(); // Check if you won or if it's a draw
     }
@@ -1156,6 +1212,11 @@ btnResume.addEventListener('click', resumeGame);
 btnBackToMenu.addEventListener('click', backToMenuFromGame);
 btnLeaderboardPause.addEventListener('click', showLeaderboardFromPause);
 
+// Game over menu buttons
+btnPlayAgain.addEventListener('click', playAgain);
+btnGameOverBackToMenu.addEventListener('click', gameOverBackToMenu);
+btnLeaderboardGameOver.addEventListener('click', showLeaderboardFromGameOver);
+
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
   updatePlayerCount(1);
@@ -1164,4 +1225,5 @@ window.addEventListener('DOMContentLoaded', () => {
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
   pauseMenu.classList.remove('active');
+  gameOverMenu.classList.remove('active');
 });

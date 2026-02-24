@@ -277,6 +277,86 @@ body::before {
   width: 100%;
 }
 
+/* Game Over Menu */
+.gameOverMenu {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  animation: fadeInOverlay 0.3s ease-out;
+}
+
+.gameOverMenu.active {
+  display: flex;
+}
+
+.gameOverContent {
+  background: linear-gradient(135deg, rgba(255, 67, 54, 0.15), rgba(210, 47, 47, 0.25));
+  border: 2px solid var(--color-accent-pink);
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(255, 67, 54, 0.4),
+              inset 0 0 20px rgba(255, 67, 54, 0.1);
+  max-width: 450px;
+  animation: slideInPause 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gameOverContent h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: var(--color-accent-pink);
+  text-shadow: 0 0 30px rgba(255, 67, 54, 0.6);
+  letter-spacing: 2px;
+}
+
+.gameOverStats {
+  background: rgba(255, 67, 54, 0.08);
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(255, 67, 54, 0.2);
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 67, 54, 0.1);
+  font-size: 0.95rem;
+}
+
+.statRow:last-child {
+  border-bottom: none;
+}
+
+.statLabel {
+  color: var(--color-text-dim);
+  font-weight: 500;
+}
+
+.statValue {
+  color: var(--color-accent-pink);
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.gameOverButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gameOverButtons .btn {
+  width: 100%;
+}
 
 .btn {
   padding: 8px 16px;
