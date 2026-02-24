@@ -470,6 +470,23 @@ input:focus {
   padding: 8px;
 }
 
+/* Dynamic grid columns based on active players */
+.gameArea.players-1 {
+  grid-template-columns: 1fr;
+}
+
+.gameArea.players-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.gameArea.players-3 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.gameArea.players-4 {
+  grid-template-columns: 1fr 1fr;
+}
+
 .playerCard {
   display: flex;
   flex-direction: column;

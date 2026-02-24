@@ -447,6 +447,31 @@ let ws = null;
 let onlineReady = false;
 let playerSlot = -1;
 let opponents = [{grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 2', piece: null, next: null}, {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 3', piece: null, next: null}, {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 4', piece: null, next: null}];
+
+// Function to update player count and show/hide boards
+function updatePlayerCount(totalPlayers) {
+  // Remove all player count classes
+  gameArea.classList.remove('players-1', 'players-2', 'players-3', 'players-4');
+  
+  // Show/hide boards based on player count
+  const boards = [
+    document.getElementById('player1Board'),
+    document.getElementById('player2Board'),
+    document.getElementById('player3Board'),
+    document.getElementById('player4Board')
+  ];
+  
+  for (let i = 0; i < boards.length; i++) {
+    if (i < totalPlayers) {
+      boards[i].style.display = 'flex';
+    } else {
+      boards[i].style.display = 'none';
+    }
+  }
+  
+  // Add the appropriate player count class
+  gameArea.classList.add(`players-${totalPlayers}`);
+}
 let snapshotMs = 0;
 let sentGameOver = false;
 
@@ -463,6 +488,7 @@ function startClassic() {
   sentGameOver = false;
   onlineReady = false;
   if (ws) { ws.close(); ws = null; }
+  updatePlayerCount(2); // Show 2 boards by default in classic mode
   setStatus('Classic mode started');
 }
 
@@ -550,7 +576,11 @@ function connectOnline() {
       }
       
       const oppCount = msg.opponents ? msg.opponents.length : 1;
+      const totalPlayers = oppCount + 1; // +1 for you
       const oppNames = msg.opponents ? msg.opponents.map(o => o.name).join(', ') : 'opponents';
+      
+      // Update player display based on count
+      updatePlayerCount(totalPlayers);
       
       // Hide form states
       waitingState.classList.remove('active');
