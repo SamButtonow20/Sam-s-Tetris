@@ -467,9 +467,17 @@ input:focus {
   padding: 4px;
 }
 
-/* Keep 2x2 layout for all player counts */
-.gameArea.players-1,
-.gameArea.players-2,
+/* Adaptive grid layout based on player count */
+.gameArea.players-1 {
+  grid-template-columns: 1fr;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.gameArea.players-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
 .gameArea.players-3,
 .gameArea.players-4 {
   grid-template-columns: 1fr 1fr;

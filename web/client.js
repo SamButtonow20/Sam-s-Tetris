@@ -1,4 +1,4 @@
-const CELL = 14;
+const CELL = 20;
 const COLS = 10;
 const ROWS = 20;
 const BOARD_W = COLS * CELL;
@@ -489,7 +489,7 @@ function startClassic() {
   sentGameOver = false;
   onlineReady = false;
   if (ws) { ws.close(); ws = null; }
-  updatePlayerCount(4); // Show all 4 boards side by side
+  updatePlayerCount(1); // Solo mode - show only player 1 board
   setStatus('Classic mode started');
 }
 
