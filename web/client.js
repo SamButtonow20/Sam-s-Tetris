@@ -432,7 +432,12 @@ const nameInput = document.getElementById('name');
 const formWrapper = onlineForm.querySelector('.formWrapper');
 const connectingState = document.getElementById('connectingState');
 const waitingState = document.getElementById('waitingState');
+const lobbyState = document.getElementById('lobbyState');
 const sharedRoom = document.getElementById('sharedRoom');
+const lobbyRoom = document.getElementById('lobbyRoom');
+const playersList = document.getElementById('playersList');
+const btnStartGame = document.getElementById('btnStartGame');
+const waitingForPlayers = document.getElementById('waitingForPlayers');
 
 let lastOppScores = [-1, -1, -1];
 let lastOppLines = [-1, -1, -1];
@@ -616,14 +621,51 @@ function connectOnline() {
       // Show waiting state
       connectingState.classList.remove('active');
       waitingState.classList.add('active');
+      lobbyState.classList.remove('active');
       sharedRoom.textContent = room;
       setStatus('Waiting for opponent...');
+    } else if (msg.type === 'lobby') {
+      onlineReady = false;
+      // Show lobby with list of players
+      connectingState.classList.remove('active');
+      waitingState.classList.remove('active');
+      lobbyState.classList.add('active');
+      lobbyRoom.textContent = room;
+      playerSlot = Number(msg.you || 0);
+      
+      // Update players list
+      if (msg.players && Array.isArray(msg.players)) {
+        playersList.innerHTML = '';
+        msg.players.forEach((player, idx) => {
+          const playerEl = document.createElement('div');
+          playerEl.className = 'playerItem';
+          if (idx === playerSlot) playerEl.classList.add('you');
+          playerEl.textContent = player.name;
+          playersList.appendChild(playerEl);
+        });
+        
+        // Show/hide start button and waiting message based on player count
+        if (msg.players.length >= 2) {
+          btnStartGame.style.display = 'block';
+          waitingForPlayers.style.display = 'none';
+        } else {
+          btnStartGame.style.display = 'none';
+          waitingForPlayers.style.display = 'block';
+        }
+      }
+      
+      setStatus(`Lobby: ${msg.players ? msg.players.length : 1} player(s) joined`);
     } else if (msg.type === 'start') {
       const seed = Number(msg.seed || Math.floor(Math.random() * 1_000_000));
       game = new Game(seed);
       sentGameOver = false;
       onlineReady = true;
       playerSlot = Number(msg.you || 0);
+      
+      // Hide lobby and form states
+      lobbyState.classList.remove('active');
+      waitingState.classList.remove('active');
+      connectingState.classList.remove('active');
       
       // Update opponent names and initialize slots
       if (msg.opponents && Array.isArray(msg.opponents)) {
@@ -940,6 +982,6 @@ btnOnline.addEventListener('click', () => {
   onlineForm.classList.toggle('active');
 });
 btnConnect.addEventListener('click', connectOnline);
-
-startClassic();
-requestAnimationFrame(loop);
+btnStartGame.addEventListener('click', () => {
+  send({ type: 'startgame' });
+});
