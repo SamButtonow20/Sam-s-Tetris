@@ -918,6 +918,12 @@ const btnBackFromLeaderboard = document.getElementById('btnBackFromLeaderboard')
 const btnClearLeaderboard = document.getElementById('btnClearLeaderboard');
 const leaderboardEntries = document.getElementById('leaderboardEntries');
 
+// Player identity elements
+const playerNameInput = document.getElementById('playerNameInput');
+const identitySaveBtn = document.getElementById('identitySaveBtn');
+const identityStatus = document.getElementById('identityStatus');
+const finalPlayerName = document.getElementById('finalPlayerName');
+
 const welcomePage = document.getElementById('welcomePage');
 const cardClassic = document.getElementById('cardClassic');
 const cardOnline = document.getElementById('cardOnline');
@@ -1216,7 +1222,8 @@ function showLeaderboardFromPause() {
 
 function showGameOver() {
   gameOverMenu.classList.add('active');
-  finalScore.textContent = game.score;
+  if (finalPlayerName) finalPlayerName.textContent = getCurrentPlayerName();
+  finalScore.textContent = game.score.toLocaleString();
   finalLines.textContent = game.lines;
   finalTime.textContent = game.getElapsedTimeFormatted();
   if (btnSaveReplay) { btnSaveReplay.textContent = '💾 Save Replay'; btnSaveReplay.disabled = false; }
@@ -1374,7 +1381,7 @@ function connectOnline() {
   startOnline();
   const url = getWebSocketURL();
   const room = roomInput.value.trim() || 'default';
-  const name = nameInput.value.trim() || 'Player';
+  const name = getCurrentPlayerName();
 
   // Show connecting state
   btnConnect.disabled = true;
@@ -1852,12 +1859,13 @@ function loop(ts) {
       sound.playGameOver();
       sound.stopMusic();
       updateStatsOnGameEnd(game);
-      const playerName = nameInput.value || 'Player';
+      const playerName = getCurrentPlayerName();
       const gameTime = game.getElapsedTimeFormatted();
       saveLeaderboard({
         name: playerName,
         score: game.score,
         lines: game.lines,
+        level: game.level || 1,
         time: gameTime,
         timestamp: Date.now()
       });
@@ -2030,6 +2038,63 @@ window.addEventListener('keyup', (e) => {
   if (e.key === 'ArrowDown') { game.softDrop = false; if (replayRecorder) replayRecorder.record('softOff'); }
 });
 
+// ==================== PLAYER IDENTITY ====================
+function getPlayerName() {
+  return localStorage.getItem('tetrisPlayerName') || '';
+}
+
+function setPlayerName(name) {
+  const trimmed = name.trim().substring(0, 20);
+  localStorage.setItem('tetrisPlayerName', trimmed);
+  // Sync with online form name input
+  if (nameInput) nameInput.value = trimmed || 'Player';
+  return trimmed;
+}
+
+function initPlayerIdentity() {
+  const saved = getPlayerName();
+  if (playerNameInput) {
+    playerNameInput.value = saved;
+    if (saved) {
+      identityStatus.textContent = 'Playing as: ' + saved;
+      identityStatus.classList.add('saved');
+      identitySaveBtn.textContent = '✓ Saved';
+    }
+  }
+  // Pre-fill online form
+  if (nameInput && saved) nameInput.value = saved;
+}
+
+if (identitySaveBtn) {
+  identitySaveBtn.addEventListener('click', () => {
+    const name = playerNameInput.value.trim();
+    if (!name) {
+      identityStatus.textContent = 'Please enter a name!';
+      identityStatus.classList.remove('saved');
+      playerNameInput.focus();
+      return;
+    }
+    setPlayerName(name);
+    identityStatus.textContent = 'Playing as: ' + name;
+    identityStatus.classList.add('saved');
+    identitySaveBtn.textContent = '✓ Saved';
+    setTimeout(() => { identitySaveBtn.textContent = 'Set Name'; }, 2000);
+  });
+}
+
+if (playerNameInput) {
+  playerNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      identitySaveBtn.click();
+    }
+  });
+  // Update save button text when name changes
+  playerNameInput.addEventListener('input', () => {
+    identitySaveBtn.textContent = 'Set Name';
+  });
+}
+
 function loadLeaderboard() {
   const scores = JSON.parse(localStorage.getItem('tetrisLeaderboard') || '[]');
   return scores;
@@ -2041,6 +2106,11 @@ function saveLeaderboard(entry) {
   scores.sort((a, b) => b.score - a.score);
   scores = scores.slice(0, 50); // Keep top 50
   localStorage.setItem('tetrisLeaderboard', JSON.stringify(scores));
+}
+
+function getCurrentPlayerName() {
+  // Use saved player name, fall back to online form, fall back to 'Player'
+  return getPlayerName() || (nameInput ? nameInput.value.trim() : '') || 'Player';
 }
 
 function displayLeaderboard() {
@@ -2062,8 +2132,9 @@ function displayLeaderboard() {
     div.innerHTML = `
       <div class="rankCol">${idx + 1}</div>
       <div class="nameCol">${entry.name || 'Anonymous'}</div>
-      <div class="scoreCol">${entry.score}</div>
+      <div class="scoreCol">${entry.score.toLocaleString()}</div>
       <div class="linesCol">${entry.lines}</div>
+      <div class="levelCol">${entry.level || '-'}</div>
       <div class="timeCol">${entry.time}</div>
     `;
     leaderboardEntries.appendChild(div);
@@ -2326,9 +2397,44 @@ function updateSoundButtons() {
   if (volumeSlider) volumeSlider.value = sound.volume * 100;
 }
 
+// Check if player has set a name — show a prompt if not, but don't block
+function ensurePlayerName() {
+  const name = getPlayerName();
+  if (!name) {
+    // Auto-save whatever is in the input, or prompt
+    if (playerNameInput && playerNameInput.value.trim()) {
+      setPlayerName(playerNameInput.value.trim());
+      return true;
+    }
+    // Flash the identity bar to draw attention
+    const bar = document.getElementById('playerIdentityBar');
+    if (bar) {
+      bar.style.boxShadow = '0 0 20px rgba(255, 0, 110, 0.6)';
+      bar.style.borderColor = 'var(--color-accent-pink)';
+      if (playerNameInput) playerNameInput.focus();
+      if (identityStatus) {
+        identityStatus.textContent = 'Enter a name for the leaderboard!';
+        identityStatus.classList.remove('saved');
+      }
+      setTimeout(() => {
+        bar.style.boxShadow = '';
+        bar.style.borderColor = '';
+      }, 3000);
+    }
+    return false;
+  }
+  return true;
+}
+
 // Card click handlers from welcome page
-cardClassic.addEventListener('click', startClassic);
+cardClassic.addEventListener('click', () => {
+  ensurePlayerName();
+  startClassic();
+});
 cardOnline.addEventListener('click', () => {
+  // Sync player name to online form
+  const saved = getPlayerName();
+  if (saved && nameInput) nameInput.value = saved;
   welcomePage.classList.remove('active');
   menu.classList.remove('active');
   onlineForm.classList.add('active');
@@ -2343,6 +2449,7 @@ cardLeaderboard.addEventListener('click', () => {
 
 // New card click handlers
 if (cardAI) cardAI.addEventListener('click', () => {
+  ensurePlayerName();
   welcomePage.classList.remove('active');
   if (aiSetupPage) aiSetupPage.classList.add('active');
 });
@@ -2511,4 +2618,5 @@ window.addEventListener('DOMContentLoaded', () => {
   applyTheme(currentThemeName);
   updatePieceStatsColors();
   updateSoundButtons();
+  initPlayerIdentity();
 });

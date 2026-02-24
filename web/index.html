@@ -19,6 +19,14 @@
       <div class="welcomeContainer">
         <h1 class="welcomeTitle">TETRIS</h1>
         <p class="welcomeSubtitle">Web Multiplayer Edition</p>
+
+        <!-- Player Identity Bar -->
+        <div class="playerIdentityBar" id="playerIdentityBar">
+          <span class="identityIcon">👤</span>
+          <input type="text" class="playerNameInput" id="playerNameInput" placeholder="Enter your name..." maxlength="20" autocomplete="off" />
+          <button class="identitySaveBtn" id="identitySaveBtn">Set Name</button>
+          <span class="identityStatus" id="identityStatus"></span>
+        </div>
         
         <div class="gameMode" id="gameModeSelector">
           <!-- Classic Card -->
@@ -155,6 +163,10 @@
         <h2>GAME OVER</h2>
         <div class="gameOverStats">
           <div class="statRow">
+            <span class="statLabel">Player:</span>
+            <span class="statValue" id="finalPlayerName">Player</span>
+          </div>
+          <div class="statRow">
             <span class="statLabel">Final Score:</span>
             <span class="statValue" id="finalScore">0</span>
           </div>
@@ -276,6 +288,7 @@
             <div class="nameCol">Player</div>
             <div class="scoreCol">Score</div>
             <div class="linesCol">Lines</div>
+            <div class="levelCol">Level</div>
             <div class="timeCol">Time</div>
           </div>
           <div id="leaderboardEntries" class="leaderboardEntries"></div>

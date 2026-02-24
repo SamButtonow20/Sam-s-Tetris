@@ -878,8 +878,8 @@ input:focus {
 
 .leaderboardHeader {
   display: grid;
-  grid-template-columns: 60px 1fr 100px 80px 80px;
-  gap: 12px;
+  grid-template-columns: 50px 1fr 90px 60px 60px 70px;
+  gap: 10px;
   padding: 12px 16px;
   background: rgba(0, 217, 255, 0.15);
   border-bottom: 2px solid rgba(0, 217, 255, 0.3);
@@ -897,8 +897,8 @@ input:focus {
 
 .leaderboardEntry {
   display: grid;
-  grid-template-columns: 60px 1fr 100px 80px 80px;
-  gap: 12px;
+  grid-template-columns: 50px 1fr 90px 60px 60px 70px;
+  gap: 10px;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(0, 217, 255, 0.1);
   align-items: center;
@@ -937,7 +937,7 @@ input:focus {
   content: '🥉 ';
 }
 
-.rankCol, .nameCol, .scoreCol, .linesCol, .timeCol {
+.rankCol, .nameCol, .scoreCol, .linesCol, .levelCol, .timeCol {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -950,6 +950,10 @@ input:focus {
 .scoreCol {
   color: var(--color-accent-pink);
   font-weight: bold;
+}
+
+.levelCol {
+  color: var(--color-accent-purple);
 }
 
 .leaderboardContent > .btn {
@@ -1778,6 +1782,93 @@ canvas:hover {
   color: var(--color-text-dim);
   font-style: italic;
   opacity: 0.8;
+}
+
+/* ==================== */
+/* PLAYER IDENTITY BAR  */
+/* ==================== */
+.playerIdentityBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, rgba(15, 21, 51, 0.9), rgba(21, 29, 58, 0.9));
+  border: 1px solid var(--color-accent-purple);
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(131, 56, 236, 0.2);
+}
+
+.identityIcon {
+  font-size: 1.4rem;
+}
+
+.playerNameInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--color-accent-purple);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.playerNameInput:focus {
+  border-color: var(--color-accent-cyan);
+  box-shadow: 0 0 8px rgba(0, 217, 255, 0.3);
+}
+
+.playerNameInput::placeholder {
+  color: var(--color-text-dim);
+  opacity: 0.6;
+}
+
+.identitySaveBtn {
+  padding: 8px 16px;
+  border: 1px solid var(--color-accent-cyan);
+  border-radius: 6px;
+  background: rgba(0, 217, 255, 0.1);
+  color: var(--color-accent-cyan);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.identitySaveBtn:hover {
+  background: rgba(0, 217, 255, 0.25);
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+}
+
+.identityStatus {
+  font-size: 0.75rem;
+  color: var(--color-accent-pink);
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+
+.identityStatus.saved {
+  color: var(--color-accent-cyan);
+}
+
+@media (max-width: 768px) {
+  .playerIdentityBar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .playerNameInput {
+    min-width: 120px;
+  }
+  .identityStatus {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 /* ==================== */
