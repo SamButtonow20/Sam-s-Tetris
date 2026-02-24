@@ -4,13 +4,15 @@
   "description": "Multiplayer Tetris game",
   "private": true,
   "engines": {
-    "node": ">=16.0.0"
+    "node": "18.x"
   },
   "scripts": {
-    "start": "npm --prefix web start",
+    "start": "node web/server.js",
+    "postinstall": "cd web && npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["tetris", "game", "multiplayer"],
   "author": "Sam",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {}
 }
