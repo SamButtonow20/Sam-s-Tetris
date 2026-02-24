@@ -493,6 +493,41 @@ function startClassic() {
   setStatus('Classic mode started');
 }
 
+function checkWinner() {
+  if (mode !== 'online') return;
+  
+  // Count how many opponents are still playing
+  let playersStillPlaying = game.gameOver ? 0 : 1; // 1 if you're still playing
+  let topOutCount = 0;
+  
+  for (let i = 0; i < 3; i++) {
+    if (opponents[i].game_over) {
+      topOutCount++;
+    } else {
+      playersStillPlaying++;
+    }
+  }
+  
+  // If you're the last one playing, you win!
+  if (!game.gameOver && playersStillPlaying === 1) {
+    setStatus('🏆 YOU WIN! All opponents topped out!');
+    return true;
+  }
+  
+  // If you topped out but at least one opponent hasn't yet, wait for them
+  if (game.gameOver && playersStillPlaying > 0) {
+    return false;
+  }
+  
+  // If everyone has topped out (including you), there's no winner
+  if (game.gameOver && playersStillPlaying === 0) {
+    setStatus('Game Over - Draw (everyone topped out)');
+    return false;
+  }
+  
+  return false;
+}
+
 function resetOpponents() {
   for (let i = 0; i < 3; i++) {
     opponents[i] = {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player ' + (i + 2), piece: null, next: null};
@@ -830,6 +865,9 @@ function loop(ts) {
 
   if (game.gameOver) {
     setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
+    if (mode === 'online') {
+      checkWinner(); // Check if you won or if it's a draw
+    }
   }
 
   if (mode === 'online') {
