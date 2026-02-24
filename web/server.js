@@ -152,14 +152,22 @@ wss.on('connection', (ws) => {
 
       room.started = true;
       room.seed = Math.floor(Math.random() * 1_000_000);
+      
+      // Store room settings from the host
+      const settings = msg.settings || {};
+      room.settings = {
+        startLevel: Number(settings.startLevel) || 1,
+        garbageMultiplier: Number(settings.garbageMultiplier) || 1,
+        speedMultiplier: Number(settings.speedMultiplier) || 1
+      };
 
       for (let i = 0; i < room.players.length; i++) {
         const opps = room.players.map((m, idx) => ({ slot: idx, name: m.name })).filter(o => o.slot !== i);
-        send(room.players[i].ws, { type: 'start', seed: room.seed, you: i, opponents: opps });
+        send(room.players[i].ws, { type: 'start', seed: room.seed, you: i, opponents: opps, settings: room.settings });
       }
       const allPlayers = room.players.map((p, i) => ({ slot: i, name: p.name }));
       for (const s of room.spectators) {
-        send(s.ws, { type: 'start_spectator', seed: room.seed, players: allPlayers });
+        send(s.ws, { type: 'start_spectator', seed: room.seed, players: allPlayers, settings: room.settings });
       }
       return;
     }

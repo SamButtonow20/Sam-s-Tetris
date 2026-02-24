@@ -50,6 +50,393 @@ const THEMES = {
 let currentThemeName = localStorage.getItem('tetrisTheme') || 'neon';
 let COLORS = { ...THEMES[currentThemeName].colors };
 
+// ==================== SOUND MANAGER ====================
+class SoundManager {
+  constructor() {
+    this.ctx = null;
+    this.enabled = localStorage.getItem('tetrisSoundEnabled') !== 'false';
+    this.musicEnabled = localStorage.getItem('tetrisMusicEnabled') !== 'false';
+    this.volume = parseFloat(localStorage.getItem('tetrisVolume') || '0.5');
+    this.musicInterval = null;
+    this.initialized = false;
+    this.masterGain = null;
+  }
+  init() {
+    if (this.initialized) return;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = this.volume;
+      this.masterGain.connect(this.ctx.destination);
+      this.initialized = true;
+    } catch (e) { console.warn('Web Audio not supported'); }
+  }
+  resume() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
+  tone(freq, duration, type = 'square', vol = 0.3) {
+    if (!this.ctx || !this.enabled) return;
+    this.resume();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = vol * this.volume;
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start();
+    osc.stop(this.ctx.currentTime + duration);
+  }
+  noise(duration, vol = 0.2) {
+    if (!this.ctx || !this.enabled) return;
+    this.resume();
+    const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    const gain = this.ctx.createGain();
+    gain.gain.value = vol * this.volume;
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+    source.connect(gain);
+    gain.connect(this.masterGain);
+    source.start();
+  }
+  playMove() { this.tone(200, 0.05, 'square', 0.1); }
+  playRotate() { this.tone(300, 0.06, 'square', 0.12); }
+  playDrop() { this.noise(0.1, 0.25); this.tone(80, 0.15, 'sine', 0.25); }
+  playLineClear(count) {
+    for (let i = 0; i < count; i++) setTimeout(() => this.tone(400 + i * 100, 0.15, 'square', 0.2), i * 60);
+  }
+  playTetris() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.tone(f, 0.2, 'square', 0.25), i * 80)); }
+  playTSpin() {
+    this.tone(200, 0.3, 'sawtooth', 0.15);
+    setTimeout(() => this.tone(400, 0.3, 'sawtooth', 0.2), 100);
+    setTimeout(() => this.tone(600, 0.2, 'square', 0.15), 200);
+  }
+  playCombo(count) {
+    const freq = 300 + Math.min(count, 10) * 50;
+    this.tone(freq, 0.1, 'square', 0.15);
+    setTimeout(() => this.tone(freq * 1.25, 0.1, 'square', 0.15), 60);
+  }
+  playPerfectClear() { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => this.tone(f, 0.3, 'sine', 0.25), i * 100)); }
+  playLevelUp() { [440, 554, 659].forEach((f, i) => setTimeout(() => this.tone(f, 0.15, 'triangle', 0.2), i * 80)); }
+  playGameOver() { [400, 350, 300, 250, 200].forEach((f, i) => setTimeout(() => this.tone(f, 0.3, 'sawtooth', 0.15), i * 150)); }
+  playB2B() { this.tone(600, 0.1, 'sine', 0.15); setTimeout(() => this.tone(800, 0.15, 'sine', 0.2), 80); }
+  playGarbage() { this.noise(0.15, 0.2); this.tone(60, 0.2, 'sine', 0.25); }
+  playAchievement() { [660, 880, 1100].forEach((f, i) => setTimeout(() => this.tone(f, 0.2, 'triangle', 0.2), i * 100)); }
+  startMusic() {
+    if (!this.ctx || !this.musicEnabled || this.musicInterval) return;
+    this.resume();
+    const notes = [131, 165, 175, 196, 175, 165, 131, 147];
+    let noteIdx = 0;
+    const playNote = () => {
+      if (!this.musicEnabled || !this.ctx) { this.stopMusic(); return; }
+      const osc = this.ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = notes[noteIdx % notes.length];
+      const g = this.ctx.createGain();
+      g.gain.value = this.volume * 0.08;
+      g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+      osc.connect(g);
+      g.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.35);
+      noteIdx++;
+    };
+    playNote();
+    this.musicInterval = setInterval(playNote, 400);
+  }
+  stopMusic() { if (this.musicInterval) { clearInterval(this.musicInterval); this.musicInterval = null; } }
+  setVolume(v) {
+    this.volume = v;
+    localStorage.setItem('tetrisVolume', String(v));
+    if (this.masterGain) this.masterGain.gain.value = v;
+  }
+  toggleSound() { this.enabled = !this.enabled; localStorage.setItem('tetrisSoundEnabled', String(this.enabled)); return this.enabled; }
+  toggleMusic() {
+    this.musicEnabled = !this.musicEnabled;
+    localStorage.setItem('tetrisMusicEnabled', String(this.musicEnabled));
+    if (this.musicEnabled) this.startMusic(); else this.stopMusic();
+    return this.musicEnabled;
+  }
+}
+const sound = new SoundManager();
+
+// ==================== FLOATING TEXT ====================
+class FloatingText {
+  constructor(text, x, y, color, size = 18, duration = 1200) {
+    this.text = text; this.x = x; this.y = y; this.color = color;
+    this.size = size; this.duration = duration; this.elapsed = 0; this.vy = -60;
+  }
+  update(dt) { this.elapsed += dt; this.y += this.vy * dt / 1000; this.vy *= 0.98; }
+  isDead() { return this.elapsed >= this.duration; }
+  getOpacity() { return Math.max(0, 1 - this.elapsed / this.duration); }
+  draw(ctx) {
+    const alpha = this.getOpacity();
+    const scale = 1 + (this.elapsed / this.duration) * 0.3;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `bold ${Math.round(this.size * scale)}px Consolas, monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 10;
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.restore();
+  }
+}
+let floatingTexts = [];
+let screenShake = { x: 0, y: 0, intensity: 0, duration: 0, elapsed: 0 };
+
+function addFloatingText(text, color, size = 18) {
+  floatingTexts.push(new FloatingText(text, BOARD_W / 2, BOARD_H / 2 - floatingTexts.length * 25, color, size));
+}
+function triggerScreenShake(intensity = 5, duration = 300) {
+  screenShake = { x: 0, y: 0, intensity, duration, elapsed: 0 };
+}
+function updateFloatingTexts(dt) {
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    floatingTexts[i].update(dt);
+    if (floatingTexts[i].isDead()) floatingTexts.splice(i, 1);
+  }
+  if (screenShake.elapsed < screenShake.duration) {
+    screenShake.elapsed += dt;
+    const decay = 1 - screenShake.elapsed / screenShake.duration;
+    screenShake.x = (Math.random() - 0.5) * screenShake.intensity * decay * 2;
+    screenShake.y = (Math.random() - 0.5) * screenShake.intensity * decay * 2;
+  } else { screenShake.x = 0; screenShake.y = 0; }
+}
+function drawFloatingTexts(ctx) { for (const ft of floatingTexts) ft.draw(ctx); }
+
+// ==================== ACHIEVEMENTS ====================
+const ACHIEVEMENTS = [
+  { id: 'first_clear', name: 'First Blood', desc: 'Clear your first line', icon: '⚔️', check: (s) => s.totalLines >= 1 },
+  { id: 'tetris_clear', name: 'Tetris!', desc: 'Clear 4 lines at once', icon: '💎' },
+  { id: 'first_tspin', name: 'Spin Doctor', desc: 'Perform a T-Spin clear', icon: '🌀' },
+  { id: 'combo_5', name: 'Combo Master', desc: 'Reach a 5-combo', icon: '🔥' },
+  { id: 'combo_10', name: 'Unstoppable', desc: 'Reach a 10-combo', icon: '💥' },
+  { id: 'score_10k', name: 'Rising Star', desc: 'Score 10,000 points', icon: '⭐', check: (s) => s.bestScore >= 10000 },
+  { id: 'score_50k', name: 'Pro Player', desc: 'Score 50,000 points', icon: '🌟', check: (s) => s.bestScore >= 50000 },
+  { id: 'score_100k', name: 'Legend', desc: 'Score 100,000 points', icon: '👑', check: (s) => s.bestScore >= 100000 },
+  { id: 'lines_100', name: 'Century', desc: 'Clear 100 total lines', icon: '💯', check: (s) => s.totalLines >= 100 },
+  { id: 'lines_500', name: 'Line Destroyer', desc: 'Clear 500 total lines', icon: '🔮', check: (s) => s.totalLines >= 500 },
+  { id: 'games_10', name: 'Getting Started', desc: 'Play 10 games', icon: '🎮', check: (s) => s.gamesPlayed >= 10 },
+  { id: 'games_50', name: 'Dedicated', desc: 'Play 50 games', icon: '🏅', check: (s) => s.gamesPlayed >= 50 },
+  { id: 'perfect_clear', name: 'Perfectionist', desc: 'Get a perfect clear', icon: '✨' },
+  { id: 'b2b_5', name: 'Chain Breaker', desc: 'Get B2B x5', icon: '🔗' },
+  { id: 'level_10', name: 'Speed Demon', desc: 'Reach level 10', icon: '⚡' },
+  { id: 'survive_5min', name: 'Survivor', desc: 'Survive for 5 minutes', icon: '🛡️' },
+];
+function loadAchievements() { return JSON.parse(localStorage.getItem('tetrisAchievements') || '{}'); }
+function saveAchievements(a) { localStorage.setItem('tetrisAchievements', JSON.stringify(a)); }
+function unlockAchievement(id) {
+  const a = loadAchievements();
+  if (a[id]) return false;
+  a[id] = { unlockedAt: Date.now() };
+  saveAchievements(a);
+  showAchievementToast(id);
+  return true;
+}
+function showAchievementToast(id) {
+  const ach = ACHIEVEMENTS.find(a => a.id === id);
+  if (!ach) return;
+  const toast = document.createElement('div');
+  toast.className = 'achievementToast';
+  toast.innerHTML = `<span class="achIcon">${ach.icon}</span><div class="achInfo"><span class="achTitle">Achievement Unlocked!</span><span class="achName">${ach.name}</span></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3000);
+  sound.playAchievement();
+}
+function checkEventAchievement(event, value) {
+  switch (event) {
+    case 'tetris': unlockAchievement('tetris_clear'); break;
+    case 'tspin': unlockAchievement('first_tspin'); break;
+    case 'combo': if (value >= 5) unlockAchievement('combo_5'); if (value >= 10) unlockAchievement('combo_10'); break;
+    case 'perfect_clear': unlockAchievement('perfect_clear'); break;
+    case 'b2b': if (value >= 5) unlockAchievement('b2b_5'); break;
+    case 'level': if (value >= 10) unlockAchievement('level_10'); break;
+    case 'survive': if (value >= 300000) unlockAchievement('survive_5min'); break;
+  }
+}
+function checkStatAchievements() {
+  const stats = loadStats();
+  const achs = loadAchievements();
+  for (const ach of ACHIEVEMENTS) {
+    if (ach.check && !achs[ach.id] && ach.check(stats)) unlockAchievement(ach.id);
+  }
+}
+
+// ==================== PLAYER STATS ====================
+const DEFAULT_STATS = { gamesPlayed: 0, totalScore: 0, bestScore: 0, totalLines: 0, bestLines: 0, bestCombo: 0, totalTetris: 0, totalTSpins: 0, totalPerfectClears: 0, totalTime: 0, piecesPlaced: 0, totalB2B: 0 };
+function loadStats() { return JSON.parse(localStorage.getItem('tetrisStats') || JSON.stringify(DEFAULT_STATS)); }
+function saveStats(s) { localStorage.setItem('tetrisStats', JSON.stringify(s)); }
+function updateStatsOnGameEnd(g) {
+  const s = loadStats();
+  s.gamesPlayed++;
+  s.totalScore += g.score;
+  if (g.score > s.bestScore) s.bestScore = g.score;
+  s.totalLines += g.lines;
+  if (g.lines > s.bestLines) s.bestLines = g.lines;
+  s.totalTime += g.elapsedMs;
+  let placed = 0;
+  for (const k of Object.keys(g.pieceStats)) placed += g.pieceStats[k];
+  s.piecesPlaced += placed;
+  saveStats(s);
+  checkStatAchievements();
+}
+function trackGameEvent(event, value) {
+  const s = loadStats();
+  switch (event) {
+    case 'tetris': s.totalTetris++; break;
+    case 'tspin': s.totalTSpins++; break;
+    case 'perfect_clear': s.totalPerfectClears++; break;
+    case 'combo': if (value > s.bestCombo) s.bestCombo = value; break;
+    case 'b2b': s.totalB2B++; break;
+  }
+  saveStats(s);
+}
+
+// ==================== REPLAY SYSTEM ====================
+class ReplayRecorder {
+  constructor(seed) { this.seed = seed; this.inputs = []; this.startTime = performance.now(); }
+  record(action) { this.inputs.push({ t: performance.now() - this.startTime, a: action }); }
+  export() { return { seed: this.seed, inputs: this.inputs, version: 1 }; }
+}
+class ReplayPlayer {
+  constructor(data) {
+    this.data = data; this.game = new Game(data.seed); this.inputIdx = 0;
+    this.elapsed = 0; this.speed = 1; this.paused = false; this.finished = false;
+  }
+  update(dt) {
+    if (this.paused || this.finished) return;
+    this.elapsed += dt * this.speed;
+    while (this.inputIdx < this.data.inputs.length && this.data.inputs[this.inputIdx].t <= this.elapsed) {
+      const input = this.data.inputs[this.inputIdx];
+      switch (input.a) {
+        case 'left': this.game.move(-1, 0); break;
+        case 'right': this.game.move(1, 0); break;
+        case 'rotate': this.game.rotateCurrent(); break;
+        case 'drop': this.game.hardDrop(); break;
+        case 'softOn': this.game.softDrop = true; break;
+        case 'softOff': this.game.softDrop = false; break;
+      }
+      this.inputIdx++;
+    }
+    this.game.update(dt * this.speed);
+    if (this.game.gameOver || this.inputIdx >= this.data.inputs.length) this.finished = true;
+  }
+}
+let replayRecorder = null;
+let replayPlayer = null;
+let savedReplays = JSON.parse(localStorage.getItem('tetrisReplays') || '[]');
+function saveReplay(name) {
+  if (!replayRecorder) return;
+  const data = replayRecorder.export();
+  data.name = name || 'Replay ' + (savedReplays.length + 1);
+  data.score = game.score; data.lines = game.lines; data.date = Date.now();
+  savedReplays.push(data);
+  if (savedReplays.length > 20) savedReplays.shift();
+  localStorage.setItem('tetrisReplays', JSON.stringify(savedReplays));
+}
+
+// ==================== AI OPPONENT ====================
+class TetrisAI {
+  constructor(difficulty = 0.5) {
+    this.difficulty = difficulty;
+    this.moveDelay = Math.max(50, 500 - difficulty * 450);
+    this.moveTimer = 0;
+    this.plannedMoves = [];
+    this.game = null;
+  }
+  setGame(g) { this.game = g; }
+  evaluate(grid, linesCleared) {
+    const heights = new Array(COLS).fill(0);
+    let aggregateHeight = 0, holes = 0, bumpiness = 0;
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r < ROWS; r++) { if (grid[r][c] !== '.') { heights[c] = ROWS - r; break; } }
+    }
+    for (let c = 0; c < COLS; c++) {
+      aggregateHeight += heights[c];
+      let blockFound = false;
+      for (let r = 0; r < ROWS; r++) { if (grid[r][c] !== '.') blockFound = true; else if (blockFound) holes++; }
+    }
+    for (let c = 0; c < COLS - 1; c++) bumpiness += Math.abs(heights[c] - heights[c + 1]);
+    const w = this.difficulty > 0.5 ? { h: -0.51, l: 0.76, ho: -0.36, b: -0.18 } : { h: -0.4, l: 0.6, ho: -0.3, b: -0.15 };
+    return w.h * aggregateHeight + w.l * linesCleared + w.ho * holes + w.b * bumpiness;
+  }
+  simulatePlacement(piece, targetRot, targetX) {
+    const grid = this.game.grid.map(r => [...r]);
+    const shape = piece.rotations[(targetRot + 4) % 4];
+    const collideTest = (px, py) => {
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+        if (shape[r][c] === '.') continue;
+        const nx = px + c, ny = py + r;
+        if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+        if (ny >= 0 && grid[ny][nx] !== '.') return true;
+      }
+      return false;
+    };
+    if (collideTest(targetX, 0)) return null;
+    let y = 0;
+    while (!collideTest(targetX, y + 1)) y++;
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+      const v = shape[r][c];
+      if (v === '.') continue;
+      const px = targetX + c, py = y + r;
+      if (py >= 0 && py < ROWS && px >= 0 && px < COLS) grid[py][px] = v;
+    }
+    return { grid };
+  }
+  generateMoves(piece, targetRot, targetX) {
+    const moves = [];
+    const rots = (targetRot - piece.rotation + 4) % 4;
+    for (let i = 0; i < rots; i++) moves.push('rotate');
+    const dx = targetX - piece.x;
+    const dir = dx > 0 ? 'right' : 'left';
+    for (let i = 0; i < Math.abs(dx); i++) moves.push(dir);
+    moves.push('drop');
+    return moves;
+  }
+  findBestMove() {
+    if (!this.game || this.game.gameOver) return [];
+    let bestScore = -Infinity, bestMoves = [];
+    for (let rot = 0; rot < 4; rot++) {
+      for (let x = -2; x < COLS; x++) {
+        const test = this.simulatePlacement(this.game.current, rot, x);
+        if (!test) continue;
+        let cleared = 0;
+        for (let r = 0; r < ROWS; r++) if (test.grid[r].every(c => c !== '.')) cleared++;
+        const score = this.evaluate(test.grid, cleared) + (1 - this.difficulty) * (Math.random() * 2 - 1) * 5;
+        if (score > bestScore) { bestScore = score; bestMoves = this.generateMoves(this.game.current, rot, x); }
+      }
+    }
+    return bestMoves;
+  }
+  update(dt) {
+    if (!this.game || this.game.gameOver) return;
+    this.moveTimer += dt;
+    if (this.plannedMoves.length === 0) this.plannedMoves = this.findBestMove();
+    if (this.moveTimer >= this.moveDelay && this.plannedMoves.length > 0) {
+      this.moveTimer = 0;
+      const move = this.plannedMoves.shift();
+      switch (move) {
+        case 'left': this.game.move(-1, 0); break;
+        case 'right': this.game.move(1, 0); break;
+        case 'rotate': this.game.rotateCurrent(); break;
+        case 'drop': this.game.hardDrop(); break;
+      }
+    }
+  }
+}
+let aiOpponent = null;
+let aiGame = null;
+let aiDifficulty = 0.5;
+
+// Room settings for custom games
+let roomSettings = { startLevel: 1, garbageMultiplier: 1, speedMultiplier: 1 };
+
 class RNG {
   constructor(seed = Date.now() % 2147483647) {
     this.state = seed <= 0 ? 1 : seed;
@@ -238,6 +625,8 @@ class Game {
       this.current.y += dy;
       this.groundedMs = 0;
       this.lastMoveWasRotate = false;
+      if (dx !== 0) sound.playMove();
+      if (replayRecorder && dx !== 0) replayRecorder.record(dx < 0 ? 'left' : 'right');
       return true;
     }
     return false;
@@ -253,6 +642,8 @@ class Game {
         this.current.rotation = newRot;
         this.lastMoveWasRotate = true;
         this.groundedMs = 0;
+        sound.playRotate();
+        if (replayRecorder) replayRecorder.record('rotate');
         return true;
       }
     }
@@ -262,6 +653,8 @@ class Game {
   hardDrop() {
     while (!this.collide(this.current, 0, 1)) this.current.y += 1;
     this.groundedMs = this.lockDelayMs;
+    sound.playDrop();
+    if (replayRecorder) replayRecorder.record('drop');
   }
 
   detectTSpin() {
@@ -343,12 +736,60 @@ class Game {
     this.score += (base + comboBonus) * this.level;
     this.lastAttack = attack;
 
+    // Sound effects, floating text, screen shake, achievements, stats
+    if (tSpin && cleared > 0) {
+      sound.playTSpin();
+      const tSpinLabel = ['', 'SINGLE', 'DOUBLE', 'TRIPLE'][cleared] || '';
+      addFloatingText('T-SPIN ' + tSpinLabel, '#dc3cff', 20);
+      checkEventAchievement('tspin');
+      trackGameEvent('tspin');
+      triggerScreenShake(6, 300);
+    }
+    if (cleared === 4) {
+      sound.playTetris();
+      addFloatingText('+' + ((base + comboBonus) * this.level) + ' TETRIS!', '#ffd650', 24);
+      checkEventAchievement('tetris');
+      trackGameEvent('tetris');
+      triggerScreenShake(8, 400);
+    } else if (cleared > 0 && !(tSpin && cleared > 0)) {
+      sound.playLineClear(cleared);
+      addFloatingText('+' + ((base + comboBonus) * this.level), '#06ffa5', 16);
+      if (cleared >= 2) triggerScreenShake(3, 200);
+    }
+    if (this.combo > 0) {
+      sound.playCombo(this.combo + 1);
+      addFloatingText('COMBO x' + (this.combo + 1), '#00d9ff', 14);
+      checkEventAchievement('combo', this.combo + 1);
+      trackGameEvent('combo', this.combo + 1);
+    }
+    if (b2bEligible && this.backToBack && this.backToBackCount > 0) {
+      sound.playB2B();
+      addFloatingText('BACK-TO-BACK!', '#ff006e', 14);
+      checkEventAchievement('b2b', this.backToBackCount);
+      trackGameEvent('b2b');
+    }
+    if (perfectClear) {
+      sound.playPerfectClear();
+      addFloatingText('PERFECT CLEAR!', '#ffd650', 28);
+      checkEventAchievement('perfect_clear');
+      trackGameEvent('perfect_clear');
+      triggerScreenShake(12, 500);
+    }
+    // Level-up check
+    const prevLevel = 1 + Math.floor((this.lines - cleared) / 10);
+    if (this.level > prevLevel) {
+      sound.playLevelUp();
+      addFloatingText('LEVEL ' + this.level, '#06ffa5', 16);
+      checkEventAchievement('level', this.level);
+    }
+
     this.spawn(this.next);
     this.next = this.makePiece(this.nextKind());
   }
 
   addGarbage(n) {
-    for (let i = 0; i < n; i++) {
+    const adjustedN = Math.max(1, Math.round(n * (roomSettings.garbageMultiplier || 1)));
+    for (let i = 0; i < adjustedN; i++) {
       const hole = Math.floor(this.rng.next() * COLS);
       const row = Array(COLS).fill('8');
       row[hole] = '.';
@@ -364,13 +805,15 @@ class Game {
     // Track elapsed time for progressive difficulty
     this.elapsedMs += dtMs;
     
-    // Speed calculation with both level and time-based progression
-    // Base speed from level + additional difficulty from elapsed time
-    // Every 60 seconds adds difficulty equivalent to ~1 level
-    const timeDifficulty = Math.floor(this.elapsedMs / 60000); // Difficulty tier every minute
-    const totalLevel = this.level + timeDifficulty;
+    // Check survival achievement
+    checkEventAchievement('survive', this.elapsedMs);
     
-    const speed = this.softDrop ? 200 : Math.max(80, 700 - (totalLevel - 1) * 45);
+    // Speed calculation with both level and time-based progression
+    const timeDifficulty = Math.floor(this.elapsedMs / 60000);
+    const totalLevel = this.level + timeDifficulty;
+    const speedMult = roomSettings.speedMultiplier || 1;
+    
+    const speed = this.softDrop ? 200 : Math.max(80, (700 - (totalLevel - 1) * 45) / speedMult);
     this.fallMs += dtMs;
 
     while (this.fallMs >= speed) {
@@ -517,6 +960,39 @@ const spectatorBanner = document.getElementById('spectatorBanner');
 
 // Theme selector
 const themeOptions = document.getElementById('themeOptions');
+
+// New feature DOM elements
+const cardAI = document.getElementById('cardAI');
+const cardStats = document.getElementById('cardStats');
+const cardAchievements = document.getElementById('cardAchievements');
+const cardReplays = document.getElementById('cardReplays');
+const statsPage = document.getElementById('statsPage');
+const achievementsPage = document.getElementById('achievementsPage');
+const replaysPage = document.getElementById('replaysPage');
+const aiSetupPage = document.getElementById('aiSetupPage');
+const aiDiffSlider = document.getElementById('aiDiffSlider');
+const aiDiffLabel = document.getElementById('aiDiffLabel');
+const btnStartAI = document.getElementById('btnStartAI');
+const btnBackFromAI = document.getElementById('btnBackFromAI');
+const btnBackFromStats = document.getElementById('btnBackFromStats');
+const btnBackFromAchievements = document.getElementById('btnBackFromAchievements');
+const btnBackFromReplays = document.getElementById('btnBackFromReplays');
+const btnClearStats = document.getElementById('btnClearStats');
+const btnClearAchievements = document.getElementById('btnClearAchievements');
+const btnSaveReplay = document.getElementById('btnSaveReplay');
+const btnExportReplay = document.getElementById('btnExportReplay');
+const btnImportReplay = document.getElementById('btnImportReplay');
+const statsContent = document.getElementById('statsContent');
+const achievementsList = document.getElementById('achievementsList');
+const replaysList = document.getElementById('replaysList');
+const soundToggleBtn = document.getElementById('soundToggleBtn');
+const musicToggleBtn = document.getElementById('musicToggleBtn');
+const volumeSlider = document.getElementById('volumeSlider');
+// Room settings elements
+const roomStartLevel = document.getElementById('roomStartLevel');
+const roomGarbageMult = document.getElementById('roomGarbageMult');
+const roomSpeedMult = document.getElementById('roomSpeedMult');
+const roomSettingsPanel = document.getElementById('roomSettingsPanel');
 
 let lastOppScores = [-1, -1, -1];
 let lastOppLines = [-1, -1, -1];
@@ -706,6 +1182,10 @@ function backToMenuFromGame() {
   mode = 'classic';
   isSpectator = false;
   game.gameOver = true;
+  sound.stopMusic();
+  replayPlayer = null;
+  aiOpponent = null;
+  aiGame = null;
   welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
@@ -730,6 +1210,7 @@ function showGameOver() {
   finalScore.textContent = game.score;
   finalLines.textContent = game.lines;
   finalTime.textContent = game.getElapsedTimeFormatted();
+  if (btnSaveReplay) { btnSaveReplay.textContent = '💾 Save Replay'; btnSaveReplay.disabled = false; }
   setStatus('Game Over');
 }
 
@@ -743,6 +1224,8 @@ function playAgain() {
     startClassic();
   } else if (mode === 'online') {
     startOnline();
+  } else if (mode === 'ai') {
+    startAIMode();
   }
 }
 
@@ -752,6 +1235,10 @@ function gameOverBackToMenu() {
   mode = 'classic';
   isSpectator = false;
   game.gameOver = true;
+  sound.stopMusic();
+  replayPlayer = null;
+  aiOpponent = null;
+  aiGame = null;
   welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
@@ -782,19 +1269,29 @@ function startClassic() {
   game = new Game();
   sentGameOver = false;
   onlineReady = false;
+  replayRecorder = new ReplayRecorder(game.seed);
+  floatingTexts = [];
+  aiOpponent = null;
+  aiGame = null;
+  replayPlayer = null;
   if (ws) { ws.close(); ws = null; }
-  updatePlayerCount(1); // Solo mode - show only player 1 board
+  updatePlayerCount(1);
   menu.classList.remove('active');
   leaderboardPage.classList.remove('active');
   welcomePage.classList.remove('active');
   gameOverMenu.classList.remove('active');
+  if (statsPage) statsPage.classList.remove('active');
+  if (achievementsPage) achievementsPage.classList.remove('active');
+  if (replaysPage) replaysPage.classList.remove('active');
+  if (aiSetupPage) aiSetupPage.classList.remove('active');
   gameContainer.style.display = 'flex';
   if (gameChatBox) gameChatBox.style.display = 'none';
   if (spectatorBanner) spectatorBanner.style.display = 'none';
   if (pieceStatsPanel) pieceStatsPanel.style.display = '';
-  // Reset player 1 board title
   const p1Title = document.querySelector('#player1Board .playerTitle');
   if (p1Title) p1Title.textContent = 'You';
+  sound.init();
+  sound.startMusic();
   lastTs = performance.now();
   requestAnimationFrame(loop);
   setStatus('Classic mode started');
@@ -954,10 +1451,19 @@ function connectOnline() {
       setStatus(`Lobby: ${msg.players ? msg.players.length : 1} player(s)${msg.spectators && msg.spectators.length ? ' + ' + msg.spectators.length + ' spectator(s)' : ''}`);
     } else if (msg.type === 'start') {
       const seed = Number(msg.seed || Math.floor(Math.random() * 1_000_000));
+      // Apply room settings from server
+      if (msg.settings) {
+        roomSettings = { startLevel: msg.settings.startLevel || 1, garbageMultiplier: msg.settings.garbageMultiplier || 1, speedMultiplier: msg.settings.speedMultiplier || 1 };
+      }
       game = new Game(seed);
+      if (roomSettings.startLevel > 1) { game.level = roomSettings.startLevel; game.lines = (roomSettings.startLevel - 1) * 10; }
       sentGameOver = false;
       onlineReady = true;
       playerSlot = Number(msg.you || 0);
+      replayRecorder = new ReplayRecorder(seed);
+      floatingTexts = [];
+      sound.init();
+      sound.startMusic();
       
       // Hide lobby and form states
       lobbyState.classList.remove('active');
@@ -1039,7 +1545,7 @@ function connectOnline() {
     } else if (msg.type === 'attack') {
       if (!isSpectator) {
         const amt = Number(msg.amount || 0);
-        if (amt > 0) game.addGarbage(amt);
+        if (amt > 0) { game.addGarbage(amt); sound.playGarbage(); triggerScreenShake(4, 200); }
       }
     } else if (msg.type === 'gameover') {
       const playerIdx = Number(msg.player || 0);
@@ -1324,12 +1830,18 @@ function loop(ts) {
       if (game.gameOver && !sentGameOver) {
         sentGameOver = true;
         send({ type: 'gameover' });
+        sound.playGameOver();
+        sound.stopMusic();
+        updateStatsOnGameEnd(game);
       }
     }
   } else if (!isPaused && mode === 'classic') {
     updateParticles(dt);
     if (game.gameOver && !sentGameOver) {
       sentGameOver = true;
+      sound.playGameOver();
+      sound.stopMusic();
+      updateStatsOnGameEnd(game);
       const playerName = nameInput.value || 'Player';
       const gameTime = game.getElapsedTimeFormatted();
       saveLeaderboard({
@@ -1340,31 +1852,68 @@ function loop(ts) {
         timestamp: Date.now()
       });
     }
+  } else if (!isPaused && mode === 'ai') {
+    // AI mode update
+    game.update(dt);
+    updateParticles(dt);
+    if (aiOpponent && aiGame && !aiGame.gameOver) {
+      aiGame.update(dt);
+      aiOpponent.update(dt);
+    }
+    if (game.gameOver && !sentGameOver) {
+      sentGameOver = true;
+      sound.playGameOver();
+      sound.stopMusic();
+      updateStatsOnGameEnd(game);
+    }
+  } else if (!isPaused && mode === 'replay') {
+    // Replay playback
+    if (replayPlayer && !replayPlayer.finished) {
+      replayPlayer.update(dt);
+    }
+    updateParticles(dt);
   } else if (!isPaused) {
     updateParticles(dt);
   }
 
-  drawGrid(bctx, game.grid);
-  if (!game.gameOver) drawPiece(bctx, game.current);
+  // Update floating texts and screen shake
+  updateFloatingTexts(dt);
+
+  // Apply screen shake to main canvas
+  bctx.save();
+  bctx.translate(screenShake.x, screenShake.y);
+
+  // Determine which game to render (replay mode uses replayPlayer.game)
+  const renderGame = mode === 'replay' && replayPlayer ? replayPlayer.game : game;
+
+  drawGrid(bctx, renderGame.grid);
+  if (!renderGame.gameOver) drawPiece(bctx, renderGame.current);
   drawParticles(bctx);
+  drawFloatingTexts(bctx);
+  bctx.restore();
   
   // Draw next piece for player
-  drawNextPiece(nextCtx, game.next, nextCanvas.width, nextCanvas.height);
+  drawNextPiece(nextCtx, renderGame.next, nextCanvas.width, nextCanvas.height);
 
   if (mode === 'online') {
     for (let i = 0; i < 3; i++) {
       drawGrid(octxes[i], opponents[i].grid);
       if (opponents[i].piece) drawOpponentPiece(octxes[i], opponents[i].piece);
-      // Draw opponent next piece previews
       if (opponents[i].next && i < nextCtxes.length - 1) {
         const nextPreviewSize = (i === 0) ? nextCanvas.width : next2Canvas.width;
         drawNextPiece(nextCtxes[i + 1], opponents[i].next, nextPreviewSize, nextPreviewSize);
       }
     }
+  } else if (mode === 'ai' && aiGame) {
+    drawGrid(octxes[0], aiGame.grid);
+    if (!aiGame.gameOver) drawPiece(octxes[0], aiGame.current);
+    drawNextPiece(nextCtxes[1], aiGame.next, next2Canvas.width, next2Canvas.height);
+    oppScoreEls[0].textContent = aiGame.score;
+    oppLinesEls[0].textContent = aiGame.lines;
+    oppStatusEls[0].textContent = aiGame.gameOver ? 'Topped Out' : 'Playing';
+    for (let i = 1; i < 3; i++) drawGrid(octxes[i], blankGrid);
   } else {
-    for (let i = 0; i < 3; i++) {
-      drawGrid(octxes[i], blankGrid);
-    }
+    for (let i = 0; i < 3; i++) drawGrid(octxes[i], blankGrid);
   }
 
   if (game.score !== lastScore) {
@@ -1395,10 +1944,10 @@ function loop(ts) {
   updateB2BIndicator();
 
   if (game.gameOver) {
-    setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
+    setStatus(mode === 'online' ? 'Game over (you topped out)' : mode === 'ai' ? 'Game over' : 'Game over');
     if (!shownGameOver) {
       shownGameOver = true;
-      showGameOver();
+      if (mode !== 'replay') showGameOver();
     }
     if (mode === 'online') {
       checkWinner(); // Check if you won or if it's a draw
@@ -1443,17 +1992,18 @@ window.addEventListener('keydown', (e) => {
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
   if (game.gameOver) return;
   if (mode === 'online' && !onlineReady) return;
+  if (mode === 'replay') return; // No input during replay
   if (isPaused) return;
 
   if (e.key === 'ArrowLeft') game.move(-1, 0);
   else if (e.key === 'ArrowRight') game.move(1, 0);
   else if (e.key === 'ArrowUp') game.rotateCurrent();
   else if (e.key === ' ') game.hardDrop();
-  else if (e.key === 'ArrowDown') game.softDrop = true;
+  else if (e.key === 'ArrowDown') { game.softDrop = true; if (replayRecorder) replayRecorder.record('softOn'); }
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.key === 'ArrowDown') game.softDrop = false;
+  if (e.key === 'ArrowDown') { game.softDrop = false; if (replayRecorder) replayRecorder.record('softOff'); }
 });
 
 function loadLeaderboard() {
@@ -1510,6 +2060,178 @@ function hideLeaderboard() {
   gameContainer.style.display = 'none';
 }
 
+// ==================== AI MODE ====================
+function startAIMode() {
+  mode = 'ai';
+  isPaused = false;
+  shownGameOver = false;
+  isSpectator = false;
+  sentGameOver = false;
+  modeEl.textContent = 'Mode: VS AI';
+  const seed = Math.floor(Math.random() * 1_000_000);
+  game = new Game(seed);
+  aiGame = new Game(seed);
+  aiOpponent = new TetrisAI(aiDifficulty);
+  aiOpponent.setGame(aiGame);
+  replayRecorder = new ReplayRecorder(seed);
+  floatingTexts = [];
+  
+  updatePlayerCount(2);
+  oppNameEls[0].textContent = 'AI (' + ['Easy', 'Medium', 'Hard', 'Expert'][Math.min(3, Math.floor(aiDifficulty * 4))] + ')';
+  oppStatusEls[0].textContent = 'Playing';
+  
+  welcomePage.classList.remove('active');
+  menu.classList.remove('active');
+  leaderboardPage.classList.remove('active');
+  gameOverMenu.classList.remove('active');
+  aiSetupPage.classList.remove('active');
+  gameContainer.style.display = 'flex';
+  if (gameChatBox) gameChatBox.style.display = 'none';
+  if (spectatorBanner) spectatorBanner.style.display = 'none';
+  if (pieceStatsPanel) pieceStatsPanel.style.display = '';
+  const p1Title = document.querySelector('#player1Board .playerTitle');
+  if (p1Title) p1Title.textContent = 'You';
+  
+  sound.init();
+  sound.startMusic();
+  lastTs = performance.now();
+  requestAnimationFrame(loop);
+  setStatus('VS AI - ' + ['Easy', 'Medium', 'Hard', 'Expert'][Math.min(3, Math.floor(aiDifficulty * 4))]);
+}
+
+// ==================== STATS DASHBOARD ====================
+function showStatsPage() {
+  welcomePage.classList.remove('active');
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.remove('active');
+  if (statsPage) {
+    statsPage.classList.add('active');
+    displayStats();
+  }
+}
+function displayStats() {
+  if (!statsContent) return;
+  const s = loadStats();
+  const avgScore = s.gamesPlayed > 0 ? Math.round(s.totalScore / s.gamesPlayed) : 0;
+  const totalMinutes = Math.floor(s.totalTime / 60000);
+  const avgLines = s.gamesPlayed > 0 ? Math.round(s.totalLines / s.gamesPlayed) : 0;
+  statsContent.innerHTML = `
+    <div class="statRow"><span class="statLabel">Games Played</span><span class="statValue">${s.gamesPlayed}</span></div>
+    <div class="statRow"><span class="statLabel">Total Score</span><span class="statValue">${s.totalScore.toLocaleString()}</span></div>
+    <div class="statRow"><span class="statLabel">Best Score</span><span class="statValue">${s.bestScore.toLocaleString()}</span></div>
+    <div class="statRow"><span class="statLabel">Average Score</span><span class="statValue">${avgScore.toLocaleString()}</span></div>
+    <div class="statRow"><span class="statLabel">Total Lines</span><span class="statValue">${s.totalLines}</span></div>
+    <div class="statRow"><span class="statLabel">Best Lines (1 game)</span><span class="statValue">${s.bestLines}</span></div>
+    <div class="statRow"><span class="statLabel">Average Lines</span><span class="statValue">${avgLines}</span></div>
+    <div class="statRow"><span class="statLabel">Best Combo</span><span class="statValue">${s.bestCombo}</span></div>
+    <div class="statRow"><span class="statLabel">Total Tetris Clears</span><span class="statValue">${s.totalTetris}</span></div>
+    <div class="statRow"><span class="statLabel">Total T-Spins</span><span class="statValue">${s.totalTSpins}</span></div>
+    <div class="statRow"><span class="statLabel">Perfect Clears</span><span class="statValue">${s.totalPerfectClears}</span></div>
+    <div class="statRow"><span class="statLabel">Back-to-Back Bonuses</span><span class="statValue">${s.totalB2B}</span></div>
+    <div class="statRow"><span class="statLabel">Pieces Placed</span><span class="statValue">${s.piecesPlaced.toLocaleString()}</span></div>
+    <div class="statRow"><span class="statLabel">Total Play Time</span><span class="statValue">${totalMinutes} min</span></div>
+  `;
+}
+
+// ==================== ACHIEVEMENTS PAGE ====================
+function showAchievementsPage() {
+  welcomePage.classList.remove('active');
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.remove('active');
+  if (achievementsPage) {
+    achievementsPage.classList.add('active');
+    displayAchievements();
+  }
+}
+function displayAchievements() {
+  if (!achievementsList) return;
+  const unlocked = loadAchievements();
+  const count = Object.keys(unlocked).length;
+  achievementsList.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'achProgress';
+  header.textContent = `${count} / ${ACHIEVEMENTS.length} Unlocked`;
+  achievementsList.appendChild(header);
+  for (const ach of ACHIEVEMENTS) {
+    const div = document.createElement('div');
+    div.className = 'achCard' + (unlocked[ach.id] ? ' unlocked' : ' locked');
+    div.innerHTML = `<span class="achCardIcon">${ach.icon}</span><div class="achCardInfo"><span class="achCardName">${ach.name}</span><span class="achCardDesc">${ach.desc}</span></div>${unlocked[ach.id] ? '<span class="achUnlocked">✓</span>' : '<span class="achLocked">🔒</span>'}`;
+    achievementsList.appendChild(div);
+  }
+}
+
+// ==================== REPLAYS PAGE ====================
+function showReplaysPage() {
+  welcomePage.classList.remove('active');
+  gameContainer.style.display = 'none';
+  leaderboardPage.classList.remove('active');
+  if (replaysPage) {
+    replaysPage.classList.add('active');
+    displayReplays();
+  }
+}
+function displayReplays() {
+  if (!replaysList) return;
+  savedReplays = JSON.parse(localStorage.getItem('tetrisReplays') || '[]');
+  replaysList.innerHTML = '';
+  if (savedReplays.length === 0) {
+    replaysList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--color-text-dim);">No replays saved yet. Complete a game to save a replay!</div>';
+    return;
+  }
+  savedReplays.forEach((r, idx) => {
+    const div = document.createElement('div');
+    div.className = 'replayEntry';
+    const date = new Date(r.date).toLocaleDateString();
+    div.innerHTML = `<div class="replayInfo"><span class="replayName">${r.name || 'Replay ' + (idx + 1)}</span><span class="replayMeta">Score: ${r.score} | Lines: ${r.lines} | ${date}</span></div><div class="replayActions"><button class="btn replayPlayBtn" data-idx="${idx}">▶ Play</button><button class="btn replayDeleteBtn" data-idx="${idx}">✕</button></div>`;
+    replaysList.appendChild(div);
+  });
+  // Attach event listeners
+  replaysList.querySelectorAll('.replayPlayBtn').forEach(btn => {
+    btn.addEventListener('click', () => startReplay(Number(btn.dataset.idx)));
+  });
+  replaysList.querySelectorAll('.replayDeleteBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      savedReplays.splice(Number(btn.dataset.idx), 1);
+      localStorage.setItem('tetrisReplays', JSON.stringify(savedReplays));
+      displayReplays();
+    });
+  });
+}
+function startReplay(idx) {
+  const data = savedReplays[idx];
+  if (!data) return;
+  mode = 'replay';
+  isPaused = false;
+  shownGameOver = false;
+  sentGameOver = true; // Don't trigger game over logic
+  replayPlayer = new ReplayPlayer(data);
+  game = replayPlayer.game;
+  floatingTexts = [];
+  
+  updatePlayerCount(1);
+  replaysPage.classList.remove('active');
+  achievementsPage.classList.remove('active');
+  statsPage.classList.remove('active');
+  welcomePage.classList.remove('active');
+  gameContainer.style.display = 'flex';
+  if (gameChatBox) gameChatBox.style.display = 'none';
+  if (spectatorBanner) spectatorBanner.style.display = 'none';
+  modeEl.textContent = 'Mode: Replay';
+  const p1Title = document.querySelector('#player1Board .playerTitle');
+  if (p1Title) p1Title.textContent = 'Replay: ' + (data.name || 'Untitled');
+  
+  lastTs = performance.now();
+  requestAnimationFrame(loop);
+  setStatus('Playing replay...');
+}
+
+// ==================== SOUND CONTROLS ====================
+function updateSoundButtons() {
+  if (soundToggleBtn) soundToggleBtn.textContent = sound.enabled ? '🔊 SFX: On' : '🔇 SFX: Off';
+  if (musicToggleBtn) musicToggleBtn.textContent = sound.musicEnabled ? '🎵 Music: On' : '🎵 Music: Off';
+  if (volumeSlider) volumeSlider.value = sound.volume * 100;
+}
+
 // Card click handlers from welcome page
 cardClassic.addEventListener('click', startClassic);
 cardOnline.addEventListener('click', () => {
@@ -1525,9 +2247,95 @@ cardLeaderboard.addEventListener('click', () => {
   displayLeaderboard();
 });
 
+// New card click handlers
+if (cardAI) cardAI.addEventListener('click', () => {
+  welcomePage.classList.remove('active');
+  if (aiSetupPage) aiSetupPage.classList.add('active');
+});
+if (cardStats) cardStats.addEventListener('click', showStatsPage);
+if (cardAchievements) cardAchievements.addEventListener('click', showAchievementsPage);
+if (cardReplays) cardReplays.addEventListener('click', showReplaysPage);
+
+// AI setup
+if (btnStartAI) btnStartAI.addEventListener('click', startAIMode);
+if (btnBackFromAI) btnBackFromAI.addEventListener('click', () => {
+  if (aiSetupPage) aiSetupPage.classList.remove('active');
+  welcomePage.classList.add('active');
+});
+if (aiDiffSlider) aiDiffSlider.addEventListener('input', () => {
+  aiDifficulty = aiDiffSlider.value / 100;
+  if (aiDiffLabel) aiDiffLabel.textContent = ['Easy', 'Medium', 'Hard', 'Expert'][Math.min(3, Math.floor(aiDifficulty * 4))];
+});
+
+// Back buttons for new pages
+if (btnBackFromStats) btnBackFromStats.addEventListener('click', () => {
+  if (statsPage) statsPage.classList.remove('active');
+  welcomePage.classList.add('active');
+});
+if (btnBackFromAchievements) btnBackFromAchievements.addEventListener('click', () => {
+  if (achievementsPage) achievementsPage.classList.remove('active');
+  welcomePage.classList.add('active');
+});
+if (btnBackFromReplays) btnBackFromReplays.addEventListener('click', () => {
+  if (replaysPage) replaysPage.classList.remove('active');
+  welcomePage.classList.add('active');
+});
+if (btnClearStats) btnClearStats.addEventListener('click', () => {
+  if (confirm('Clear all stats?')) { localStorage.removeItem('tetrisStats'); displayStats(); }
+});
+if (btnClearAchievements) btnClearAchievements.addEventListener('click', () => {
+  if (confirm('Reset all achievements?')) { localStorage.removeItem('tetrisAchievements'); displayAchievements(); }
+});
+
+// Save replay button in game over
+if (btnSaveReplay) btnSaveReplay.addEventListener('click', () => {
+  const name = prompt('Name this replay:', 'Replay ' + (savedReplays.length + 1));
+  if (name !== null) { saveReplay(name); btnSaveReplay.textContent = '✓ Saved!'; btnSaveReplay.disabled = true; }
+});
+if (btnExportReplay) btnExportReplay.addEventListener('click', () => {
+  if (savedReplays.length === 0) return alert('No replays to export');
+  const blob = new Blob([JSON.stringify(savedReplays)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tetris-replays.json';
+  a.click();
+});
+if (btnImportReplay) btnImportReplay.addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (Array.isArray(data)) { savedReplays.push(...data); }
+        else if (data.seed && data.inputs) { savedReplays.push(data); }
+        if (savedReplays.length > 50) savedReplays.splice(0, savedReplays.length - 50);
+        localStorage.setItem('tetrisReplays', JSON.stringify(savedReplays));
+        displayReplays();
+      } catch (e) { alert('Invalid replay file'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+
+// Sound controls
+if (soundToggleBtn) soundToggleBtn.addEventListener('click', () => { sound.init(); sound.toggleSound(); updateSoundButtons(); });
+if (musicToggleBtn) musicToggleBtn.addEventListener('click', () => { sound.init(); sound.toggleMusic(); updateSoundButtons(); });
+if (volumeSlider) volumeSlider.addEventListener('input', () => { sound.init(); sound.setVolume(volumeSlider.value / 100); updateSoundButtons(); });
+
+// Room settings listeners
+if (roomStartLevel) roomStartLevel.addEventListener('change', () => { roomSettings.startLevel = Number(roomStartLevel.value) || 1; });
+if (roomGarbageMult) roomGarbageMult.addEventListener('change', () => { roomSettings.garbageMultiplier = Number(roomGarbageMult.value) || 1; });
+if (roomSpeedMult) roomSpeedMult.addEventListener('change', () => { roomSettings.speedMultiplier = Number(roomSpeedMult.value) || 1; });
+
 btnConnect.addEventListener('click', connectOnline);
 btnStartGame.addEventListener('click', () => {
-  send({ type: 'startgame' });
+  send({ type: 'startgame', settings: roomSettings });
 });
 btnBackFromOnline.addEventListener('click', () => {
   if (ws) { ws.close(); ws = null; }
@@ -1593,9 +2401,14 @@ window.addEventListener('DOMContentLoaded', () => {
   leaderboardPage.classList.remove('active');
   pauseMenu.classList.remove('active');
   gameOverMenu.classList.remove('active');
+  if (statsPage) statsPage.classList.remove('active');
+  if (achievementsPage) achievementsPage.classList.remove('active');
+  if (replaysPage) replaysPage.classList.remove('active');
+  if (aiSetupPage) aiSetupPage.classList.remove('active');
   if (gameChatBox) gameChatBox.style.display = 'none';
   if (spectatorBanner) spectatorBanner.style.display = 'none';
   // Apply saved theme
   applyTheme(currentThemeName);
   updatePieceStatsColors();
+  updateSoundButtons();
 });

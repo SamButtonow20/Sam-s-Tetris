@@ -41,7 +41,19 @@
             <div class="modeFeatures">
               <span>✓ 1v1 to 4-Player</span>
               <span>✓ Real-time Sync</span>
-              <span>✓ Attack Power-ups</span>
+              <span>✓ Custom Room Settings</span>
+            </div>
+          </div>
+
+          <!-- VS AI Card -->
+          <div class="modeCard" id="cardAI">
+            <div class="modeIcon">🤖</div>
+            <h2 class="modeName">VS AI</h2>
+            <p class="modeDescription">Challenge the AI opponent at adjustable difficulty. See if you can beat the machine!</p>
+            <div class="modeFeatures">
+              <span>✓ Adjustable Difficulty</span>
+              <span>✓ Same Piece Sequence</span>
+              <span>✓ Head-to-Head</span>
             </div>
           </div>
 
@@ -49,11 +61,47 @@
           <div class="modeCard" id="cardLeaderboard">
             <div class="modeIcon">🏆</div>
             <h2 class="modeName">Leaderboard</h2>
-            <p class="modeDescription">View top scores and track your progress. Compete globally for the highest scores.</p>
+            <p class="modeDescription">View top scores and track your progress. Compete for the highest scores.</p>
             <div class="modeFeatures">
               <span>✓ Top 50 Scores</span>
               <span>✓ Rankings</span>
               <span>✓ Best Times</span>
+            </div>
+          </div>
+
+          <!-- Stats Card -->
+          <div class="modeCard" id="cardStats">
+            <div class="modeIcon">📊</div>
+            <h2 class="modeName">Stats</h2>
+            <p class="modeDescription">View your lifetime statistics — total lines, games played, average score, and more.</p>
+            <div class="modeFeatures">
+              <span>✓ Lifetime Stats</span>
+              <span>✓ Personal Bests</span>
+              <span>✓ Detailed Breakdown</span>
+            </div>
+          </div>
+
+          <!-- Achievements Card -->
+          <div class="modeCard" id="cardAchievements">
+            <div class="modeIcon">🏅</div>
+            <h2 class="modeName">Achievements</h2>
+            <p class="modeDescription">Unlock badges and track your Tetris milestones in the trophy case.</p>
+            <div class="modeFeatures">
+              <span>✓ 16 Achievements</span>
+              <span>✓ Trophy Case</span>
+              <span>✓ Milestone Tracking</span>
+            </div>
+          </div>
+
+          <!-- Replays Card -->
+          <div class="modeCard" id="cardReplays">
+            <div class="modeIcon">🎬</div>
+            <h2 class="modeName">Replays</h2>
+            <p class="modeDescription">Watch recordings of your best games. Save, export, and share replays.</p>
+            <div class="modeFeatures">
+              <span>✓ Record Games</span>
+              <span>✓ Export/Import</span>
+              <span>✓ Playback</span>
             </div>
           </div>
         </div>
@@ -61,6 +109,13 @@
         <p class="welcomeControls">
           <strong>Controls:</strong> ← → Move • ↑ Rotate • Space Hard Drop • ↓ Soft Drop • ESC Pause
         </p>
+
+        <!-- Sound Controls -->
+        <div class="soundControls">
+          <button class="themeBtn" id="soundToggleBtn">🔊 SFX: On</button>
+          <button class="themeBtn" id="musicToggleBtn">🎵 Music: On</button>
+          <input type="range" id="volumeSlider" min="0" max="100" value="50" class="volumeSlider" title="Volume" />
+        </div>
 
         <!-- Theme Selector -->
         <div class="themeSelector" id="themeSelector">
@@ -114,6 +169,7 @@
         </div>
         <div class="gameOverButtons">
           <button id="btnPlayAgain" class="btn btn-accent">Play Again</button>
+          <button id="btnSaveReplay" class="btn btn-primary">💾 Save Replay</button>
           <button id="btnGameOverBackToMenu" class="btn btn-primary">Back to Menu</button>
           <button id="btnLeaderboardGameOver" class="btn btn-primary">View Leaderboard</button>
         </div>
@@ -176,6 +232,24 @@
             <div id="playersList" class="playersListItems"></div>
           </div>
           <button id="btnStartGame" class="btn btn-accent">Start Game</button>
+          
+          <!-- Room Settings -->
+          <div class="roomSettingsPanel" id="roomSettingsPanel">
+            <h3 class="chatTitle">⚙️ Room Settings</h3>
+            <div class="settingRow">
+              <label>Starting Level:</label>
+              <select id="roomStartLevel"><option value="1" selected>1</option><option value="5">5</option><option value="10">10</option><option value="15">15</option></select>
+            </div>
+            <div class="settingRow">
+              <label>Garbage Multiplier:</label>
+              <select id="roomGarbageMult"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+            </div>
+            <div class="settingRow">
+              <label>Speed Multiplier:</label>
+              <select id="roomSpeedMult"><option value="0.5">0.5x (Slow)</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x (Fast)</option></select>
+            </div>
+          </div>
+
           <button id="btnLeaveLobby" class="btn btn-primary" style="margin-top: 10px;">Back to Menu</button>
           <div class="waitingForPlayers" id="waitingForPlayers">Waiting for other players...</div>
           
@@ -208,6 +282,53 @@
         </div>
         <button id="btnBackFromLeaderboard" class="btn btn-accent">Back to Menu</button>
         <button id="btnClearLeaderboard" class="btn btn-secondary">Clear Scores</button>
+      </div>
+    </div>
+
+    <!-- AI Setup Page -->
+    <div class="aiSetupPage" id="aiSetupPage">
+      <div class="pageContent">
+        <h2>🤖 VS AI</h2>
+        <p style="color:var(--color-text-dim);margin-bottom:20px;">Challenge the AI opponent. You both get the same piece sequence!</p>
+        <div class="settingRow" style="margin-bottom:20px;">
+          <label>AI Difficulty: <span id="aiDiffLabel">Medium</span></label>
+          <input type="range" id="aiDiffSlider" min="0" max="100" value="50" class="volumeSlider" />
+        </div>
+        <button id="btnStartAI" class="btn btn-accent" style="width:100%;margin-bottom:10px;">Start Match</button>
+        <button id="btnBackFromAI" class="btn btn-primary" style="width:100%;">Back to Menu</button>
+      </div>
+    </div>
+
+    <!-- Stats Dashboard Page -->
+    <div class="statsPage" id="statsPage">
+      <div class="pageContent">
+        <h2>📊 Player Stats</h2>
+        <div class="gameOverStats" id="statsContent"></div>
+        <button id="btnBackFromStats" class="btn btn-accent" style="width:100%;margin-bottom:8px;">Back to Menu</button>
+        <button id="btnClearStats" class="btn btn-secondary" style="width:100%;">Reset Stats</button>
+      </div>
+    </div>
+
+    <!-- Achievements Page -->
+    <div class="achievementsPage" id="achievementsPage">
+      <div class="pageContent">
+        <h2>🏅 Achievements</h2>
+        <div id="achievementsList" class="achievementsList"></div>
+        <button id="btnBackFromAchievements" class="btn btn-accent" style="width:100%;margin-bottom:8px;">Back to Menu</button>
+        <button id="btnClearAchievements" class="btn btn-secondary" style="width:100%;">Reset Achievements</button>
+      </div>
+    </div>
+
+    <!-- Replays Page -->
+    <div class="replaysPage" id="replaysPage">
+      <div class="pageContent">
+        <h2>🎬 Replays</h2>
+        <div id="replaysList" class="replaysList"></div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button id="btnExportReplay" class="btn btn-primary" style="flex:1;">📤 Export All</button>
+          <button id="btnImportReplay" class="btn btn-primary" style="flex:1;">📥 Import</button>
+        </div>
+        <button id="btnBackFromReplays" class="btn btn-accent" style="width:100%;margin-top:8px;">Back to Menu</button>
       </div>
     </div>
 
