@@ -62,8 +62,7 @@ body {
   font-family: 'Consolas', 'Monaco', monospace;
   background: var(--color-bg-deep);
   color: var(--color-text);
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   background-image: 
     radial-gradient(2px 2px at 20px 30px, #eee, rgba(238, 238, 238, 0)),
     radial-gradient(2px 2px at 60px 70px, #fff, rgba(255, 255, 255, 0)),
@@ -446,43 +445,173 @@ input:focus {
   animation: float 4s ease-out infinite;
   animation-delay: 0.5s;
   will-change: transform;
+  min-height: calc(100vh - 220px);
+  display: flex;
+  flex-direction: column;
 }
 
 .gameArea {
-  display: flex;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
   justify-content: center;
-  align-items: flex-start;
-  max-width: 1000px;
+  align-items: stretch;
+  flex: 1;
+  max-width: 900px;
   margin: 0 auto;
-  flex-wrap: wrap;
-}
-
-.mainPlayer {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.opponentsList {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 580px;
+  width: 100%;
+  padding: 16px;
 }
 
 .playerCard {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   padding: 12px;
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.6), rgba(21, 29, 58, 0.6));
   border: 1px solid rgba(0, 217, 255, 0.2);
   border-radius: 4px;
   animation: smoothFade 0.4s ease-out;
   will-change: transform;
+  align-items: center;
+}
+
+.playerBoard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(15, 21, 51, 0.6), rgba(21, 29, 58, 0.6));
+  border: 1px solid rgba(0, 217, 255, 0.2);
+  border-radius: 4px;
+  animation: smoothFade 0.4s ease-out;
+  will-change: transform;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: fit-content;
+}
+
+.boardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(131, 56, 236, 0.2);
+}
+
+.playerTitle {
+  margin: 0;
+  color: var(--color-accent-cyan);
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.levelBadge, .statusBadge {
+  background: rgba(6, 255, 165, 0.2);
+  color: var(--color-accent-green);
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.statusBadge {
+  background: rgba(255, 0, 110, 0.2);
+  color: var(--color-accent-pink);
+}
+
+.mainCanvas {
+  flex-shrink: 0;
+}
+
+.boardFooter {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  width: 100%;
+  font-size: 0.8rem;
+}
+
+.footerStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.footerLabel {
+  color: var(--color-text-dim);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.footerValue {
+  color: var(--color-accent-green);
+  font-size: 1.1rem;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 8px var(--color-accent-green);
+}
+
+.nextPieceBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(131, 56, 236, 0.1);
+  border: 1px solid rgba(131, 56, 236, 0.3);
+  border-radius: 3px;
+  width: 100%;
+}
+
+.controlsFooter {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(15, 21, 51, 0.8), rgba(21, 29, 58, 0.8));
+  border-top: 1px solid rgba(131, 56, 236, 0.2);
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.controlsContent {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.controlsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.controlsLabel {
+  color: var(--color-accent-cyan);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.controlRow {
+  color: var(--color-text-dim);
+}
+
+.modeDisplay {
+  color: var(--color-accent-green);
+  font-weight: bold;
 }
 
 .opponentCard {
@@ -669,6 +798,28 @@ canvas:hover {
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .gameArea {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .playerBoard {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .boardHeader {
+    width: 100%;
+  }
+
+  canvas {
+    width: 100%;
+    height: auto;
+  }
+}
+
 @media (max-width: 768px) {
   .header h1 {
     font-size: 2.5rem;
@@ -676,57 +827,36 @@ canvas:hover {
   }
 
   .gameArea {
-    flex-direction: column;
-    max-width: 100%;
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
-  .mainPlayer {
-    align-items: center;
+  .gameContainer {
+    min-height: calc(100vh - 180px);
   }
 
-  .opponentsList {
-    flex-direction: row;
-    max-height: none;
-    flex-wrap: wrap;
-    justify-content: center;
+  .playerBoard canvas {
+    max-width: 160px;
+    height: auto;
   }
 
-  .opponentCard {
-    flex: 0 1 calc(50% - 6px);
-  }
-
-  .panel {
-    min-width: auto;
+  .boardHeader {
     width: 100%;
   }
 
-  .boardWrapper h3 {
+  .playerTitle {
     font-size: 0.8rem;
   }
 
-  .playerCard {
-    gap: 8px;
-    padding: 8px;
+  .controlsContent {
+    gap: 12px;
   }
 
-  #board {
-    max-width: 200px;
-    height: auto;
+  .controlsLabel {
+    font-size: 0.65rem;
   }
 
-  #board2, #board3, #board4 {
-    width: 100%;
-    height: auto;
-  }
-
-  #nextBoard {
-    max-width: 100px;
-    height: auto;
-  }
-
-  #nextBoard2, #nextBoard3, #nextBoard4 {
-    width: 100%;
-    height: auto;
+  .controlRow {
+    font-size: 0.65rem;
   }
 }

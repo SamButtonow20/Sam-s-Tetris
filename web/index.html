@@ -63,112 +63,107 @@
     <!-- Game Area -->
     <div class="gameContainer">
       <div class="gameArea">
-        <!-- LEFT: Main Player -->
-        <div class="mainPlayer">
-          <div class="playerCard">
-            <h3>You</h3>
-            <canvas id="board" width="280" height="560"></canvas>
-            <div class="nextPieceSection">
-              <div class="nextLabel">NEXT</div>
-              <canvas id="nextBoard" width="140" height="140" style="border: 2px solid var(--color-accent-green); margin-top: 6px;"></canvas>
+        <!-- 2x2 Grid Layout -->
+        <div class="playerBoard" id="player1Board">
+          <div class="boardHeader">
+            <h3 class="playerTitle">You</h3>
+            <span class="levelBadge">Level <span id="level">1</span></span>
+          </div>
+          <canvas id="board" width="200" height="400" class="mainCanvas"></canvas>
+          <div class="boardFooter">
+            <div class="footerStat">
+              <span class="footerLabel">Score</span>
+              <span id="score" class="footerValue">0</span>
+            </div>
+            <div class="footerStat">
+              <span class="footerLabel">Lines</span>
+              <span id="lines" class="footerValue">0</span>
             </div>
           </div>
-          <div class="playerStats">
-            <div class="stat">
-              <span class="label">Score</span>
-              <span id="score" class="value">0</span>
-            </div>
-            <div class="stat">
-              <span class="label">Lines</span>
-              <span id="lines" class="value">0</span>
-            </div>
-            <div class="stat">
-              <span class="label">Level</span>
-              <span id="level" class="value">1</span>
-            </div>
-          </div>
-          <div class="controlsPanel">
-            <div style="font-size: 0.75rem; line-height: 1.4; color: var(--color-text-dim);">
-              <div><strong style="color: var(--color-accent-cyan);">Controls</strong></div>
-              <div>← → Move | ↑ Rotate</div>
-              <div>↓ Drop | Space Hard</div>
-            </div>
-            <div style="margin-top: 8px; font-size: 0.7rem; color: var(--color-text-dim);">
-              <div id="mode" style="color: var(--color-accent-green);">Mode: Classic</div>
-            </div>
+          <div class="nextPieceBox">
+            <div class="nextLabel">NEXT</div>
+            <canvas id="nextBoard" width="100" height="100"></canvas>
           </div>
         </div>
 
-        <!-- RIGHT: Opponents -->
-        <div class="opponentsList">
-          <!-- Player 2 -->
-          <div class="opponentCard" id="player2Card">
-            <div class="oppHeader">
-              <h3 id="player2Name" style="margin: 0; flex: 1;">Player 2</h3>
-              <span id="status2" class="oppStatus">Ready</span>
+        <!-- Player 2 -->
+        <div class="playerBoard" id="player2Board">
+          <div class="boardHeader">
+            <h3 id="player2Name" class="playerTitle">Player 2</h3>
+            <span id="status2" class="statusBadge">Ready</span>
+          </div>
+          <canvas id="board2" width="200" height="400" class="mainCanvas"></canvas>
+          <div class="boardFooter">
+            <div class="footerStat">
+              <span class="footerLabel">Score</span>
+              <span id="score2" class="footerValue">0</span>
             </div>
-            <canvas id="board2" width="200" height="400"></canvas>
-            <div class="oppNextSection">
-              <div class="nextLabel">NEXT</div>
-              <canvas id="nextBoard2" width="100" height="100"></canvas>
-            </div>
-            <div class="oppStats">
-              <div class="stat">
-                <span class="label">Sc:</span>
-                <span id="score2" class="value">0</span>
-              </div>
-              <div class="stat">
-                <span class="label">Ln:</span>
-                <span id="lines2" class="value">0</span>
-              </div>
+            <div class="footerStat">
+              <span class="footerLabel">Lines</span>
+              <span id="lines2" class="footerValue">0</span>
             </div>
           </div>
+          <div class="nextPieceBox">
+            <div class="nextLabel">NEXT</div>
+            <canvas id="nextBoard2" width="100" height="100"></canvas>
+          </div>
+        </div>
 
-          <!-- Player 3 -->
-          <div class="opponentCard" id="player3Card">
-            <div class="oppHeader">
-              <h3 id="player3Name" style="margin: 0; flex: 1;">Player 3</h3>
-              <span id="status3" class="oppStatus">Ready</span>
+        <!-- Player 3 -->
+        <div class="playerBoard" id="player3Board">
+          <div class="boardHeader">
+            <h3 id="player3Name" class="playerTitle">Player 3</h3>
+            <span id="status3" class="statusBadge">Ready</span>
+          </div>
+          <canvas id="board3" width="200" height="400" class="mainCanvas"></canvas>
+          <div class="boardFooter">
+            <div class="footerStat">
+              <span class="footerLabel">Score</span>
+              <span id="score3" class="footerValue">0</span>
             </div>
-            <canvas id="board3" width="200" height="400"></canvas>
-            <div class="oppNextSection">
-              <div class="nextLabel">NEXT</div>
-              <canvas id="nextBoard3" width="100" height="100"></canvas>
-            </div>
-            <div class="oppStats">
-              <div class="stat">
-                <span class="label">Sc:</span>
-                <span id="score3" class="value">0</span>
-              </div>
-              <div class="stat">
-                <span class="label">Ln:</span>
-                <span id="lines3" class="value">0</span>
-              </div>
+            <div class="footerStat">
+              <span class="footerLabel">Lines</span>
+              <span id="lines3" class="footerValue">0</span>
             </div>
           </div>
+          <div class="nextPieceBox">
+            <div class="nextLabel">NEXT</div>
+            <canvas id="nextBoard3" width="100" height="100"></canvas>
+          </div>
+        </div>
 
-          <!-- Player 4 -->
-          <div class="opponentCard" id="player4Card">
-            <div class="oppHeader">
-              <h3 id="player4Name" style="margin: 0; flex: 1;">Player 4</h3>
-              <span id="status4" class="oppStatus">Ready</span>
+        <!-- Player 4 -->
+        <div class="playerBoard" id="player4Board">
+          <div class="boardHeader">
+            <h3 id="player4Name" class="playerTitle">Player 4</h3>
+            <span id="status4" class="statusBadge">Ready</span>
+          </div>
+          <canvas id="board4" width="200" height="400" class="mainCanvas"></canvas>
+          <div class="boardFooter">
+            <div class="footerStat">
+              <span class="footerLabel">Score</span>
+              <span id="score4" class="footerValue">0</span>
             </div>
-            <canvas id="board4" width="200" height="400"></canvas>
-            <div class="oppNextSection">
-              <div class="nextLabel">NEXT</div>
-              <canvas id="nextBoard4" width="100" height="100"></canvas>
-            </div>
-            <div class="oppStats">
-              <div class="stat">
-                <span class="label">Sc:</span>
-                <span id="score4" class="value">0</span>
-              </div>
-              <div class="stat">
-                <span class="label">Ln:</span>
-                <span id="lines4" class="value">0</span>
-              </div>
+            <div class="footerStat">
+              <span class="footerLabel">Lines</span>
+              <span id="lines4" class="footerValue">0</span>
             </div>
           </div>
+          <div class="nextPieceBox">
+            <div class="nextLabel">NEXT</div>
+            <canvas id="nextBoard4" width="100" height="100"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Panel Below -->
+      <div class="controlsFooter">
+        <div class="controlsContent">
+          <div class="controlsGroup">
+            <div class="controlsLabel">KEYBOARD</div>
+            <div class="controlRow">← / → Move  •  ↑ Rotate  •  Space Hard Drop  •  ↓ Soft Drop</div>
+          </div>
+          <div id="mode" class="modeDisplay">Mode: Classic</div>
         </div>
       </div>
     </div>
