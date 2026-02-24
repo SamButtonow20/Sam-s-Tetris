@@ -461,10 +461,10 @@ input:focus {
 .gameArea {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
   align-items: start;
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   width: 100%;
   padding: 8px;
@@ -700,11 +700,12 @@ input:focus {
 
 .nextLabel {
   color: var(--color-accent-purple);
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   font-weight: bold;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+}
 }
 }
 
