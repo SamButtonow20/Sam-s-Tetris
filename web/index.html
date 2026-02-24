@@ -61,6 +61,18 @@
         <p class="welcomeControls">
           <strong>Controls:</strong> ← → Move • ↑ Rotate • Space Hard Drop • ↓ Soft Drop • ESC Pause
         </p>
+
+        <!-- Theme Selector -->
+        <div class="themeSelector" id="themeSelector">
+          <h3 class="themeSelectorTitle">🎨 Theme</h3>
+          <div class="themeOptions" id="themeOptions">
+            <button class="themeBtn active" data-theme="neon">💜 Neon</button>
+            <button class="themeBtn" data-theme="retro">🕹️ Retro</button>
+            <button class="themeBtn" data-theme="pastel">🌸 Pastel</button>
+            <button class="themeBtn" data-theme="monochrome">⬜ Mono</button>
+            <button class="themeBtn" data-theme="ocean">🌊 Ocean</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -129,6 +141,14 @@
           </div>
         </div>
 
+        <div class="spectatorOption">
+          <label class="spectatorToggle">
+            <input type="checkbox" id="spectatorCheck" />
+            <span class="spectatorLabel">👁 Join as Spectator</span>
+          </label>
+          <span class="formHint">Watch the game without playing</span>
+        </div>
+
         <button id="btnConnect" class="btn btn-accent" style="grid-column: 1 / -1;">
           <span class="btnText">Connect & Play</span>
           <span class="btnLoader"></span>
@@ -158,6 +178,16 @@
           <button id="btnStartGame" class="btn btn-accent">Start Game</button>
           <button id="btnLeaveLobby" class="btn btn-primary" style="margin-top: 10px;">Back to Menu</button>
           <div class="waitingForPlayers" id="waitingForPlayers">Waiting for other players...</div>
+          
+          <!-- Lobby Chat -->
+          <div class="lobbyChatBox">
+            <h3 class="chatTitle">💬 Chat</h3>
+            <div class="chatMessages" id="lobbyChatMessages"></div>
+            <div class="chatInputRow">
+              <input id="lobbyChatInput" class="chatInput" placeholder="Type a message..." maxlength="200" />
+              <button id="lobbyChatSend" class="chatSendBtn">Send</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -206,6 +236,21 @@
             <div class="nextLabel">NEXT</div>
             <canvas id="nextBoard" width="70" height="70"></canvas>
           </div>
+
+          <!-- Piece Statistics -->
+          <div class="pieceStatsPanel" id="pieceStatsPanel">
+            <div class="panelTitle">PIECES</div>
+            <div class="pieceStatRow"><span class="pieceMini" id="miniI">I</span><span class="pieceCount" id="statI">0</span></div>
+            <div class="pieceStatRow"><span class="pieceMini" id="miniO">O</span><span class="pieceCount" id="statO">0</span></div>
+            <div class="pieceStatRow"><span class="pieceMini" id="miniT">T</span><span class="pieceCount" id="statT">0</span></div>
+            <div class="pieceStatRow"><span class="pieceMini" id="miniS">S</span><span class="pieceCount" id="statS">0</span></div>
+            <div class="pieceStatRow"><span class="pieceMini" id="miniZ">Z</span><span class="pieceCount" id="statZ">0</span></div>
+            <div class="pieceStatRow"><span class="pieceMini" id="miniJ">J</span><span class="pieceCount" id="statJ">0</span></div>
+            <div class="pieceStatRow"><span class="pieceMini" id="miniL">L</span><span class="pieceCount" id="statL">0</span></div>
+          </div>
+
+          <!-- Back-to-Back Indicator -->
+          <div class="b2bIndicator" id="b2bIndicator">B2B</div>
         </div>
 
         <!-- Player 2 -->
@@ -274,6 +319,24 @@
           <div class="nextPieceBox">
             <div class="nextLabel">NEXT</div>
             <canvas id="nextBoard4" width="70" height="70"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spectator Banner -->
+      <div class="spectatorBanner" id="spectatorBanner" style="display:none;">
+        <span class="spectatorIcon">👁</span>
+        <span>SPECTATING</span>
+      </div>
+
+      <!-- Game Chat (Online/Spectator) -->
+      <div class="gameChatBox" id="gameChatBox" style="display:none;">
+        <div class="chatToggleBtn" id="chatToggle">💬 Chat</div>
+        <div class="chatPanel" id="chatPanel">
+          <div class="chatMessages" id="gameChatMessages"></div>
+          <div class="chatInputRow">
+            <input id="gameChatInput" class="chatInput" placeholder="Type..." maxlength="200" />
+            <button id="gameChatSend" class="chatSendBtn">Send</button>
           </div>
         </div>
       </div>

@@ -7,40 +7,66 @@ const PORT = Number(process.env.PORT || process.argv[2] || 8080);
 const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 
-const rooms = new Map(); // room -> [{ws,name}]
+const rooms = new Map(); // room -> { players: [{ws,name}], spectators: [{ws,name}], started: false, seed: null }
 
 function send(ws, payload) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(payload));
 }
 
-function broadcastRoom(room, payload, exceptWs = null) {
-  const members = rooms.get(room) || [];
-  for (const m of members) {
+function getRoom(name) {
+  if (!rooms.has(name)) {
+    rooms.set(name, { players: [], spectators: [], started: false, seed: null });
+  }
+  return rooms.get(name);
+}
+
+function broadcastAll(roomName, payload, exceptWs = null) {
+  const r = rooms.get(roomName);
+  if (!r) return;
+  for (const m of r.players) {
     if (m.ws !== exceptWs) send(m.ws, payload);
+  }
+  for (const s of r.spectators) {
+    if (s.ws !== exceptWs) send(s.ws, payload);
   }
 }
 
-function broadcastRoomFull(room, msg, fromWs) {
-  const members = rooms.get(room) || [];
-  const senderIdx = members.findIndex((m) => m.ws === fromWs);
-  if (senderIdx < 0) return;
-  
-  for (let i = 0; i < members.length; i++) {
-    if (i !== senderIdx) {
-      const payload = { ...msg, player: senderIdx };
-      send(members[i].ws, payload);
-    }
+function sendLobbyUpdate(roomName) {
+  const room = rooms.get(roomName);
+  if (!room) return;
+  const playerList = room.players.map((p, i) => ({ slot: i, name: p.name }));
+  const spectatorList = room.spectators.map(s => ({ name: s.name }));
+  for (let i = 0; i < room.players.length; i++) {
+    send(room.players[i].ws, {
+      type: 'lobby', you: i, players: playerList, spectators: spectatorList, isSpectator: false
+    });
+  }
+  for (const s of room.spectators) {
+    send(s.ws, {
+      type: 'lobby', players: playerList, spectators: spectatorList, isSpectator: true
+    });
   }
 }
 
 function removeClient(ws) {
-  for (const [room, members] of rooms.entries()) {
-    const idx = members.findIndex((m) => m.ws === ws);
-    if (idx >= 0) {
-      members.splice(idx, 1);
-      broadcastRoom(room, { type: 'opponent_left', player: idx }, ws);
-      if (members.length === 0) rooms.delete(room);
-      break;
+  for (const [roomName, room] of rooms.entries()) {
+    const pidx = room.players.findIndex(m => m.ws === ws);
+    if (pidx >= 0) {
+      room.players.splice(pidx, 1);
+      if (room.started) {
+        broadcastAll(roomName, { type: 'opponent_left', player: pidx });
+      } else {
+        sendLobbyUpdate(roomName);
+      }
+      if (room.players.length === 0 && room.spectators.length === 0) rooms.delete(roomName);
+      return;
+    }
+    const sidx = room.spectators.findIndex(m => m.ws === ws);
+    if (sidx >= 0) {
+      room.spectators.splice(sidx, 1);
+      if (!room.started) sendLobbyUpdate(roomName);
+      if (room.players.length === 0 && room.spectators.length === 0) rooms.delete(roomName);
+      return;
     }
   }
 }
@@ -75,43 +101,94 @@ wss.on('connection', (ws) => {
     try { msg = JSON.parse(raw.toString()); } catch { return; }
 
     if (msg.type === 'join') {
-      const room = String(msg.room || 'default');
+      const roomName = String(msg.room || 'default');
       const name = String(msg.name || 'Player');
-      const members = rooms.get(room) || [];
+      const isSpectator = Boolean(msg.spectator);
+      const room = getRoom(roomName);
 
-      if (members.length >= 4) {
-        send(ws, { type: 'error', message: 'Room full' });
-        ws.close();
+      if (room.started) {
+        if (!isSpectator) {
+          send(ws, { type: 'error', message: 'Game already in progress. Join as spectator to watch.' });
+          return;
+        }
+        room.spectators.push({ ws, name });
+        ws.room = roomName;
+        ws.name = name;
+        ws.isSpectator = true;
+        send(ws, { type: 'spectating', room: roomName, players: room.players.map((p, i) => ({ slot: i, name: p.name })) });
         return;
       }
 
-      const playerSlot = members.length;
-      members.push({ ws, name });
-      rooms.set(room, members);
-      ws.room = room;
-      ws.name = name;
-      ws.playerSlot = playerSlot;
-
-      send(ws, { type: 'joined', room, slot: playerSlot });
-      
-      if (members.length === 1) {
-        send(ws, { type: 'waiting', count: 1 });
-      } else if (members.length >= 2) {
-        const seed = Math.floor(Math.random() * 1_000_000);
-        const opponents = members.map((m, i) => ({ slot: i, name: m.name })).filter((o, i) => i !== playerSlot);
-        
-        for (let i = 0; i < members.length; i++) {
-          const opps = members.map((m, idx) => ({ slot: idx, name: m.name })).filter((o) => o.slot !== i);
-          send(members[i].ws, { type: 'start', seed, you: i, opponents: opps });
+      if (isSpectator) {
+        room.spectators.push({ ws, name });
+        ws.room = roomName;
+        ws.name = name;
+        ws.isSpectator = true;
+      } else {
+        if (room.players.length >= 4) {
+          send(ws, { type: 'error', message: 'Room full (4 players max)' });
+          return;
         }
+        room.players.push({ ws, name });
+        ws.room = roomName;
+        ws.name = name;
+        ws.isSpectator = false;
+        ws.playerSlot = room.players.length - 1;
+      }
+
+      if (room.players.length <= 1 && room.spectators.length === 0) {
+        send(ws, { type: 'waiting', count: 1 });
+      } else {
+        sendLobbyUpdate(roomName);
       }
       return;
     }
 
-    if (!ws.room) return;
+    if (msg.type === 'startgame') {
+      const roomName = ws.room;
+      if (!roomName) return;
+      const room = rooms.get(roomName);
+      if (!room || room.started || room.players.length < 2) return;
 
-    if (msg.type === 'snapshot' || msg.type === 'attack' || msg.type === 'gameover' || msg.type === 'ping') {
-      broadcastRoomFull(ws.room, msg, ws);
+      room.started = true;
+      room.seed = Math.floor(Math.random() * 1_000_000);
+
+      for (let i = 0; i < room.players.length; i++) {
+        const opps = room.players.map((m, idx) => ({ slot: idx, name: m.name })).filter(o => o.slot !== i);
+        send(room.players[i].ws, { type: 'start', seed: room.seed, you: i, opponents: opps });
+      }
+      const allPlayers = room.players.map((p, i) => ({ slot: i, name: p.name }));
+      for (const s of room.spectators) {
+        send(s.ws, { type: 'start_spectator', seed: room.seed, players: allPlayers });
+      }
+      return;
+    }
+
+    if (msg.type === 'chat') {
+      const roomName = ws.room;
+      if (!roomName) return;
+      const text = String(msg.text || '').slice(0, 200);
+      if (!text) return;
+      broadcastAll(roomName, { type: 'chat', name: ws.name, text, isSpectator: ws.isSpectator || false }, ws);
+      return;
+    }
+
+    if (!ws.room) return;
+    const roomName = ws.room;
+    const room = rooms.get(roomName);
+    if (!room) return;
+
+    if (msg.type === 'snapshot' || msg.type === 'attack' || msg.type === 'gameover') {
+      const senderIdx = room.players.findIndex(m => m.ws === ws);
+      if (senderIdx < 0) return;
+      for (let i = 0; i < room.players.length; i++) {
+        if (i !== senderIdx) {
+          send(room.players[i].ws, { ...msg, player: senderIdx });
+        }
+      }
+      for (const s of room.spectators) {
+        send(s.ws, { ...msg, player: senderIdx });
+      }
     }
   });
 

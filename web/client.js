@@ -14,17 +14,41 @@ const TETROMINOES = {
   L: ['...7', '.777', '....', '....']
 };
 
-const COLORS = {
-  '.': '#0b0b16',
-  '1': '#00ffff',
-  '2': '#ffd650',
-  '3': '#dc3cff',
-  '4': '#00ffaa',
-  '5': '#ff4678',
-  '6': '#78aaff',
-  '7': '#ffa03c',
-  '8': '#868686'
+const THEMES = {
+  neon: {
+    name: 'Neon', icon: '💜',
+    bg: '#0b0b16', grid: '#1f1f35',
+    colors: { '.': '#0b0b16', '1': '#00ffff', '2': '#ffd650', '3': '#dc3cff', '4': '#00ffaa', '5': '#ff4678', '6': '#78aaff', '7': '#ffa03c', '8': '#868686' },
+    cssVars: { '--color-bg-deep': '#0a0e27', '--color-bg-dark': '#0f1533', '--color-bg-card': '#151d3a', '--color-accent-cyan': '#00d9ff', '--color-accent-pink': '#ff006e', '--color-accent-purple': '#8338ec', '--color-accent-green': '#06ffa5', '--color-border': '#2a3566' }
+  },
+  retro: {
+    name: 'Retro', icon: '🕹️',
+    bg: '#000000', grid: '#1a1a1a',
+    colors: { '.': '#000000', '1': '#00b8d4', '2': '#e6c200', '3': '#9c27b0', '4': '#4caf50', '5': '#f44336', '6': '#2196f3', '7': '#ff9800', '8': '#757575' },
+    cssVars: { '--color-bg-deep': '#0d0d0d', '--color-bg-dark': '#1a1a1a', '--color-bg-card': '#262626', '--color-accent-cyan': '#00b8d4', '--color-accent-pink': '#f44336', '--color-accent-purple': '#9c27b0', '--color-accent-green': '#4caf50', '--color-border': '#404040' }
+  },
+  pastel: {
+    name: 'Pastel', icon: '🌸',
+    bg: '#1a1525', grid: '#2a2540',
+    colors: { '.': '#1a1525', '1': '#87ceeb', '2': '#ffe4b5', '3': '#dda0dd', '4': '#98fb98', '5': '#ffb6c1', '6': '#b0c4de', '7': '#ffdab9', '8': '#a9a9a9' },
+    cssVars: { '--color-bg-deep': '#1a1525', '--color-bg-dark': '#221d35', '--color-bg-card': '#2a2545', '--color-accent-cyan': '#87ceeb', '--color-accent-pink': '#ffb6c1', '--color-accent-purple': '#dda0dd', '--color-accent-green': '#98fb98', '--color-border': '#3d3660' }
+  },
+  monochrome: {
+    name: 'Mono', icon: '⬜',
+    bg: '#0a0a0a', grid: '#1a1a1a',
+    colors: { '.': '#0a0a0a', '1': '#ffffff', '2': '#e0e0e0', '3': '#c0c0c0', '4': '#a0a0a0', '5': '#808080', '6': '#d0d0d0', '7': '#b0b0b0', '8': '#505050' },
+    cssVars: { '--color-bg-deep': '#0a0a0a', '--color-bg-dark': '#141414', '--color-bg-card': '#1e1e1e', '--color-accent-cyan': '#ffffff', '--color-accent-pink': '#c0c0c0', '--color-accent-purple': '#a0a0a0', '--color-accent-green': '#e0e0e0', '--color-border': '#333333' }
+  },
+  ocean: {
+    name: 'Ocean', icon: '🌊',
+    bg: '#0a1628', grid: '#152238',
+    colors: { '.': '#0a1628', '1': '#00e5ff', '2': '#ffd54f', '3': '#7c4dff', '4': '#64ffda', '5': '#ff5252', '6': '#448aff', '7': '#ffab40', '8': '#607d8b' },
+    cssVars: { '--color-bg-deep': '#0a1628', '--color-bg-dark': '#0d1f3c', '--color-bg-card': '#132840', '--color-accent-cyan': '#00e5ff', '--color-accent-pink': '#ff5252', '--color-accent-purple': '#7c4dff', '--color-accent-green': '#64ffda', '--color-border': '#1e3a5f' }
+  }
 };
+
+let currentThemeName = localStorage.getItem('tetrisTheme') || 'neon';
+let COLORS = { ...THEMES[currentThemeName].colors };
 
 class RNG {
   constructor(seed = Date.now() % 2147483647) {
@@ -145,9 +169,11 @@ class Game {
     this.level = 1;
     this.combo = -1;
     this.backToBack = false;
+    this.backToBackCount = 0;
     this.gameOver = false;
     this.lastAttack = 0;
     this.bag = [];
+    this.pieceStats = { I: 0, O: 0, T: 0, S: 0, Z: 0, J: 0, L: 0 };
     this.next = this.makePiece(this.nextKind());
     this.current = this.makePiece(this.nextKind());
     this.spawn(this.current);
@@ -183,6 +209,7 @@ class Game {
     this.current = piece;
     this.lastMoveWasRotate = false;
     this.groundedMs = 0;
+    if (this.pieceStats[piece.kind] !== undefined) this.pieceStats[piece.kind]++;
     if (this.collide(this.current, 0, 0)) this.gameOver = true;
   }
 
@@ -294,10 +321,12 @@ class Game {
       if (this.backToBack) {
         base = Math.floor(base * 1.5);
         attack += 1;
+        this.backToBackCount++;
       }
       this.backToBack = true;
     } else if (cleared > 0) {
       this.backToBack = false;
+      this.backToBackCount = 0;
     }
 
     const comboBonus = Math.max(0, this.combo) * 50;
@@ -463,8 +492,42 @@ const btnPlayAgain = document.getElementById('btnPlayAgain');
 const btnGameOverBackToMenu = document.getElementById('btnGameOverBackToMenu');
 const btnLeaderboardGameOver = document.getElementById('btnLeaderboardGameOver');
 
+// Piece stats elements
+const pieceStatsPanel = document.getElementById('pieceStatsPanel');
+const statEls = { I: document.getElementById('statI'), O: document.getElementById('statO'), T: document.getElementById('statT'), S: document.getElementById('statS'), Z: document.getElementById('statZ'), J: document.getElementById('statJ'), L: document.getElementById('statL') };
+const pieceColorMap = { I: '1', O: '2', T: '3', S: '4', Z: '5', J: '6', L: '7' };
+
+// B2B indicator
+const b2bIndicator = document.getElementById('b2bIndicator');
+
+// Chat elements
+const lobbyChatMessages = document.getElementById('lobbyChatMessages');
+const lobbyChatInput = document.getElementById('lobbyChatInput');
+const lobbyChatSend = document.getElementById('lobbyChatSend');
+const gameChatBox = document.getElementById('gameChatBox');
+const gameChatMessages = document.getElementById('gameChatMessages');
+const gameChatInput = document.getElementById('gameChatInput');
+const gameChatSend = document.getElementById('gameChatSend');
+const chatToggle = document.getElementById('chatToggle');
+const chatPanel = document.getElementById('chatPanel');
+
+// Spectator elements
+const spectatorCheck = document.getElementById('spectatorCheck');
+const spectatorBanner = document.getElementById('spectatorBanner');
+
+// Theme selector
+const themeOptions = document.getElementById('themeOptions');
+
 let lastOppScores = [-1, -1, -1];
 let lastOppLines = [-1, -1, -1];
+
+// Chat state
+let chatMessages = [];
+let chatOpen = false;
+
+// Spectator state
+let isSpectator = false;
+let spectatorData = [null, null, null, null];
 
 // Auto-detect WebSocket URL based on current page location
 function getWebSocketURL() {
@@ -476,13 +539,14 @@ function getWebSocketURL() {
 const blankGrid = createEmptyGrid();
 
 function buildGridOverlay() {
+  const theme = THEMES[currentThemeName];
   const layer = document.createElement('canvas');
   layer.width = BOARD_W;
   layer.height = BOARD_H;
   const ctx = layer.getContext('2d');
-  ctx.fillStyle = '#0b0b16';
+  ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, BOARD_W, BOARD_H);
-  ctx.strokeStyle = '#1f1f35';
+  ctx.strokeStyle = theme.grid;
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
@@ -491,7 +555,89 @@ function buildGridOverlay() {
   return layer;
 }
 
-const gridOverlay = buildGridOverlay();
+let gridOverlay = buildGridOverlay();
+
+function applyTheme(name) {
+  if (!THEMES[name]) return;
+  currentThemeName = name;
+  const theme = THEMES[name];
+  COLORS = { ...theme.colors };
+  localStorage.setItem('tetrisTheme', name);
+
+  // Update CSS variables
+  const root = document.documentElement;
+  for (const [prop, val] of Object.entries(theme.cssVars)) {
+    root.style.setProperty(prop, val);
+  }
+
+  // Rebuild grid overlay
+  gridOverlay = buildGridOverlay();
+
+  // Update theme buttons
+  document.querySelectorAll('.themeBtn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === name);
+  });
+
+  // Update piece stats colors
+  updatePieceStatsColors();
+}
+
+function updatePieceStatsColors() {
+  for (const [kind, colorKey] of Object.entries(pieceColorMap)) {
+    const mini = document.getElementById(`mini${kind}`);
+    if (mini) mini.style.backgroundColor = COLORS[colorKey];
+  }
+}
+
+function updatePieceStatsDisplay() {
+  if (!game) return;
+  for (const [kind, el] of Object.entries(statEls)) {
+    if (el) el.textContent = game.pieceStats[kind] || 0;
+  }
+}
+
+function updateB2BIndicator() {
+  if (!b2bIndicator) return;
+  if (game && game.backToBack && !game.gameOver) {
+    b2bIndicator.classList.add('active');
+    b2bIndicator.textContent = game.backToBackCount > 0 ? `B2B x${game.backToBackCount}` : 'B2B';
+  } else {
+    b2bIndicator.classList.remove('active');
+  }
+}
+
+// Chat functions
+function addChatMessage(name, text, isSpec, target) {
+  const el = target === 'lobby' ? lobbyChatMessages : gameChatMessages;
+  if (!el) return;
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'chatMsg' + (isSpec ? ' spectator' : '');
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'chatName';
+  nameSpan.textContent = (isSpec ? '👁 ' : '') + name + ': ';
+  const textSpan = document.createElement('span');
+  textSpan.className = 'chatText';
+  textSpan.textContent = text;
+  msgDiv.appendChild(nameSpan);
+  msgDiv.appendChild(textSpan);
+  el.appendChild(msgDiv);
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChat(inputEl) {
+  if (!inputEl) return;
+  const text = inputEl.value.trim();
+  if (!text || !ws) return;
+  send({ type: 'chat', text });
+  const myName = nameInput.value.trim() || 'You';
+  addChatMessage(myName, text, isSpectator, gameChatMessages && gameChatBox && gameChatBox.style.display !== 'none' ? 'game' : 'lobby');
+  inputEl.value = '';
+}
+
+function toggleGameChat() {
+  chatOpen = !chatOpen;
+  if (chatPanel) chatPanel.classList.toggle('open', chatOpen);
+}
 
 let mode = 'classic';
 let isPaused = false;
@@ -558,12 +704,17 @@ function backToMenuFromGame() {
   pauseMenu.classList.remove('active');
   if (ws) { ws.close(); ws = null; }
   mode = 'classic';
+  isSpectator = false;
   game.gameOver = true;
   welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
   menu.classList.remove('active');
   onlineForm.classList.remove('active');
+  if (gameChatBox) gameChatBox.style.display = 'none';
+  if (spectatorBanner) spectatorBanner.style.display = 'none';
+  const p1Title = document.querySelector('#player1Board .playerTitle');
+  if (p1Title) p1Title.textContent = 'You';
   setStatus('Ready');
 }
 
@@ -599,12 +750,17 @@ function gameOverBackToMenu() {
   hideGameOver();
   if (ws) { ws.close(); ws = null; }
   mode = 'classic';
+  isSpectator = false;
   game.gameOver = true;
   welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
   menu.classList.remove('active');
   onlineForm.classList.remove('active');
+  if (gameChatBox) gameChatBox.style.display = 'none';
+  if (spectatorBanner) spectatorBanner.style.display = 'none';
+  const p1Title = document.querySelector('#player1Board .playerTitle');
+  if (p1Title) p1Title.textContent = 'You';
   setStatus('Ready');
 }
 
@@ -621,6 +777,7 @@ function startClassic() {
   mode = 'classic';
   isPaused = false;
   shownGameOver = false;
+  isSpectator = false;
   modeEl.textContent = 'Mode: Classic';
   game = new Game();
   sentGameOver = false;
@@ -632,6 +789,12 @@ function startClassic() {
   welcomePage.classList.remove('active');
   gameOverMenu.classList.remove('active');
   gameContainer.style.display = 'flex';
+  if (gameChatBox) gameChatBox.style.display = 'none';
+  if (spectatorBanner) spectatorBanner.style.display = 'none';
+  if (pieceStatsPanel) pieceStatsPanel.style.display = '';
+  // Reset player 1 board title
+  const p1Title = document.querySelector('#player1Board .playerTitle');
+  if (p1Title) p1Title.textContent = 'You';
   lastTs = performance.now();
   requestAnimationFrame(loop);
   setStatus('Classic mode started');
@@ -727,7 +890,9 @@ function connectOnline() {
 
   ws.onopen = () => {
     console.log('WebSocket connected, joining room:', room);
-    send({ type: 'join', room, name });
+    const spectate = spectatorCheck && spectatorCheck.checked;
+    isSpectator = spectate;
+    send({ type: 'join', room, name, spectator: spectate });
   };
 
   ws.onmessage = (evt) => {
@@ -749,7 +914,7 @@ function connectOnline() {
       waitingState.classList.remove('active');
       lobbyState.classList.add('active');
       lobbyRoom.textContent = room;
-      playerSlot = Number(msg.you || 0);
+      if (!msg.isSpectator) playerSlot = Number(msg.you || 0);
       
       // Update players list
       if (msg.players && Array.isArray(msg.players)) {
@@ -757,22 +922,36 @@ function connectOnline() {
         msg.players.forEach((player, idx) => {
           const playerEl = document.createElement('div');
           playerEl.className = 'playerItem';
-          if (idx === playerSlot) playerEl.classList.add('you');
+          if (!msg.isSpectator && idx === playerSlot) playerEl.classList.add('you');
           playerEl.textContent = player.name;
           playersList.appendChild(playerEl);
         });
         
+        // Show spectators
+        if (msg.spectators && Array.isArray(msg.spectators)) {
+          msg.spectators.forEach(spec => {
+            const specEl = document.createElement('div');
+            specEl.className = 'playerItem spectatorItem';
+            specEl.textContent = '👁 ' + spec.name + ' (spectator)';
+            playersList.appendChild(specEl);
+          });
+        }
+        
         // Show/hide start button and waiting message based on player count
-        if (msg.players.length >= 2) {
+        if (msg.players.length >= 2 && !msg.isSpectator) {
           btnStartGame.style.display = 'block';
           waitingForPlayers.style.display = 'none';
+        } else if (msg.isSpectator) {
+          btnStartGame.style.display = 'none';
+          waitingForPlayers.textContent = 'Watching as spectator...';
+          waitingForPlayers.style.display = 'block';
         } else {
           btnStartGame.style.display = 'none';
           waitingForPlayers.style.display = 'block';
         }
       }
       
-      setStatus(`Lobby: ${msg.players ? msg.players.length : 1} player(s) joined`);
+      setStatus(`Lobby: ${msg.players ? msg.players.length : 1} player(s)${msg.spectators && msg.spectators.length ? ' + ' + msg.spectators.length + ' spectator(s)' : ''}`);
     } else if (msg.type === 'start') {
       const seed = Number(msg.seed || Math.floor(Math.random() * 1_000_000));
       game = new Game(seed);
@@ -809,6 +988,9 @@ function connectOnline() {
       menu.classList.remove('active');
       leaderboardPage.classList.remove('active');
       gameContainer.style.display = 'flex';
+      if (gameChatBox) gameChatBox.style.display = 'flex';
+      if (spectatorBanner) spectatorBanner.style.display = 'none';
+      isSpectator = false;
       
       lastTs = performance.now();
       requestAnimationFrame(loop);
@@ -816,7 +998,28 @@ function connectOnline() {
       setStatus(`Match started (${oppCount + 1} players): ${oppNames}`);
     } else if (msg.type === 'snapshot') {
       const playerIdx = Number(msg.player || 0);
-      if (playerIdx >= 1 && playerIdx <= 3 && playerIdx !== playerSlot) {
+      if (isSpectator) {
+        // Spectator: store all player data
+        if (playerIdx >= 0 && playerIdx < 4) {
+          if (!spectatorData[playerIdx]) {
+            spectatorData[playerIdx] = { name: 'Player ' + (playerIdx + 1), grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, piece: null, next: null };
+          }
+          if (Array.isArray(msg.grid) && msg.grid.length === ROWS) {
+            const parsed = [];
+            let ok = true;
+            for (const row of msg.grid) {
+              if (typeof row !== 'string' || row.length !== COLS) { ok = false; break; }
+              parsed.push(row.split(''));
+            }
+            if (ok) spectatorData[playerIdx].grid = parsed;
+          }
+          spectatorData[playerIdx].score = Number(msg.score || 0);
+          spectatorData[playerIdx].lines = Number(msg.lines || 0);
+          spectatorData[playerIdx].game_over = Boolean(msg.game_over);
+          if (msg.piece) spectatorData[playerIdx].piece = msg.piece;
+          if (msg.next) spectatorData[playerIdx].next = msg.next;
+        }
+      } else if (playerIdx >= 1 && playerIdx <= 3 && playerIdx !== playerSlot) {
         const oppIdx = playerIdx - 1;
         if (Array.isArray(msg.grid) && msg.grid.length === ROWS) {
           const parsed = [];
@@ -834,15 +1037,93 @@ function connectOnline() {
         if (msg.next) opponents[oppIdx].next = msg.next;
       }
     } else if (msg.type === 'attack') {
-      const amt = Number(msg.amount || 0);
-      if (amt > 0) game.addGarbage(amt);
+      if (!isSpectator) {
+        const amt = Number(msg.amount || 0);
+        if (amt > 0) game.addGarbage(amt);
+      }
     } else if (msg.type === 'gameover') {
       const playerIdx = Number(msg.player || 0);
-      if (playerIdx >= 1 && playerIdx <= 3 && playerIdx !== playerSlot) {
+      if (isSpectator) {
+        if (playerIdx >= 0 && playerIdx < 4 && spectatorData[playerIdx]) {
+          spectatorData[playerIdx].game_over = true;
+        }
+      } else if (playerIdx >= 1 && playerIdx <= 3 && playerIdx !== playerSlot) {
         const oppIdx = playerIdx - 1;
         opponents[oppIdx].game_over = true;
         oppStatusEls[oppIdx].textContent = 'TOPOUT';
       }
+    } else if (msg.type === 'start_spectator') {
+      // Spectator mode game start
+      isSpectator = true;
+      mode = 'spectating';
+      const players = msg.players || [];
+      spectatorData = [null, null, null, null];
+      for (let i = 0; i < players.length; i++) {
+        spectatorData[i] = { name: players[i].name, grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, piece: null, next: null };
+      }
+      updatePlayerCount(players.length);
+      // Update board headers for spectator view
+      const boardTitles = [
+        document.querySelector('#player1Board .playerTitle'),
+        document.querySelector('#player2Board .playerTitle'),
+        document.querySelector('#player3Board .playerTitle'),
+        document.querySelector('#player4Board .playerTitle')
+      ];
+      for (let i = 0; i < players.length; i++) {
+        if (boardTitles[i]) boardTitles[i].textContent = spectatorData[i].name;
+      }
+      // Hide lobby, show game
+      lobbyState.classList.remove('active');
+      waitingState.classList.remove('active');
+      connectingState.classList.remove('active');
+      formWrapper.classList.remove('hidden');
+      menu.classList.remove('active');
+      leaderboardPage.classList.remove('active');
+      gameContainer.style.display = 'flex';
+      if (spectatorBanner) spectatorBanner.style.display = 'flex';
+      if (gameChatBox) gameChatBox.style.display = 'flex';
+      // Hide piece stats for spectator
+      if (pieceStatsPanel) pieceStatsPanel.style.display = 'none';
+      if (b2bIndicator) b2bIndicator.classList.remove('active');
+      lastTs = performance.now();
+      requestAnimationFrame(loop);
+      setStatus('Spectating match');
+    } else if (msg.type === 'spectating') {
+      // Mid-game spectator join
+      isSpectator = true;
+      mode = 'spectating';
+      const players = msg.players || [];
+      spectatorData = [null, null, null, null];
+      for (let i = 0; i < players.length; i++) {
+        spectatorData[i] = { name: players[i].name, grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, piece: null, next: null };
+      }
+      updatePlayerCount(players.length);
+      const boardTitles2 = [
+        document.querySelector('#player1Board .playerTitle'),
+        document.querySelector('#player2Board .playerTitle'),
+        document.querySelector('#player3Board .playerTitle'),
+        document.querySelector('#player4Board .playerTitle')
+      ];
+      for (let i = 0; i < players.length; i++) {
+        if (boardTitles2[i]) boardTitles2[i].textContent = spectatorData[i].name;
+      }
+      lobbyState.classList.remove('active');
+      waitingState.classList.remove('active');
+      connectingState.classList.remove('active');
+      formWrapper.classList.remove('hidden');
+      menu.classList.remove('active');
+      leaderboardPage.classList.remove('active');
+      gameContainer.style.display = 'flex';
+      if (spectatorBanner) spectatorBanner.style.display = 'flex';
+      if (gameChatBox) gameChatBox.style.display = 'flex';
+      if (pieceStatsPanel) pieceStatsPanel.style.display = 'none';
+      if (b2bIndicator) b2bIndicator.classList.remove('active');
+      lastTs = performance.now();
+      requestAnimationFrame(loop);
+      setStatus('Spectating match (joined mid-game)');
+    } else if (msg.type === 'chat') {
+      const target = lobbyState.classList.contains('active') ? 'lobby' : 'game';
+      addChatMessage(msg.name, msg.text, msg.isSpectator, target);
     } else if (msg.type === 'error') {
       setStatus(`Server error: ${msg.message || 'unknown'}`);
       btnConnect.disabled = false;
@@ -962,12 +1243,13 @@ function drawNextPiece(ctx, piece, canvasW, canvasH) {
   if (!shape) return;
   
   // Clear the canvas
-  ctx.fillStyle = '#0b0b16';
+  const theme = THEMES[currentThemeName];
+  ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, canvasW, canvasH);
   
   // Draw grid
   const smallCell = canvasW / 4;
-  ctx.strokeStyle = '#1f1f35';
+  ctx.strokeStyle = theme.grid;
   for (let i = 0; i <= 4; i++) {
     ctx.beginPath();
     ctx.moveTo(i * smallCell, 0);
@@ -997,6 +1279,35 @@ let lastTs = performance.now();
 function loop(ts) {
   const dt = Math.min(50, ts - lastTs);
   lastTs = ts;
+
+  // Spectator mode rendering
+  if (mode === 'spectating') {
+    const allCtx = [bctx, octx2, octx3, octx4];
+    const allNextCtx = nextCtxes;
+    for (let i = 0; i < 4; i++) {
+      if (!spectatorData[i]) {
+        drawGrid(allCtx[i], blankGrid);
+        continue;
+      }
+      drawGrid(allCtx[i], spectatorData[i].grid);
+      if (spectatorData[i].piece) drawOpponentPiece(allCtx[i], spectatorData[i].piece);
+      if (spectatorData[i].next) drawNextPiece(allNextCtx[i], spectatorData[i].next, 70, 70);
+    }
+    // Update score/lines for spectated players
+    if (spectatorData[0]) {
+      scoreEl.textContent = `Score: ${spectatorData[0].score}`;
+      linesEl.textContent = `Lines: ${spectatorData[0].lines}`;
+    }
+    for (let i = 1; i < 4; i++) {
+      if (spectatorData[i]) {
+        oppScoreEls[i-1].textContent = spectatorData[i].score;
+        oppLinesEls[i-1].textContent = spectatorData[i].lines;
+        oppStatusEls[i-1].textContent = spectatorData[i].game_over ? 'Topped Out' : 'Playing';
+      }
+    }
+    requestAnimationFrame(loop);
+    return;
+  }
 
   // Skip game logic updates if paused, but still render
   if (!isPaused && !game.gameOver && (mode === 'classic' || (mode === 'online' && onlineReady))) {
@@ -1079,6 +1390,10 @@ function loop(ts) {
     timeBadgeEl.textContent = game.getElapsedTimeFormatted();
   }
 
+  // Update piece stats and B2B indicator
+  updatePieceStatsDisplay();
+  updateB2BIndicator();
+
   if (game.gameOver) {
     setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
     if (!shownGameOver) {
@@ -1108,6 +1423,14 @@ function loop(ts) {
 }
 
 window.addEventListener('keydown', (e) => {
+  // Don't capture keys when typing in chat
+  if (document.activeElement && (document.activeElement.id === 'gameChatInput' || document.activeElement.id === 'lobbyChatInput')) {
+    if (e.key === 'Enter') {
+      sendChat(document.activeElement);
+    }
+    return;
+  }
+
   // Allow ESC at any time to pause/resume
   if (e.key === 'Escape') {
     e.preventDefault();
@@ -1246,6 +1569,21 @@ btnPlayAgain.addEventListener('click', playAgain);
 btnGameOverBackToMenu.addEventListener('click', gameOverBackToMenu);
 btnLeaderboardGameOver.addEventListener('click', showLeaderboardFromGameOver);
 
+// Theme selector
+if (themeOptions) {
+  themeOptions.addEventListener('click', (e) => {
+    const btn = e.target.closest('.themeBtn');
+    if (btn && btn.dataset.theme) {
+      applyTheme(btn.dataset.theme);
+    }
+  });
+}
+
+// Chat event listeners
+if (lobbyChatSend) lobbyChatSend.addEventListener('click', () => sendChat(lobbyChatInput));
+if (gameChatSend) gameChatSend.addEventListener('click', () => sendChat(gameChatInput));
+if (chatToggle) chatToggle.addEventListener('click', toggleGameChat);
+
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
   updatePlayerCount(1);
@@ -1255,4 +1593,9 @@ window.addEventListener('DOMContentLoaded', () => {
   leaderboardPage.classList.remove('active');
   pauseMenu.classList.remove('active');
   gameOverMenu.classList.remove('active');
+  if (gameChatBox) gameChatBox.style.display = 'none';
+  if (spectatorBanner) spectatorBanner.style.display = 'none';
+  // Apply saved theme
+  applyTheme(currentThemeName);
+  updatePieceStatsColors();
 });
