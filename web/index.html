@@ -63,56 +63,106 @@
     <!-- Game Area -->
     <div class="gameContainer">
       <div class="gameArea">
-        <div class="boardWrapper">
-          <h3>YOU</h3>
-          <canvas id="board" width="280" height="560"></canvas>
-          <div class="boardOverlay" id="boardOverlay"></div>
-        </div>
-
-        <div class="panel">
-          <div class="stat">
-            <span class="label">Score</span>
-            <span id="score" class="value">0</span>
+        <!-- Top Left: You -->
+        <div class="playerCard">
+          <div class="boardWrapper">
+            <h3>You</h3>
+            <canvas id="board" width="280" height="560"></canvas>
           </div>
-          <div class="stat">
-            <span class="label">Lines</span>
-            <span id="lines" class="value">0</span>
-          </div>
-          <div class="stat">
-            <span class="label">Level</span>
-            <span id="level" class="value">1</span>
-          </div>
-          <div class="stat">
-            <span class="label">Mode</span>
-            <span id="mode" class="value">Classic</span>
-          </div>
-          <div style="border-top: 1px solid #4a4a6a; margin: 8px 0; padding-top: 8px; font-size: 12px; color: #b8b8d6;">
-            <div><strong>Controls:</strong></div>
-            <div>← → : Move</div>
-            <div>↑ : Rotate</div>
-            <div>↓ : Soft Drop</div>
-            <div>Space : Hard Drop</div>
+          <div class="playerStats">
+            <div class="stat">
+              <span class="label">Score</span>
+              <span id="score" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Lines</span>
+              <span id="lines" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Level</span>
+              <span id="level" class="value">1</span>
+            </div>
           </div>
         </div>
 
-        <div class="boardWrapper">
-          <h3>OPPONENT</h3>
-          <canvas id="opp" width="280" height="560"></canvas>
+        <!-- Top Right: Player 2 -->
+        <div class="playerCard" id="player2Card">
+          <div class="boardWrapper">
+            <h3 id="player2Name">Player 2</h3>
+            <canvas id="board2" width="280" height="560"></canvas>
+          </div>
+          <div class="playerStats">
+            <div class="stat">
+              <span class="label">Score</span>
+              <span id="score2" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Lines</span>
+              <span id="lines2" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Status</span>
+              <span id="status2" class="value" style="font-size: 0.8rem;">Ready</span>
+            </div>
+          </div>
         </div>
 
-        <div class="panel">
-          <div class="stat">
-            <span class="label">Score</span>
-            <span id="oppScore" class="value">0</span>
+        <!-- Bottom Left: Player 3 -->
+        <div class="playerCard" id="player3Card">
+          <div class="boardWrapper">
+            <h3 id="player3Name">Player 3</h3>
+            <canvas id="board3" width="280" height="560"></canvas>
           </div>
-          <div class="stat">
-            <span class="label">Lines</span>
-            <span id="oppLines" class="value">0</span>
+          <div class="playerStats">
+            <div class="stat">
+              <span class="label">Score</span>
+              <span id="score3" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Lines</span>
+              <span id="lines3" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Status</span>
+              <span id="status3" class="value" style="font-size: 0.8rem;">Ready</span>
+            </div>
           </div>
-          <div class="stat">
-            <span class="label">Status</span>
-            <span id="oppStatus" class="value" style="font-size: 0.9rem; color: #06ffa5;">Ready</span>
+        </div>
+
+        <!-- Bottom Right: Player 4 -->
+        <div class="playerCard" id="player4Card">
+          <div class="boardWrapper">
+            <h3 id="player4Name">Player 4</h3>
+            <canvas id="board4" width="280" height="560"></canvas>
           </div>
+          <div class="playerStats">
+            <div class="stat">
+              <span class="label">Score</span>
+              <span id="score4" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Lines</span>
+              <span id="lines4" class="value">0</span>
+            </div>
+            <div class="stat">
+              <span class="label">Status</span>
+              <span id="status4" class="value" style="font-size: 0.8rem;">Ready</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Panel (Center) -->
+      <div class="controlsPanel">
+        <div style="font-size: 0.85rem; line-height: 1.6; color: var(--color-text-dim);">
+          <div><strong style="color: var(--color-accent-cyan);">Controls:</strong></div>
+          <div>← → : Move</div>
+          <div>↑ : Rotate</div>
+          <div>↓ : Soft Drop</div>
+          <div>Space : Hard Drop</div>
+        </div>
+        <div style="margin-top: 12px; font-size: 0.8rem; color: var(--color-text-dim);">
+          <div id="mode" style="color: var(--color-accent-green);">Mode: Classic</div>
         </div>
       </div>
     </div>

@@ -147,7 +147,7 @@ body::before {
   font-family: inherit;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: bold;
@@ -201,7 +201,7 @@ body::before {
 
 .btnText {
   display: inline-block;
-  transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btnLoader {
@@ -260,7 +260,7 @@ body::before {
 
 .onlineForm.active {
   display: block;
-  animation: smoothFade 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: smoothFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .onlineForm.show {
@@ -272,7 +272,7 @@ body::before {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 24px;
-  animation: smoothFade 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: smoothFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .formWrapper.hidden {
@@ -284,7 +284,7 @@ body::before {
   display: none;
   padding: 40px 24px;
   text-align: center;
-  animation: smoothFade 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: smoothFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .connectingState.active,
@@ -361,8 +361,8 @@ body::before {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(131, 56, 236, 0.2);
   border-radius: 4px;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  animation: smoothFade 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: smoothFade 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .formStep:nth-child(1) {
@@ -393,7 +393,7 @@ body::before {
   font-size: 0.9rem;
   flex-shrink: 0;
   box-shadow: 0 0 15px rgba(131, 56, 236, 0.4);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
@@ -443,16 +443,31 @@ input:focus {
 
 /* Game Container */
 .gameContainer {
-  animation: float 4s ease-in-out infinite;
+  animation: float 4s ease-out infinite;
   animation-delay: 0.5s;
+  will-change: transform;
 }
 
 .gameArea {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
-  justify-content: center;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  justify-items: center;
+  align-items: start;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.playerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(15, 21, 51, 0.6), rgba(21, 29, 58, 0.6));
+  border: 1px solid rgba(0, 217, 255, 0.2);
+  border-radius: 4px;
+  animation: smoothFade 0.4s ease-out;
+  will-change: transform;
 }
 
 .boardWrapper {
@@ -469,6 +484,25 @@ input:focus {
   letter-spacing: 2px;
   text-transform: uppercase;
   text-shadow: 0 0 8px var(--color-accent-pink);
+}
+
+.playerStats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.controlsPanel {
+  grid-column: 1 / -1;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(15, 21, 51, 0.6), rgba(21, 29, 58, 0.6));
+  border: 1px solid rgba(255, 0, 110, 0.2);
+  border-radius: 4px;
+  text-align: center;
+  color: var(--color-text-dim);
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
 /* Canvas */
@@ -554,6 +588,8 @@ canvas:hover {
   }
 
   .gameArea {
+    grid-template-columns: 1fr;
+    max-width: 300px;
     gap: 12px;
   }
 
@@ -564,6 +600,11 @@ canvas:hover {
 
   .boardWrapper h3 {
     font-size: 0.8rem;
+  }
+
+  .playerCard {
+    gap: 8px;
+    padding: 8px;
   }
 
   canvas {

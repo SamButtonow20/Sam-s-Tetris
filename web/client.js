@@ -366,9 +366,14 @@ class Game {
 }
 
 const boardCanvas = document.getElementById('board');
-const oppCanvas = document.getElementById('opp');
+const board2Canvas = document.getElementById('board2');
+const board3Canvas = document.getElementById('board3');
+const board4Canvas = document.getElementById('board4');
 const bctx = boardCanvas.getContext('2d');
-const octx = oppCanvas.getContext('2d');
+const octx2 = board2Canvas.getContext('2d');
+const octx3 = board3Canvas.getContext('2d');
+const octx4 = board4Canvas.getContext('2d');
+const octxes = [octx2, octx3, octx4];
 
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
@@ -376,9 +381,10 @@ const levelEl = document.getElementById('level');
 const modeEl = document.getElementById('mode');
 const statusEl = document.getElementById('status');
 
-const oppScoreEl = document.getElementById('oppScore');
-const oppLinesEl = document.getElementById('oppLines');
-const oppStatusEl = document.getElementById('oppStatus');
+const oppScoreEls = [document.getElementById('score2'), document.getElementById('score3'), document.getElementById('score4')];
+const oppLinesEls = [document.getElementById('lines2'), document.getElementById('lines3'), document.getElementById('lines4')];
+const oppStatusEls = [document.getElementById('status2'), document.getElementById('status3'), document.getElementById('status4')];
+const oppNameEls = [document.getElementById('player2Name'), document.getElementById('player3Name'), document.getElementById('player4Name')];
 
 const btnClassic = document.getElementById('btnClassic');
 const btnOnline = document.getElementById('btnOnline');
@@ -392,8 +398,8 @@ const connectingState = document.getElementById('connectingState');
 const waitingState = document.getElementById('waitingState');
 const sharedRoom = document.getElementById('sharedRoom');
 
-let lastOppScore = -1;
-let lastOppLines = -1;
+let lastOppScores = [-1, -1, -1];
+let lastOppLines = [-1, -1, -1];
 
 // Auto-detect WebSocket URL based on current page location
 function getWebSocketURL() {
@@ -426,7 +432,8 @@ let mode = 'classic';
 let game = new Game();
 let ws = null;
 let onlineReady = false;
-let opponent = { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Opponent', piece: null };
+let playerSlot = -1;
+let opponents = [{grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 2', piece: null}, {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 3', piece: null}, {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player 4', piece: null}];
 let snapshotMs = 0;
 let sentGameOver = false;
 
@@ -446,13 +453,26 @@ function startClassic() {
   setStatus('Classic mode started');
 }
 
+function resetOpponents() {
+  for (let i = 0; i < 3; i++) {
+    opponents[i] = {grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Player ' + (i + 2), piece: null};
+    oppScoreEls[i].textContent = '0';
+    oppLinesEls[i].textContent = '0';
+    oppStatusEls[i].textContent = 'Ready';
+    oppNameEls[i].textContent = 'Player ' + (i + 2);
+    lastOppScores[i] = -1;
+    lastOppLines[i] = -1;
+  }
+}
+
 function startOnline() {
   mode = 'online';
+  resetOpponents();
   modeEl.textContent = 'Mode: Online';
   game = new Game();
   sentGameOver = false;
   onlineReady = false;
-  opponent = { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, name: 'Opponent' };
+  playerSlot = -1;
 }
 
 function send(payload) {
@@ -506,32 +526,52 @@ function connectOnline() {
       game = new Game(seed);
       sentGameOver = false;
       onlineReady = true;
-      opponent.name = msg.opponent || 'Opponent';
+      playerSlot = Number(msg.you || 0);
+      
+      // Update opponent names and initialize slots
+      if (msg.opponents && Array.isArray(msg.opponents)) {
+        for (let i = 0; i < msg.opponents.length; i++) {
+          opponents[i].name = msg.opponents[i].name || `Player ${i + 2}`;
+          oppNameEls[i].textContent = opponents[i].name;
+        }
+      }
+      
+      const oppCount = msg.opponents ? msg.opponents.length : 1;
+      const oppNames = msg.opponents ? msg.opponents.map(o => o.name).join(', ') : 'opponents';
+      
       // Hide form states
       waitingState.classList.remove('active');
       connectingState.classList.remove('active');
       formWrapper.classList.remove('hidden');
-      setStatus(`Match started vs ${opponent.name}`);
+      setStatus(`Match started (${oppCount + 1} players): ${oppNames}`);
     } else if (msg.type === 'snapshot') {
-      if (Array.isArray(msg.grid) && msg.grid.length === ROWS) {
-        const parsed = [];
-        let ok = true;
-        for (const row of msg.grid) {
-          if (typeof row !== 'string' || row.length !== COLS) { ok = false; break; }
-          parsed.push(row.split(''));
+      const playerIdx = Number(msg.player || 0);
+      if (playerIdx >= 1 && playerIdx <= 3 && playerIdx !== playerSlot) {
+        const oppIdx = playerIdx - 1;
+        if (Array.isArray(msg.grid) && msg.grid.length === ROWS) {
+          const parsed = [];
+          let ok = true;
+          for (const row of msg.grid) {
+            if (typeof row !== 'string' || row.length !== COLS) { ok = false; break; }
+            parsed.push(row.split(''));
+          }
+          if (ok) opponents[oppIdx].grid = parsed;
         }
-        if (ok) opponent.grid = parsed;
+        opponents[oppIdx].score = Number(msg.score || opponents[oppIdx].score);
+        opponents[oppIdx].lines = Number(msg.lines || opponents[oppIdx].lines);
+        opponents[oppIdx].game_over = Boolean(msg.game_over || false);
+        if (msg.piece) opponents[oppIdx].piece = msg.piece;
       }
-      opponent.score = Number(msg.score || opponent.score);
-      opponent.lines = Number(msg.lines || opponent.lines);
-      opponent.game_over = Boolean(msg.game_over || false);
-      if (msg.piece) opponent.piece = msg.piece;
     } else if (msg.type === 'attack') {
       const amt = Number(msg.amount || 0);
       if (amt > 0) game.addGarbage(amt);
     } else if (msg.type === 'gameover') {
-      opponent.game_over = true;
-      setStatus('Opponent topped out');
+      const playerIdx = Number(msg.player || 0);
+      if (playerIdx >= 1 && playerIdx <= 3 && playerIdx !== playerSlot) {
+        const oppIdx = playerIdx - 1;
+        opponents[oppIdx].game_over = true;
+        oppStatusEls[oppIdx].textContent = 'TOPOUT';
+      }
     } else if (msg.type === 'error') {
       setStatus(`Server error: ${msg.message || 'unknown'}`);
       btnConnect.disabled = false;
@@ -540,8 +580,13 @@ function connectOnline() {
       connectingState.classList.remove('active');
       waitingState.classList.remove('active');
     } else if (msg.type === 'opponent_left') {
-      onlineReady = false;
-      setStatus('Opponent left');
+      const playerIdx = Number(msg.player || 0);
+      if (playerIdx >= 1 && playerIdx <= 3 && playerIdx !== playerSlot) {
+        const oppIdx = playerIdx - 1;
+        opponents[oppIdx].name = 'Player ' + (oppIdx + 2) + ' (left)';
+        oppNameEls[oppIdx].textContent = opponents[oppIdx].name;
+      }
+      setStatus('A player has left');
     }
   };
 
@@ -648,10 +693,14 @@ function loop(ts) {
   drawParticles(bctx);
 
   if (mode === 'online') {
-    drawGrid(octx, opponent.grid);
-    if (opponent.piece) drawOpponentPiece(octx, opponent.piece);
+    for (let i = 0; i < 3; i++) {
+      drawGrid(octxes[i], opponents[i].grid);
+      if (opponents[i].piece) drawOpponentPiece(octxes[i], opponents[i].piece);
+    }
   } else {
-    drawGrid(octx, blankGrid);
+    for (let i = 0; i < 3; i++) {
+      drawGrid(octxes[i], blankGrid);
+    }
   }
 
   if (game.score !== lastScore) {
@@ -672,15 +721,17 @@ function loop(ts) {
   }
 
   if (mode === 'online') {
-    if (opponent.score !== lastOppScore) {
-      lastOppScore = opponent.score;
-      oppScoreEl.textContent = opponent.score;
+    for (let i = 0; i < 3; i++) {
+      if (opponents[i].score !== lastOppScores[i]) {
+        lastOppScores[i] = opponents[i].score;
+        oppScoreEls[i].textContent = opponents[i].score;
+      }
+      if (opponents[i].lines !== lastOppLines[i]) {
+        lastOppLines[i] = opponents[i].lines;
+        oppLinesEls[i].textContent = opponents[i].lines;
+      }
+      oppStatusEls[i].textContent = opponents[i].game_over ? 'Topped Out' : 'Playing';
     }
-    if (opponent.lines !== lastOppLines) {
-      lastOppLines = opponent.lines;
-      oppLinesEl.textContent = opponent.lines;
-    }
-    oppStatusEl.textContent = opponent.game_over ? 'Topped Out' : 'Playing';
   }
 
   requestAnimationFrame(loop);

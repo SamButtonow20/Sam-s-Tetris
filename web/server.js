@@ -20,12 +20,25 @@ function broadcastRoom(room, payload, exceptWs = null) {
   }
 }
 
+function broadcastRoomFull(room, msg, fromWs) {
+  const members = rooms.get(room) || [];
+  const senderIdx = members.findIndex((m) => m.ws === fromWs);
+  if (senderIdx < 0) return;
+  
+  for (let i = 0; i < members.length; i++) {
+    if (i !== senderIdx) {
+      const payload = { ...msg, player: senderIdx };
+      send(members[i].ws, payload);
+    }
+  }
+}
+
 function removeClient(ws) {
   for (const [room, members] of rooms.entries()) {
     const idx = members.findIndex((m) => m.ws === ws);
     if (idx >= 0) {
       members.splice(idx, 1);
-      broadcastRoom(room, { type: 'opponent_left' }, ws);
+      broadcastRoom(room, { type: 'opponent_left', player: idx }, ws);
       if (members.length === 0) rooms.delete(room);
       break;
     }
@@ -66,24 +79,31 @@ wss.on('connection', (ws) => {
       const name = String(msg.name || 'Player');
       const members = rooms.get(room) || [];
 
-      if (members.length >= 2) {
+      if (members.length >= 4) {
         send(ws, { type: 'error', message: 'Room full' });
         ws.close();
         return;
       }
 
+      const playerSlot = members.length;
       members.push({ ws, name });
       rooms.set(room, members);
       ws.room = room;
       ws.name = name;
+      ws.playerSlot = playerSlot;
 
-      send(ws, { type: 'joined', room, slot: members.length });
+      send(ws, { type: 'joined', room, slot: playerSlot });
+      
       if (members.length === 1) {
-        send(ws, { type: 'waiting' });
-      } else if (members.length === 2) {
+        send(ws, { type: 'waiting', count: 1 });
+      } else if (members.length >= 2) {
         const seed = Math.floor(Math.random() * 1_000_000);
-        send(members[0].ws, { type: 'start', seed, you: 0, opponent: members[1].name });
-        send(members[1].ws, { type: 'start', seed, you: 1, opponent: members[0].name });
+        const opponents = members.map((m, i) => ({ slot: i, name: m.name })).filter((o, i) => i !== playerSlot);
+        
+        for (let i = 0; i < members.length; i++) {
+          const opps = members.map((m, idx) => ({ slot: idx, name: m.name })).filter((o) => o.slot !== i);
+          send(members[i].ws, { type: 'start', seed, you: i, opponents: opps });
+        }
       }
       return;
     }
@@ -91,7 +111,7 @@ wss.on('connection', (ws) => {
     if (!ws.room) return;
 
     if (msg.type === 'snapshot' || msg.type === 'attack' || msg.type === 'gameover' || msg.type === 'ping') {
-      broadcastRoom(ws.room, msg, ws);
+      broadcastRoomFull(ws.room, msg, ws);
     }
   });
 
