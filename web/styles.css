@@ -1106,24 +1106,24 @@ input:focus {
 /* Row 1: header spans both columns */
 .gameArea .playerBoard .boardHeader   { grid-column: 1 / -1; grid-row: 1; width: 100%; }
 
-/* Row 2: canvas in col 1, next-piece in col 2 (spanning rows 2-3) */
+/* Row 2: canvas in col 1 */
 .gameArea .playerBoard .mainCanvas {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 2 / 4;
   height: var(--board-h);
   width: 100%;
   image-rendering: pixelated;
 }
 
 /* Row 3: footer in col 1 */
-.gameArea .playerBoard .boardFooter   { grid-column: 1; grid-row: 3; font-size: var(--footer-size); }
+.gameArea .playerBoard .boardFooter   { grid-column: 1; grid-row: 4; font-size: var(--footer-size); }
 .gameArea .playerBoard .boardFooter .footerLabel { font-size: var(--footer-label); }
 .gameArea .playerBoard .boardFooter .footerValue { font-size: var(--footer-value); }
 
-/* Sidebar: next piece spans rows 2-3 in col 2 */
+/* Sidebar col 2: next piece in row 2, piece stats in row 3 */
 .gameArea .playerBoard .nextPieceBox  {
   grid-column: 2;
-  grid-row: 2 / 4;
+  grid-row: 2;
   width: 100%;
   padding: 6px;
   border-radius: 4px;
@@ -1137,21 +1137,27 @@ input:focus {
 .gameArea .playerBoard .timeBadge,
 .gameArea .playerBoard .coinBadge     { font-size: var(--badge-size); }
 
-/* Extra sidebar items: piece stats & b2b below the next-piece box */
+/* Piece stats in sidebar row 3 */
 .gameArea .playerBoard .pieceStatsPanel {
   grid-column: 2;
+  grid-row: 3;
   position: relative;
   left: auto;
   top: auto;
   transform: none;
   width: 100%;
   margin-top: 0;
+  align-self: start;
 }
+
+/* B2B indicator: absolute overlay so it doesn't affect grid */
 .gameArea .playerBoard .b2bIndicator {
   grid-column: 2;
+  grid-row: 4;
   position: relative;
   right: auto;
   top: auto;
+  align-self: start;
 }
 
 .playerCard {
