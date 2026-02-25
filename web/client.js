@@ -2751,6 +2751,23 @@ function scheduleSyncProfile() {
   syncTimer = setTimeout(() => syncProfileToServer(), 2000);
 }
 
+// Sync immediately before page unload so nothing is lost
+window.addEventListener('beforeunload', () => {
+  if (authToken) {
+    const profile = {
+      coins: loadCoins(),
+      ownedSkins: ownedSkins,
+      equippedSkin: equippedSkin,
+      stats: loadStats(),
+      ranked: loadRankedData(),
+      achievements: loadAchievements(),
+      keybinds: keybinds
+    };
+    // Use sendBeacon for reliable unload sync
+    navigator.sendBeacon('/api/profile', new Blob([JSON.stringify({ profile, token: authToken })], { type: 'application/json' }));
+  }
+});
+
 // Hook into existing save functions to trigger server sync
 const _origAddCoins = addCoins;
 const _origSpendCoins = spendCoins;
@@ -3879,13 +3896,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Show auth page or welcome page depending on login state
   if (isLoggedIn()) {
-    // Validate token with server
+    // Validate token with server and pull latest profile
     fetch('/api/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-      body: JSON.stringify({})
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + authToken }
     }).then(r => r.json()).then(data => {
       if (data.ok) {
+        authUsername = data.username;
         loadProfileFromServer(data.profile);
         showWelcomeAfterAuth();
       } else {

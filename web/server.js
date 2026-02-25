@@ -170,12 +170,19 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && req.url === '/api/profile') {
     try {
       const auth = req.headers.authorization;
-      if (!auth || !auth.startsWith('Bearer ')) return sendJSON(res, 401, { error: 'Not authenticated' });
-      const token = auth.slice(7);
+      const body = await parseBody(req);
+      // Support both: Authorization header (normal) and body.token (sendBeacon on page close)
+      let token;
+      if (auth && auth.startsWith('Bearer ')) {
+        token = auth.slice(7);
+      } else if (body.token) {
+        token = body.token;
+      }
+      if (!token) return sendJSON(res, 401, { error: 'Not authenticated' });
       const users = loadUsers();
       const userEntry = Object.values(users).find(u => u.token === token);
       if (!userEntry) return sendJSON(res, 401, { error: 'Invalid session' });
-      const { profile } = await parseBody(req);
+      const { profile } = body;
       if (profile) {
         // Merge profile fields (don't let client set arbitrary stuff)
         if (typeof profile.coins === 'number') userEntry.profile.coins = Math.max(0, profile.coins);
@@ -187,6 +194,19 @@ const server = http.createServer(async (req, res) => {
         if (profile.keybinds) userEntry.profile.keybinds = profile.keybinds;
         saveUsers(users);
       }
+      return sendJSON(res, 200, { ok: true, username: userEntry.username, profile: userEntry.profile });
+    } catch (e) { return sendJSON(res, 400, { error: e.message }); }
+  }
+
+  // GET /api/profile — read profile via token (no body needed)
+  if (req.method === 'GET' && req.url === '/api/profile') {
+    try {
+      const auth = req.headers.authorization;
+      if (!auth || !auth.startsWith('Bearer ')) return sendJSON(res, 401, { error: 'Not authenticated' });
+      const token = auth.slice(7);
+      const users = loadUsers();
+      const userEntry = Object.values(users).find(u => u.token === token);
+      if (!userEntry) return sendJSON(res, 401, { error: 'Invalid session' });
       return sendJSON(res, 200, { ok: true, username: userEntry.username, profile: userEntry.profile });
     } catch (e) { return sendJSON(res, 400, { error: e.message }); }
   }

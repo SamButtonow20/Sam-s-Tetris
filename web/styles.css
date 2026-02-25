@@ -1976,7 +1976,13 @@ canvas:hover {
 .authSubtitle {
   color: var(--color-text-dim);
   font-size: 1rem;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
+}
+.authNote {
+  color: var(--color-accent-green);
+  font-size: 0.8rem;
+  margin-bottom: 24px;
+  opacity: 0.85;
 }
 .authCard {
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.95), rgba(21, 29, 58, 0.95));
