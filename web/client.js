@@ -301,6 +301,12 @@ class SoundManager {
     this._stopOceanMusic();
     this.currentMusicTheme = null;
   }
+  pauseMusic() {
+    if (this.ctx && this.ctx.state === 'running') this.ctx.suspend();
+  }
+  resumeMusic() {
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  }
   /** Call when theme changes — seamlessly switches the soundtrack */
   switchThemeMusic() {
     if (!this.musicEnabled) return;
@@ -1270,10 +1276,10 @@ class Game {
         x: this.current.x,
         y: this.current.y
       },
-      next: this.gameOver ? null : {
+      next: this.next ? {
         kind: this.next.kind,
         rotation: this.next.rotation
-      }
+      } : null
     };
   }
 
@@ -1632,14 +1638,17 @@ let lastLevel = -1;
 function setStatus(text) { statusEl.textContent = text; }
 
 function togglePause() {
-  if (mode !== 'classic' && mode !== 'online') return;
+  if (mode !== 'classic' && mode !== 'online' && mode !== 'ai') return;
+  if (game && game.gameOver) return;
   isPaused = !isPaused;
   if (isPaused) {
     pauseMenu.classList.add('active');
     setStatus('Game Paused');
+    sound.pauseMusic();
   } else {
     pauseMenu.classList.remove('active');
     setStatus('Resumed');
+    sound.resumeMusic();
   }
 }
 
@@ -1647,6 +1656,7 @@ function resumeGame() {
   isPaused = false;
   pauseMenu.classList.remove('active');
   setStatus('Game Resumed');
+  sound.resumeMusic();
 }
 
 function backToMenuFromGame() {
@@ -1705,8 +1715,55 @@ function showGameOver() {
   setStatus('Game Over');
 }
 
+function showWinScreen() {
+  // Reuse the game over overlay but style it as a victory
+  const content = document.querySelector('.gameOverContent');
+  const heading = content ? content.querySelector('h2') : null;
+  if (heading) heading.textContent = '🏆 YOU WIN!';
+  if (content) {
+    content.style.background = 'linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(131, 56, 236, 0.25))';
+    content.style.borderColor = 'var(--color-accent-cyan)';
+    content.style.boxShadow = '0 0 40px rgba(0, 217, 255, 0.4), inset 0 0 20px rgba(0, 217, 255, 0.1)';
+  }
+  gameOverMenu.classList.add('active');
+  if (finalPlayerName) finalPlayerName.textContent = getCurrentPlayerName();
+  finalScore.textContent = game.score.toLocaleString();
+  finalLines.textContent = game.lines;
+  finalTime.textContent = game.getElapsedTimeFormatted();
+  if (btnSaveReplay) { btnSaveReplay.textContent = '💾 Save Replay'; btnSaveReplay.disabled = false; }
+  // Earn bonus coins for winning
+  const coinsEarned = earnGameCoins(game, true);
+  const coinEl = document.getElementById('gameOverCoins');
+  if (!coinEl) {
+    const ce = document.createElement('div');
+    ce.id = 'gameOverCoins';
+    ce.style.cssText = 'color:#ffd54f;font-size:0.9rem;margin-top:6px;';
+    ce.textContent = `🪙 +${coinsEarned} coins earned (WIN bonus!)`;
+    const timeEl = finalTime.parentElement;
+    if (timeEl) timeEl.parentElement.appendChild(ce);
+  } else {
+    coinEl.textContent = `🪙 +${coinsEarned} coins earned (WIN bonus!)`;
+  }
+  updateCoinDisplays();
+  scheduleSyncProfile();
+  sound.playAchievement();
+  setStatus('🏆 You Win!');
+}
+
+function resetGameOverOverlayStyle() {
+  const content = document.querySelector('.gameOverContent');
+  const heading = content ? content.querySelector('h2') : null;
+  if (heading) heading.textContent = 'GAME OVER';
+  if (content) {
+    content.style.background = '';
+    content.style.borderColor = '';
+    content.style.boxShadow = '';
+  }
+}
+
 function hideGameOver() {
   gameOverMenu.classList.remove('active');
+  resetGameOverOverlayStyle();
 }
 
 function playAgain() {
@@ -2558,14 +2615,14 @@ function loop(ts) {
   updateB2BIndicator();
 
   if (game.gameOver || (mode === 'replay' && replayPlayer && replayPlayer.finished)) {
-    if (mode === 'replay') {
-      setStatus('Replay finished');
-    } else {
-      setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
-    }
     if (!shownGameOver) {
       shownGameOver = true;
-      if (mode !== 'replay') showGameOver();
+      if (mode === 'replay') {
+        setStatus('Replay finished');
+      } else {
+        setStatus(mode === 'online' ? 'Game over (you topped out)' : 'Game over');
+        showGameOver();
+      }
       // Handle ranked match results
       if (mode === 'ai' && isRankedMatch) {
         const playerWon = !game.gameOver || (aiGame && aiGame.gameOver);
@@ -2576,11 +2633,15 @@ function loop(ts) {
       checkWinner(); // Check if you won or if it's a draw
     }
   }
-  // Also check if AI lost in ranked (vs AI only, vs Player handled by websocket)
-  if (mode === 'ai' && aiGame && aiGame.gameOver && !game.gameOver && isRankedMatch && !isRankedVsPlayer && !shownGameOver) {
+  // Check if AI lost (ranked or casual)
+  if (mode === 'ai' && aiGame && aiGame.gameOver && !game.gameOver && !shownGameOver) {
     shownGameOver = true;
-    showGameOver();
-    handleRankedGameOver(true);
+    game.gameOver = true; // Stop the player's game — they won
+    sound.stopMusic();
+    if (isRankedMatch && !isRankedVsPlayer) {
+      handleRankedGameOver(true);
+    }
+    showWinScreen();
   }
 
   if (mode === 'online') {
