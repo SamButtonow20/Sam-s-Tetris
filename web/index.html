@@ -112,6 +112,54 @@
               <span>✓ Playback</span>
             </div>
           </div>
+
+          <!-- Ranked 1v1 Card -->
+          <div class="modeCard" id="cardRanked">
+            <div class="modeIcon">⚔️</div>
+            <h2 class="modeName">Ranked 1v1</h2>
+            <p class="modeDescription">Compete in ranked matches. Climb the ELO ladder and prove your skill.</p>
+            <div class="modeFeatures">
+              <span>✓ ELO Rating</span>
+              <span>✓ Matchmaking</span>
+              <span>✓ Rank Ladder</span>
+            </div>
+          </div>
+
+          <!-- Shop Card -->
+          <div class="modeCard" id="cardShop">
+            <div class="modeIcon">🛒</div>
+            <h2 class="modeName">Shop</h2>
+            <p class="modeDescription">Spend your hard-earned coins on custom piece skins and block styles.</p>
+            <div class="modeFeatures">
+              <span>✓ Piece Skins</span>
+              <span>✓ Earn Coins</span>
+              <span>✓ Customize Blocks</span>
+            </div>
+          </div>
+
+          <!-- Settings Card -->
+          <div class="modeCard" id="cardSettings">
+            <div class="modeIcon">⚙️</div>
+            <h2 class="modeName">Settings</h2>
+            <p class="modeDescription">Customize your controls, keybinds, and game preferences.</p>
+            <div class="modeFeatures">
+              <span>✓ Custom Keybinds</span>
+              <span>✓ Control Options</span>
+              <span>✓ Preferences</span>
+            </div>
+          </div>
+
+          <!-- Profile Card -->
+          <div class="modeCard" id="cardProfile">
+            <div class="modeIcon">👤</div>
+            <h2 class="modeName">Profile</h2>
+            <p class="modeDescription">View your player profile, match history, rank, and earned badges.</p>
+            <div class="modeFeatures">
+              <span>✓ Match History</span>
+              <span>✓ Rank Display</span>
+              <span>✓ Badge Showcase</span>
+            </div>
+          </div>
         </div>
 
         <p class="welcomeControls">
@@ -345,6 +393,81 @@
       </div>
     </div>
 
+    <!-- Settings / Keybinds Page -->
+    <div class="settingsPage" id="settingsPage">
+      <div class="pageContent">
+        <h2>⚙️ Settings</h2>
+        <h3 style="color:var(--color-accent-cyan);margin:16px 0 12px;">🎮 Keybinds</h3>
+        <p style="color:var(--color-text-dim);font-size:0.85em;margin-bottom:12px;">Click a binding, then press the key you want to assign.</p>
+        <div class="keybindsList" id="keybindsList"></div>
+        <button id="btnResetKeybinds" class="btn btn-secondary" style="width:100%;margin-top:12px;">Reset to Defaults</button>
+        <button id="btnBackFromSettings" class="btn btn-accent" style="width:100%;margin-top:8px;">Back to Menu</button>
+      </div>
+    </div>
+
+    <!-- Shop Page -->
+    <div class="shopPage" id="shopPage">
+      <div class="pageContent">
+        <h2>🛒 Shop</h2>
+        <div class="shopCoinsBar">
+          <span class="coinIcon">🪙</span>
+          <span class="coinAmount" id="shopCoinDisplay">0</span>
+          <span style="color:var(--color-text-dim);font-size:0.85em;">coins</span>
+        </div>
+        <h3 style="color:var(--color-accent-cyan);margin:12px 0 8px;">Piece Skins</h3>
+        <div class="shopGrid" id="shopGrid"></div>
+        <button id="btnBackFromShop" class="btn btn-accent" style="width:100%;margin-top:12px;">Back to Menu</button>
+      </div>
+    </div>
+
+    <!-- Ranked Page -->
+    <div class="rankedPage" id="rankedPage">
+      <div class="pageContent">
+        <h2>⚔️ Ranked 1v1</h2>
+        <div class="rankedInfo" id="rankedInfo">
+          <div class="rankedRank">
+            <span class="rankIcon" id="rankIcon">🥉</span>
+            <span class="rankName" id="rankName">Bronze</span>
+          </div>
+          <div class="rankedElo">
+            <span class="eloLabel">ELO</span>
+            <span class="eloValue" id="eloValue">1000</span>
+          </div>
+          <div class="rankedRecord">
+            <span id="rankedWins">0</span>W / <span id="rankedLosses">0</span>L
+          </div>
+        </div>
+        <div id="rankedQueueStatus" class="rankedQueueStatus" style="display:none;">Searching for opponent...</div>
+        <button id="btnFindRankedMatch" class="btn btn-accent" style="width:100%;margin-bottom:8px;">🔍 Find Match</button>
+        <button id="btnCancelQueue" class="btn btn-secondary" style="width:100%;margin-bottom:8px;display:none;">Cancel Search</button>
+        <h3 style="color:var(--color-accent-cyan);margin:16px 0 8px;">Rank Ladder</h3>
+        <div class="rankedLadder" id="rankedLadder"></div>
+        <button id="btnBackFromRanked" class="btn btn-accent" style="width:100%;margin-top:12px;">Back to Menu</button>
+      </div>
+    </div>
+
+    <!-- Profile Page -->
+    <div class="profilePage" id="profilePage">
+      <div class="pageContent">
+        <h2>👤 Profile</h2>
+        <div class="profileCard" id="profileCard">
+          <div class="profileHeader">
+            <div class="profileAvatar" id="profileAvatar">👤</div>
+            <div class="profileNameSection">
+              <h3 id="profileName">Player</h3>
+              <span class="profileRank" id="profileRankBadge">🥉 Bronze (1000)</span>
+            </div>
+          </div>
+          <div class="profileStats" id="profileStats"></div>
+          <h3 style="color:var(--color-accent-cyan);margin:16px 0 8px;">🏅 Badges</h3>
+          <div class="profileBadges" id="profileBadges"></div>
+          <h3 style="color:var(--color-accent-cyan);margin:16px 0 8px;">📜 Match History</h3>
+          <div class="matchHistory" id="matchHistory"></div>
+        </div>
+        <button id="btnBackFromProfile" class="btn btn-accent" style="width:100%;margin-top:12px;">Back to Menu</button>
+      </div>
+    </div>
+
     <!-- Game Area -->
     <div class="gameContainer">
       <div class="gameArea" id="gameArea">
@@ -352,6 +475,7 @@
         <div class="playerBoard" id="player1Board">
           <div class="boardHeader">
             <h3 class="playerTitle">You</h3>
+            <span class="coinBadge" id="coinBadge">🪙 <span id="coinDisplay">0</span></span>
             <span class="levelBadge">Level <span id="level">1</span></span>
             <span class="timeBadge" id="timeBadge">0:00</span>
           </div>
@@ -490,9 +614,22 @@
         <div class="controlsContent">
           <div class="controlsGroup">
             <div class="controlsLabel">KEYBOARD</div>
-            <div class="controlRow">← / → Move  •  ↑ Rotate  •  Space Hard Drop  •  ↓ Soft Drop</div>
+            <div class="controlRow" id="controlsDisplay">← / → Move  •  ↑ Rotate  •  Space Hard Drop  •  ↓ Soft Drop</div>
           </div>
           <div id="mode" class="modeDisplay">Mode: Classic</div>
+        </div>
+      </div>
+
+      <!-- Mobile Touch Controls Overlay -->
+      <div class="touchControls" id="touchControls">
+        <div class="touchRow touchRowTop">
+          <button class="touchBtn touchRotate" id="touchRotate">↻</button>
+          <button class="touchBtn touchHardDrop" id="touchHardDrop">⤓</button>
+        </div>
+        <div class="touchRow touchRowBottom">
+          <button class="touchBtn touchLeft" id="touchLeft">◀</button>
+          <button class="touchBtn touchDown" id="touchDown">▼</button>
+          <button class="touchBtn touchRight" id="touchRight">▶</button>
         </div>
       </div>
     </div>

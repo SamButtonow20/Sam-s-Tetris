@@ -600,6 +600,258 @@ let aiDifficulty = 0.5;
 // Room settings for custom games
 let roomSettings = { startLevel: 1, garbageMultiplier: 1, speedMultiplier: 1 };
 
+// ==================== KEYBIND SYSTEM ====================
+const DEFAULT_KEYBINDS = {
+  moveLeft: 'ArrowLeft',
+  moveRight: 'ArrowRight',
+  rotate: 'ArrowUp',
+  hardDrop: ' ',
+  softDrop: 'ArrowDown',
+};
+const KEYBIND_LABELS = {
+  moveLeft: 'Move Left',
+  moveRight: 'Move Right',
+  rotate: 'Rotate',
+  hardDrop: 'Hard Drop',
+  softDrop: 'Soft Drop',
+};
+function loadKeybinds() {
+  try { return { ...DEFAULT_KEYBINDS, ...JSON.parse(localStorage.getItem('tetrisKeybinds') || '{}') }; }
+  catch { return { ...DEFAULT_KEYBINDS }; }
+}
+function saveKeybinds(kb) { localStorage.setItem('tetrisKeybinds', JSON.stringify(kb)); }
+let keybinds = loadKeybinds();
+
+function keyDisplayName(key) {
+  const names = { ' ': 'Space', 'ArrowLeft': '←', 'ArrowRight': '→', 'ArrowUp': '↑', 'ArrowDown': '↓', 'Shift': 'Shift', 'Control': 'Ctrl', 'Alt': 'Alt' };
+  return names[key] || (key.length === 1 ? key.toUpperCase() : key);
+}
+function getActionForKey(key) {
+  for (const [action, boundKey] of Object.entries(keybinds)) {
+    if (boundKey === key) return action;
+  }
+  return null;
+}
+function getAllBoundKeys() {
+  return new Set(Object.values(keybinds));
+}
+
+// ==================== COIN / ECONOMY SYSTEM ====================
+function loadCoins() { return parseInt(localStorage.getItem('tetrisCoins') || '0', 10); }
+function saveCoins(amount) { localStorage.setItem('tetrisCoins', String(amount)); }
+function addCoins(amount) {
+  const c = loadCoins() + amount;
+  saveCoins(c);
+  updateCoinDisplays();
+  return c;
+}
+function spendCoins(amount) {
+  const c = loadCoins();
+  if (c < amount) return false;
+  saveCoins(c - amount);
+  updateCoinDisplays();
+  return true;
+}
+function updateCoinDisplays() {
+  const coins = loadCoins();
+  const cd = document.getElementById('coinDisplay');
+  const scd = document.getElementById('shopCoinDisplay');
+  if (cd) cd.textContent = coins;
+  if (scd) scd.textContent = coins;
+}
+// Earn coins: 1 per 1000 score, 1 per line, 5 per tetris, 3 per t-spin, bonus for wins
+function earnGameCoins(g, won = false) {
+  let earned = Math.floor(g.score / 1000) + g.lines;
+  if (won) earned += 20;
+  if (earned > 0) addCoins(earned);
+  return earned;
+}
+
+// ==================== PIECE SKINS SYSTEM ====================
+const PIECE_SKINS = {
+  default: { name: 'Default', price: 0, style: 'flat', desc: 'Classic flat blocks' },
+  rounded: { name: 'Rounded', price: 50, style: 'rounded', desc: 'Smooth rounded corners' },
+  pixelated: { name: 'Pixelated', price: 75, style: 'pixelated', desc: 'Retro pixel art style' },
+  glowing: { name: 'Glowing', price: 100, style: 'glowing', desc: 'Neon glow effect' },
+  gradient: { name: 'Gradient', price: 120, style: 'gradient', desc: 'Smooth color gradients' },
+  glass: { name: 'Glass', price: 150, style: 'glass', desc: 'Transparent glass look' },
+  metallic: { name: 'Metallic', price: 200, style: 'metallic', desc: 'Shiny metal finish' },
+  rainbow: { name: 'Rainbow', price: 300, style: 'rainbow', desc: 'Shifting rainbow colors' },
+};
+function loadOwnedSkins() {
+  try { return JSON.parse(localStorage.getItem('tetrisOwnedSkins') || '["default"]'); }
+  catch { return ['default']; }
+}
+function saveOwnedSkins(list) { localStorage.setItem('tetrisOwnedSkins', JSON.stringify(list)); }
+function loadEquippedSkin() { return localStorage.getItem('tetrisEquippedSkin') || 'default'; }
+function saveEquippedSkin(id) { localStorage.setItem('tetrisEquippedSkin', id); }
+let ownedSkins = loadOwnedSkins();
+let equippedSkin = loadEquippedSkin();
+
+function buySkin(id) {
+  const skin = PIECE_SKINS[id];
+  if (!skin || ownedSkins.includes(id)) return false;
+  if (!spendCoins(skin.price)) return false;
+  ownedSkins.push(id);
+  saveOwnedSkins(ownedSkins);
+  return true;
+}
+function equipSkin(id) {
+  if (!ownedSkins.includes(id)) return;
+  equippedSkin = id;
+  saveEquippedSkin(id);
+}
+
+// ==================== RANKED / ELO SYSTEM (Local) ====================
+const RANK_TIERS = [
+  { name: 'Bronze', icon: '🥉', min: 0 },
+  { name: 'Silver', icon: '🥈', min: 1200 },
+  { name: 'Gold', icon: '🥇', min: 1400 },
+  { name: 'Platinum', icon: '💎', min: 1600 },
+  { name: 'Diamond', icon: '👑', min: 1800 },
+  { name: 'Master', icon: '🏆', min: 2000 },
+];
+function getRankForElo(elo) {
+  for (let i = RANK_TIERS.length - 1; i >= 0; i--) {
+    if (elo >= RANK_TIERS[i].min) return RANK_TIERS[i];
+  }
+  return RANK_TIERS[0];
+}
+function loadRankedData() {
+  try {
+    return JSON.parse(localStorage.getItem('tetrisRanked') || JSON.stringify({ elo: 1000, wins: 0, losses: 0, history: [] }));
+  } catch { return { elo: 1000, wins: 0, losses: 0, history: [] }; }
+}
+function saveRankedData(d) { localStorage.setItem('tetrisRanked', JSON.stringify(d)); }
+function calculateEloChange(myElo, oppElo, won) {
+  const K = 32;
+  const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
+  const actual = won ? 1 : 0;
+  return Math.round(K * (actual - expected));
+}
+function recordRankedResult(opponentName, opponentElo, won) {
+  const rd = loadRankedData();
+  const change = calculateEloChange(rd.elo, opponentElo, won);
+  rd.elo = Math.max(0, rd.elo + change);
+  if (won) rd.wins++; else rd.losses++;
+  rd.history.unshift({ opponent: opponentName, result: won ? 'win' : 'loss', eloChange: change, newElo: rd.elo, date: Date.now() });
+  if (rd.history.length > 50) rd.history.pop();
+  saveRankedData(rd);
+  return change;
+}
+
+// ==================== BACKGROUND PARTICLE SYSTEM ====================
+const BG_PARTICLES = {
+  neon: {
+    count: 30, colors: ['#00d9ff', '#ff006e', '#8338ec', '#06ffa5'],
+    speed: 0.4, size: [1, 3], glow: true, type: 'spark'
+  },
+  retro: {
+    count: 0, type: 'scanlines' // scanlines are drawn differently
+  },
+  pastel: {
+    count: 15, colors: ['#87ceeb', '#ffb6c1', '#dda0dd', '#98fb98'],
+    speed: 0.15, size: [3, 8], glow: false, type: 'bubble'
+  },
+  monochrome: {
+    count: 0, type: 'none'
+  },
+  ocean: {
+    count: 20, colors: ['#00e5ff', '#64ffda', '#448aff', '#7c4dff'],
+    speed: 0.25, size: [2, 5], glow: true, type: 'wave'
+  }
+};
+
+class BgParticle {
+  constructor(w, h, cfg) {
+    this.w = w; this.h = h; this.cfg = cfg;
+    this.reset(true);
+  }
+  reset(initial = false) {
+    this.x = Math.random() * this.w;
+    this.y = initial ? Math.random() * this.h : -10;
+    this.size = this.cfg.size[0] + Math.random() * (this.cfg.size[1] - this.cfg.size[0]);
+    this.color = this.cfg.colors[Math.floor(Math.random() * this.cfg.colors.length)];
+    this.vx = (Math.random() - 0.5) * this.cfg.speed * 30;
+    this.vy = this.cfg.speed * (20 + Math.random() * 30);
+    this.opacity = 0.2 + Math.random() * 0.5;
+    this.phase = Math.random() * Math.PI * 2;
+  }
+  update(dt) {
+    this.x += this.vx * dt / 1000;
+    this.y += this.vy * dt / 1000;
+    this.phase += dt / 1000;
+    if (this.cfg.type === 'wave') this.x += Math.sin(this.phase) * 0.3;
+    if (this.y > this.h + 10 || this.x < -10 || this.x > this.w + 10) this.reset();
+  }
+  draw(ctx) {
+    ctx.globalAlpha = this.opacity;
+    ctx.fillStyle = this.color;
+    if (this.cfg.glow) { ctx.shadowColor = this.color; ctx.shadowBlur = this.size * 3; }
+    if (this.cfg.type === 'bubble') {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 0.5;
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+}
+
+let bgParticles = [];
+let bgParticleCanvas = null;
+let bgParticleCtx = null;
+
+function initBgParticles() {
+  const cfg = BG_PARTICLES[currentThemeName];
+  bgParticles = [];
+  if (!cfg || cfg.count === 0) return;
+  // Create canvas if not exists
+  const board = document.getElementById('player1Board');
+  if (!board) return;
+  if (!bgParticleCanvas) {
+    bgParticleCanvas = document.createElement('canvas');
+    bgParticleCanvas.className = 'bgParticleCanvas';
+    bgParticleCanvas.width = BOARD_W;
+    bgParticleCanvas.height = BOARD_H;
+    // Insert before the main canvas
+    const mainCanvas = board.querySelector('.mainCanvas');
+    if (mainCanvas) mainCanvas.parentNode.insertBefore(bgParticleCanvas, mainCanvas);
+    bgParticleCtx = bgParticleCanvas.getContext('2d');
+  }
+  for (let i = 0; i < cfg.count; i++) {
+    bgParticles.push(new BgParticle(BOARD_W, BOARD_H, cfg));
+  }
+}
+
+function updateBgParticles(dt) {
+  for (const p of bgParticles) p.update(dt);
+}
+
+function drawBgParticles() {
+  if (!bgParticleCtx) return;
+  bgParticleCtx.clearRect(0, 0, BOARD_W, BOARD_H);
+  const cfg = BG_PARTICLES[currentThemeName];
+  if (!cfg) return;
+  // Retro scanlines
+  if (cfg.type === 'scanlines') {
+    bgParticleCtx.fillStyle = 'rgba(255,255,255,0.03)';
+    for (let y = 0; y < BOARD_H; y += 4) {
+      bgParticleCtx.fillRect(0, y, BOARD_W, 1);
+    }
+    return;
+  }
+  bgParticleCtx.save();
+  for (const p of bgParticles) p.draw(bgParticleCtx);
+  bgParticleCtx.restore();
+}
+
 class RNG {
   constructor(seed = Date.now() % 2147483647) {
     this.state = seed <= 0 ? 1 : seed;
@@ -1171,6 +1423,20 @@ const replayMenuBtn = document.getElementById('replayMenuBtn');
 const replayProgressText = document.getElementById('replayProgressText');
 const replayProgressFill = document.getElementById('replayProgressFill');
 
+// New feature page elements
+const cardRanked = document.getElementById('cardRanked');
+const cardShop = document.getElementById('cardShop');
+const cardSettings = document.getElementById('cardSettings');
+const cardProfile = document.getElementById('cardProfile');
+const settingsPage = document.getElementById('settingsPage');
+const shopPage = document.getElementById('shopPage');
+const rankedPage = document.getElementById('rankedPage');
+const profilePage = document.getElementById('profilePage');
+const keybindsList = document.getElementById('keybindsList');
+const shopGrid = document.getElementById('shopGrid');
+const controlsDisplay = document.getElementById('controlsDisplay');
+const touchControls = document.getElementById('touchControls');
+
 let lastOppScores = [-1, -1, -1];
 let lastOppLines = [-1, -1, -1];
 
@@ -1236,6 +1502,9 @@ function applyTheme(name) {
 
   // Switch soundtrack to match this theme
   sound.switchThemeMusic();
+
+  // Reinitialize background particles for new theme
+  initBgParticles();
 }
 
 function updatePieceStatsColors() {
@@ -1393,6 +1662,20 @@ function showGameOver() {
   finalLines.textContent = game.lines;
   finalTime.textContent = game.getElapsedTimeFormatted();
   if (btnSaveReplay) { btnSaveReplay.textContent = '💾 Save Replay'; btnSaveReplay.disabled = false; }
+  // Earn coins based on performance
+  const coinsEarned = earnGameCoins(game, false);
+  const coinEl = document.getElementById('gameOverCoins');
+  if (!coinEl) {
+    const ce = document.createElement('div');
+    ce.id = 'gameOverCoins';
+    ce.style.cssText = 'color:#ffd54f;font-size:0.9rem;margin-top:6px;';
+    ce.textContent = `🪙 +${coinsEarned} coins earned`;
+    const timeEl = finalTime.parentElement;
+    if (timeEl) timeEl.parentElement.appendChild(ce);
+  } else {
+    coinEl.textContent = `🪙 +${coinsEarned} coins earned`;
+  }
+  updateCoinDisplays();
   setStatus('Game Over');
 }
 
@@ -1467,6 +1750,10 @@ function startClassic() {
   if (achievementsPage) achievementsPage.classList.remove('active');
   if (replaysPage) replaysPage.classList.remove('active');
   if (aiSetupPage) aiSetupPage.classList.remove('active');
+  if (settingsPage) settingsPage.classList.remove('active');
+  if (shopPage) shopPage.classList.remove('active');
+  if (rankedPage) rankedPage.classList.remove('active');
+  if (profilePage) profilePage.classList.remove('active');
   gameContainer.style.display = 'flex';
   if (gameChatBox) gameChatBox.style.display = 'none';
   if (spectatorBanner) spectatorBanner.style.display = 'none';
@@ -1475,6 +1762,8 @@ function startClassic() {
   if (p1Title) p1Title.textContent = 'You';
   sound.init();
   sound.startMusic();
+  initBgParticles();
+  updateCoinDisplays();
   lastTs = performance.now();
   requestAnimationFrame(loop);
   setStatus('Classic mode started');
@@ -1853,8 +2142,85 @@ function connectOnline() {
 }
 
 function drawCell(ctx, x, y, v) {
-  ctx.fillStyle = COLORS[v] || '#fff';
-  ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+  const color = COLORS[v] || '#fff';
+  const px = x * CELL + 1;
+  const py = y * CELL + 1;
+  const sz = CELL - 2;
+
+  switch (equippedSkin) {
+    case 'rounded':
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(px, py, sz, sz, 4);
+      ctx.fill();
+      break;
+    case 'pixelated': {
+      ctx.fillStyle = color;
+      ctx.fillRect(px, py, sz, sz);
+      // Pixel grid effect
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      const ps = sz / 3;
+      for (let gx = 0; gx < 3; gx++) for (let gy = 0; gy < 3; gy++) {
+        ctx.fillRect(px + gx * ps + ps - 0.5, py + gy * ps, 0.5, ps);
+        ctx.fillRect(px + gx * ps, py + gy * ps + ps - 0.5, ps, 0.5);
+      }
+      break;
+    }
+    case 'glowing':
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = color;
+      ctx.fillRect(px, py, sz, sz);
+      ctx.shadowBlur = 0;
+      break;
+    case 'gradient': {
+      const grad = ctx.createLinearGradient(px, py, px + sz, py + sz);
+      grad.addColorStop(0, color);
+      grad.addColorStop(1, shadeColor(color, -40));
+      ctx.fillStyle = grad;
+      ctx.fillRect(px, py, sz, sz);
+      break;
+    }
+    case 'glass':
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.6;
+      ctx.fillRect(px, py, sz, sz);
+      ctx.globalAlpha = 1;
+      // Highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillRect(px + 1, py + 1, sz - 2, sz / 3);
+      break;
+    case 'metallic': {
+      ctx.fillStyle = color;
+      ctx.fillRect(px, py, sz, sz);
+      // Metallic sheen
+      const mg = ctx.createLinearGradient(px, py, px, py + sz);
+      mg.addColorStop(0, 'rgba(255,255,255,0.35)');
+      mg.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+      mg.addColorStop(1, 'rgba(0,0,0,0.2)');
+      ctx.fillStyle = mg;
+      ctx.fillRect(px, py, sz, sz);
+      break;
+    }
+    case 'rainbow': {
+      const hue = ((x * 37 + y * 53 + performance.now() / 20) % 360);
+      ctx.fillStyle = `hsl(${hue}, 80%, 55%)`;
+      ctx.fillRect(px, py, sz, sz);
+      break;
+    }
+    default: // flat
+      ctx.fillStyle = color;
+      ctx.fillRect(px, py, sz, sz);
+  }
+}
+
+function shadeColor(color, percent) {
+  const num = parseInt(color.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
 }
 
 function drawGrid(ctx, grid) {
@@ -2065,6 +2431,8 @@ function loop(ts) {
 
   // Update floating texts and screen shake
   updateFloatingTexts(dt);
+  updateBgParticles(dt);
+  drawBgParticles();
 
   // Apply screen shake to main canvas
   bctx.save();
@@ -2139,10 +2507,21 @@ function loop(ts) {
     if (!shownGameOver) {
       shownGameOver = true;
       if (mode !== 'replay') showGameOver();
+      // Handle ranked match results
+      if (mode === 'ai' && isRankedMatch) {
+        const playerWon = !game.gameOver || (aiGame && aiGame.gameOver);
+        handleRankedGameOver(playerWon);
+      }
     }
     if (mode === 'online') {
       checkWinner(); // Check if you won or if it's a draw
     }
+  }
+  // Also check if AI lost in ranked
+  if (mode === 'ai' && aiGame && aiGame.gameOver && !game.gameOver && isRankedMatch && !shownGameOver) {
+    shownGameOver = true;
+    showGameOver();
+    handleRankedGameOver(true);
   }
 
   if (mode === 'online') {
@@ -2180,7 +2559,8 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   
-  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
+  const allBound = getAllBoundKeys();
+  if (allBound.has(e.key) || e.key === ' ') e.preventDefault();
   if (game.gameOver) return;
   if (mode === 'online' && !onlineReady) return;
   if (mode === 'replay') {
@@ -2193,15 +2573,16 @@ window.addEventListener('keydown', (e) => {
   }
   if (isPaused) return;
 
-  if (e.key === 'ArrowLeft') game.move(-1, 0);
-  else if (e.key === 'ArrowRight') game.move(1, 0);
-  else if (e.key === 'ArrowUp') game.rotateCurrent();
-  else if (e.key === ' ') game.hardDrop();
-  else if (e.key === 'ArrowDown') { game.softDrop = true; if (replayRecorder) replayRecorder.record('softOn'); }
+  const action = getActionForKey(e.key);
+  if (action === 'moveLeft') game.move(-1, 0);
+  else if (action === 'moveRight') game.move(1, 0);
+  else if (action === 'rotate') game.rotateCurrent();
+  else if (action === 'hardDrop') game.hardDrop();
+  else if (action === 'softDrop') { game.softDrop = true; if (replayRecorder) replayRecorder.record('softOn'); }
 });
 
 window.addEventListener('keyup', (e) => {
-  if (e.key === 'ArrowDown') { game.softDrop = false; if (replayRecorder) replayRecorder.record('softOff'); }
+  if (e.key === keybinds.softDrop) { game.softDrop = false; if (replayRecorder) replayRecorder.record('softOff'); }
 });
 
 // ==================== PLAYER IDENTITY ====================
@@ -2346,6 +2727,10 @@ function startAIMode() {
   leaderboardPage.classList.remove('active');
   gameOverMenu.classList.remove('active');
   aiSetupPage.classList.remove('active');
+  if (settingsPage) settingsPage.classList.remove('active');
+  if (shopPage) shopPage.classList.remove('active');
+  if (rankedPage) rankedPage.classList.remove('active');
+  if (profilePage) profilePage.classList.remove('active');
   gameContainer.style.display = 'flex';
   if (gameChatBox) gameChatBox.style.display = 'none';
   if (spectatorBanner) spectatorBanner.style.display = 'none';
@@ -2355,6 +2740,8 @@ function startAIMode() {
   
   sound.init();
   sound.startMusic();
+  initBgParticles();
+  updateCoinDisplays();
   lastTs = performance.now();
   requestAnimationFrame(loop);
   setStatus('VS AI - ' + ['Easy', 'Medium', 'Hard', 'Expert'][Math.min(3, Math.floor(aiDifficulty * 4))]);
@@ -2592,6 +2979,389 @@ function ensurePlayerName() {
   return true;
 }
 
+// ==================== SETTINGS / KEYBINDS PAGE ====================
+function displayKeybinds() {
+  if (!keybindsList) return;
+  keybindsList.innerHTML = '';
+  for (const [action, key] of Object.entries(keybinds)) {
+    const row = document.createElement('div');
+    row.className = 'keybindRow';
+    row.innerHTML = `<span class="keybindAction">${KEYBIND_LABELS[action]}</span><button class="keybindKey" data-action="${action}">${keyDisplayName(key)}</button>`;
+    keybindsList.appendChild(row);
+  }
+  // Keybind click-to-rebind
+  keybindsList.querySelectorAll('.keybindKey').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Remove any existing listeners
+      keybindsList.querySelectorAll('.keybindKey').forEach(b => b.classList.remove('listening'));
+      btn.classList.add('listening');
+      btn.textContent = 'Press a key...';
+      const handler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.key === 'Escape') { btn.textContent = keyDisplayName(keybinds[btn.dataset.action]); btn.classList.remove('listening'); window.removeEventListener('keydown', handler, true); return; }
+        keybinds[btn.dataset.action] = e.key;
+        saveKeybinds(keybinds);
+        btn.textContent = keyDisplayName(e.key);
+        btn.classList.remove('listening');
+        window.removeEventListener('keydown', handler, true);
+        updateControlsDisplay();
+      };
+      window.addEventListener('keydown', handler, true);
+    });
+  });
+}
+
+function updateControlsDisplay() {
+  if (!controlsDisplay) return;
+  controlsDisplay.textContent = `${keyDisplayName(keybinds.moveLeft)} / ${keyDisplayName(keybinds.moveRight)} Move  •  ${keyDisplayName(keybinds.rotate)} Rotate  •  ${keyDisplayName(keybinds.hardDrop)} Hard Drop  •  ${keyDisplayName(keybinds.softDrop)} Soft Drop`;
+}
+
+function showSettingsPage() {
+  welcomePage.classList.remove('active');
+  settingsPage.classList.add('active');
+  displayKeybinds();
+}
+
+// ==================== SHOP PAGE ====================
+function displayShop() {
+  if (!shopGrid) return;
+  shopGrid.innerHTML = '';
+  updateCoinDisplays();
+  for (const [id, skin] of Object.entries(PIECE_SKINS)) {
+    const owned = ownedSkins.includes(id);
+    const equipped = equippedSkin === id;
+    const item = document.createElement('div');
+    item.className = `shopItem${owned ? ' owned' : ''}${equipped ? ' equipped' : ''}`;
+
+    // Create preview canvas
+    const previewCanvas = document.createElement('canvas');
+    previewCanvas.width = 60;
+    previewCanvas.height = 60;
+    previewCanvas.className = 'shopItemPreview';
+    const pctx = previewCanvas.getContext('2d');
+    // Draw sample block with this skin
+    const savedSkin = equippedSkin;
+    equippedSkin = id;
+    const sampleColors = ['1', '2', '3', '4'];
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) {
+      const origCELL = CELL;
+      // Scale the preview
+      pctx.save();
+      pctx.scale(60 / (2 * CELL), 60 / (2 * CELL));
+      drawCell(pctx, c, r, sampleColors[(r * 2 + c) % 4]);
+      pctx.restore();
+    }
+    equippedSkin = savedSkin;
+
+    let btnHtml = '';
+    if (equipped) {
+      btnHtml = `<button class="shopItemBtn equipped" disabled>✓ Equipped</button>`;
+    } else if (owned) {
+      btnHtml = `<button class="shopItemBtn equip" data-skin="${id}">Equip</button>`;
+    } else if (skin.price === 0) {
+      btnHtml = `<button class="shopItemBtn equip" data-skin="${id}">Equip</button>`;
+    } else {
+      const canAfford = loadCoins() >= skin.price;
+      btnHtml = `<button class="shopItemBtn ${canAfford ? 'buy' : 'locked'}" data-skin="${id}" ${canAfford ? '' : 'disabled'}>🪙 ${skin.price}</button>`;
+    }
+
+    item.innerHTML = `<div class="shopItemName">${skin.name}</div><div style="font-size:0.8rem;color:var(--color-text-dim);margin-bottom:4px;">${skin.desc}</div>${btnHtml}`;
+    item.insertBefore(previewCanvas, item.firstChild);
+    shopGrid.appendChild(item);
+  }
+  // Event delegation for shop buttons
+  shopGrid.querySelectorAll('.shopItemBtn.buy').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const skinId = btn.dataset.skin;
+      if (buySkin(skinId)) { equipSkin(skinId); displayShop(); }
+    });
+  });
+  shopGrid.querySelectorAll('.shopItemBtn.equip').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      equipSkin(btn.dataset.skin);
+      displayShop();
+    });
+  });
+}
+
+function showShopPage() {
+  welcomePage.classList.remove('active');
+  shopPage.classList.add('active');
+  displayShop();
+}
+
+// ==================== RANKED PAGE ====================
+function displayRankedInfo() {
+  const rd = loadRankedData();
+  const rank = getRankForElo(rd.elo);
+  const ri = document.getElementById('rankIcon');
+  const rn = document.getElementById('rankName');
+  const ev = document.getElementById('eloValue');
+  const rw = document.getElementById('rankedWins');
+  const rl = document.getElementById('rankedLosses');
+  if (ri) ri.textContent = rank.icon;
+  if (rn) rn.textContent = rank.name;
+  if (ev) ev.textContent = rd.elo;
+  if (rw) rw.textContent = rd.wins;
+  if (rl) rl.textContent = rd.losses;
+
+  // Display rank ladder
+  const ladder = document.getElementById('rankedLadder');
+  if (ladder) {
+    ladder.innerHTML = '';
+    for (const tier of RANK_TIERS) {
+      const row = document.createElement('div');
+      const isCurrent = rank.name === tier.name;
+      row.className = `ladderRow${isCurrent ? ' you' : ''}`;
+      row.innerHTML = `<span class="ladderPos">${tier.icon}</span><span class="ladderName">${tier.name}</span><span class="ladderElo">${tier.min}+</span>`;
+      ladder.appendChild(row);
+    }
+  }
+}
+
+let rankedSearching = false;
+let rankedSearchTimeout = null;
+
+function findRankedMatch() {
+  if (rankedSearching) return;
+  if (!ensurePlayerName()) return;
+  rankedSearching = true;
+  const queueStatus = document.getElementById('rankedQueueStatus');
+  const findBtn = document.getElementById('btnFindRankedMatch');
+  const cancelBtn = document.getElementById('btnCancelQueue');
+  if (queueStatus) queueStatus.style.display = 'block';
+  if (findBtn) findBtn.style.display = 'none';
+  if (cancelBtn) cancelBtn.style.display = 'block';
+
+  // Simulate matchmaking — in a real implementation this would go through the server
+  // For now, match against AI with ELO-scaled difficulty
+  rankedSearchTimeout = setTimeout(() => {
+    if (!rankedSearching) return;
+    rankedSearching = false;
+    if (queueStatus) queueStatus.style.display = 'none';
+    if (findBtn) findBtn.style.display = 'block';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+
+    // Start a ranked match vs AI
+    rankedPage.classList.remove('active');
+    startRankedMatch();
+  }, 2000 + Math.random() * 3000); // 2-5 second "search"
+}
+
+function cancelRankedQueue() {
+  rankedSearching = false;
+  if (rankedSearchTimeout) { clearTimeout(rankedSearchTimeout); rankedSearchTimeout = null; }
+  const queueStatus = document.getElementById('rankedQueueStatus');
+  const findBtn = document.getElementById('btnFindRankedMatch');
+  const cancelBtn = document.getElementById('btnCancelQueue');
+  if (queueStatus) queueStatus.style.display = 'none';
+  if (findBtn) findBtn.style.display = 'block';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+function startRankedMatch() {
+  // Use ELO to determine AI difficulty  
+  const rd = loadRankedData();
+  const eloBasedDiff = Math.min(0.95, Math.max(0.2, (rd.elo - 600) / 1600));
+  aiDifficulty = eloBasedDiff;
+
+  // Generate AI opponent with ELO near player's
+  const aiEloOffset = Math.floor(Math.random() * 200 - 100);
+  rankedOpponentElo = Math.max(100, rd.elo + aiEloOffset);
+  rankedOpponentName = ['TetrisMaster', 'BlockBuster', 'LineCleared', 'T-SpinKing', 'StackAttack', 'ComboHero', 'NeonPlayer'][Math.floor(Math.random() * 7)];
+  isRankedMatch = true;
+
+  // Start AI mode
+  const seed = Math.floor(Math.random() * 1000000);
+  game = new Game(seed);
+  aiGame = new Game(seed);
+  aiOpponent = new TetrisAI(eloBasedDiff);
+  aiOpponent.setGame(aiGame);
+  replayRecorder = new ReplayRecorder(seed);
+  floatingTexts = [];
+  mode = 'ai';
+  isPaused = false;
+  onlineReady = false;
+  sentGameOver = false;
+  shownGameOver = false;
+
+  welcomePage.classList.remove('active');
+  menu.classList.remove('active');
+  onlineForm.classList.remove('active');
+  if (settingsPage) settingsPage.classList.remove('active');
+  if (shopPage) shopPage.classList.remove('active');
+  if (rankedPage) rankedPage.classList.remove('active');
+  if (profilePage) profilePage.classList.remove('active');
+  gameContainer.style.display = 'flex';
+  gameArea.className = 'gameArea players-2';
+  if (gameChatBox) gameChatBox.style.display = 'none';
+  if (spectatorBanner) spectatorBanner.style.display = 'none';
+  if (pieceStatsPanel) pieceStatsPanel.style.display = '';
+  opponents = [{ grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, next: null }, { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, next: null }, { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, next: null }];
+  oppNameEls[0].textContent = rankedOpponentName;
+  modeEl.textContent = 'Mode: Ranked 1v1';
+  updatePlayerCount(2);
+  sound.init();
+  sound.startMusic();
+  initBgParticles();
+  updateCoinDisplays();
+  lastTs = performance.now();
+  requestAnimationFrame(loop);
+}
+
+let isRankedMatch = false;
+let rankedOpponentElo = 1000;
+let rankedOpponentName = 'Opponent';
+
+function showRankedPage() {
+  welcomePage.classList.remove('active');
+  rankedPage.classList.add('active');
+  displayRankedInfo();
+}
+
+// ==================== PROFILE PAGE ====================
+function showProfilePage() {
+  welcomePage.classList.remove('active');
+  profilePage.classList.add('active');
+  displayProfile();
+}
+
+function displayProfile() {
+  const name = getPlayerName() || 'Player';
+  const stats = loadStats();
+  const rd = loadRankedData();
+  const rank = getRankForElo(rd.elo);
+  const achs = loadAchievements();
+
+  const pn = document.getElementById('profileName');
+  const prb = document.getElementById('profileRankBadge');
+  const ps = document.getElementById('profileStats');
+  const pb = document.getElementById('profileBadges');
+  const mh = document.getElementById('matchHistory');
+
+  if (pn) pn.textContent = name;
+  if (prb) prb.textContent = `${rank.icon} ${rank.name} (${rd.elo})`;
+
+  if (ps) {
+    ps.innerHTML = [
+      ['Games Played', stats.gamesPlayed],
+      ['Best Score', stats.bestScore.toLocaleString()],
+      ['Total Lines', stats.totalLines],
+      ['Best Combo', stats.bestCombo],
+      ['Total Tetrises', stats.totalTetris],
+      ['Total T-Spins', stats.totalTSpins],
+      ['Ranked W/L', `${rd.wins}/${rd.losses}`],
+      ['Coins', loadCoins()],
+    ].map(([l, v]) => `<div class="profileStatItem"><span class="profileStatValue">${v}</span><span class="profileStatLabel">${l}</span></div>`).join('');
+  }
+
+  if (pb) {
+    pb.innerHTML = ACHIEVEMENTS.map(a => {
+      const earned = !!achs[a.id];
+      return `<span class="profileBadge ${earned ? 'earned' : 'locked'}">${a.icon} ${a.name}</span>`;
+    }).join('');
+  }
+
+  if (mh) {
+    if (rd.history.length === 0) {
+      mh.innerHTML = '<div style="text-align:center;color:var(--color-text-dim);padding:12px;">No matches yet</div>';
+    } else {
+      mh.innerHTML = rd.history.slice(0, 20).map(m => {
+        const date = new Date(m.date).toLocaleDateString();
+        return `<div class="matchRow">
+          <span class="matchResult ${m.result}">${m.result === 'win' ? 'W' : 'L'}</span>
+          <span class="matchOpponent">vs ${m.opponent}</span>
+          <span class="matchEloChange ${m.eloChange >= 0 ? 'positive' : 'negative'}">${m.eloChange >= 0 ? '+' : ''}${m.eloChange}</span>
+          <span style="font-size:0.75rem;color:var(--color-text-dim);margin-left:8px;">${date}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+// ==================== TOUCH CONTROLS ====================
+function initTouchControls() {
+  const tl = document.getElementById('touchLeft');
+  const tr = document.getElementById('touchRight');
+  const td = document.getElementById('touchDown');
+  const trot = document.getElementById('touchRotate');
+  const thd = document.getElementById('touchHardDrop');
+
+  if (!tl) return; // No touch controls in DOM
+
+  function touchAction(action) {
+    if (game.gameOver || isPaused) return;
+    if (mode === 'replay') return;
+    if (action === 'left') game.move(-1, 0);
+    else if (action === 'right') game.move(1, 0);
+    else if (action === 'rotate') game.rotateCurrent();
+    else if (action === 'hardDrop') game.hardDrop();
+    else if (action === 'softDrop') game.softDrop = true;
+    sound.init();
+  }
+
+  // Use touchstart for responsive feel
+  tl.addEventListener('touchstart', (e) => { e.preventDefault(); touchAction('left'); }, { passive: false });
+  tr.addEventListener('touchstart', (e) => { e.preventDefault(); touchAction('right'); }, { passive: false });
+  trot.addEventListener('touchstart', (e) => { e.preventDefault(); touchAction('rotate'); }, { passive: false });
+  thd.addEventListener('touchstart', (e) => { e.preventDefault(); touchAction('hardDrop'); }, { passive: false });
+
+  // Soft drop hold
+  let softDropInterval = null;
+  td.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    touchAction('softDrop');
+    softDropInterval = setInterval(() => touchAction('softDrop'), 50);
+  }, { passive: false });
+  td.addEventListener('touchend', () => { game.softDrop = false; if (softDropInterval) { clearInterval(softDropInterval); softDropInterval = null; } });
+  td.addEventListener('touchcancel', () => { game.softDrop = false; if (softDropInterval) { clearInterval(softDropInterval); softDropInterval = null; } });
+
+  // Also add swipe support on the canvas
+  let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+  boardCanvas.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchStartTime = Date.now();
+  }, { passive: true });
+  boardCanvas.addEventListener('touchend', (e) => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+    if (dt > 300) return; // Too slow for a swipe
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (absDx < 20 && absDy < 20) {
+      // Tap → rotate
+      touchAction('rotate');
+    } else if (absDy > absDx && dy > 30) {
+      // Swipe down → hard drop
+      touchAction('hardDrop');
+    }
+  }, { passive: true });
+}
+
+// ==================== RANKED GAME OVER HANDLER ====================
+function handleRankedGameOver(playerWon) {
+  if (!isRankedMatch) return;
+  isRankedMatch = false;
+  const change = recordRankedResult(rankedOpponentName, rankedOpponentElo, playerWon);
+  // Show rank change notification
+  const changeText = change >= 0 ? `+${change}` : `${change}`;
+  const changeColor = change >= 0 ? 'var(--color-accent-green)' : 'var(--color-accent-pink)';
+  const toast = document.createElement('div');
+  toast.className = 'achievementToast';
+  toast.innerHTML = `<span class="achIcon">⚔️</span><div class="achInfo"><span class="achTitle">${playerWon ? 'Victory!' : 'Defeat'}</span><span class="achName" style="color:${changeColor}">ELO ${changeText}</span></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
+  if (playerWon) addCoins(20); // Ranked win bonus
+}
+
 // Card click handlers from welcome page
 cardClassic.addEventListener('click', () => {
   ensurePlayerName();
@@ -2623,6 +3393,12 @@ if (cardStats) cardStats.addEventListener('click', showStatsPage);
 if (cardAchievements) cardAchievements.addEventListener('click', showAchievementsPage);
 if (cardReplays) cardReplays.addEventListener('click', showReplaysPage);
 
+// New page card handlers
+if (cardRanked) cardRanked.addEventListener('click', showRankedPage);
+if (cardShop) cardShop.addEventListener('click', showShopPage);
+if (cardSettings) cardSettings.addEventListener('click', showSettingsPage);
+if (cardProfile) cardProfile.addEventListener('click', showProfilePage);
+
 // AI setup
 if (btnStartAI) btnStartAI.addEventListener('click', startAIMode);
 if (btnBackFromAI) btnBackFromAI.addEventListener('click', () => {
@@ -2653,6 +3429,23 @@ if (btnClearStats) btnClearStats.addEventListener('click', () => {
 if (btnClearAchievements) btnClearAchievements.addEventListener('click', () => {
   if (confirm('Reset all achievements?')) { localStorage.removeItem('tetrisAchievements'); displayAchievements(); }
 });
+
+// New page back buttons
+const btnBackFromSettings = document.getElementById('btnBackFromSettings');
+const btnResetKeybinds = document.getElementById('btnResetKeybinds');
+const btnBackFromShop = document.getElementById('btnBackFromShop');
+const btnBackFromRanked = document.getElementById('btnBackFromRanked');
+const btnFindRankedMatch = document.getElementById('btnFindRankedMatch');
+const btnCancelQueue = document.getElementById('btnCancelQueue');
+const btnBackFromProfile = document.getElementById('btnBackFromProfile');
+
+if (btnBackFromSettings) btnBackFromSettings.addEventListener('click', () => { settingsPage.classList.remove('active'); welcomePage.classList.add('active'); });
+if (btnResetKeybinds) btnResetKeybinds.addEventListener('click', () => { keybinds = { ...DEFAULT_KEYBINDS }; saveKeybinds(keybinds); displayKeybinds(); updateControlsDisplay(); });
+if (btnBackFromShop) btnBackFromShop.addEventListener('click', () => { shopPage.classList.remove('active'); welcomePage.classList.add('active'); });
+if (btnBackFromRanked) btnBackFromRanked.addEventListener('click', () => { cancelRankedQueue(); rankedPage.classList.remove('active'); welcomePage.classList.add('active'); });
+if (btnFindRankedMatch) btnFindRankedMatch.addEventListener('click', findRankedMatch);
+if (btnCancelQueue) btnCancelQueue.addEventListener('click', cancelRankedQueue);
+if (btnBackFromProfile) btnBackFromProfile.addEventListener('click', () => { profilePage.classList.remove('active'); welcomePage.classList.add('active'); });
 
 // Save replay button in game over
 if (btnSaveReplay) btnSaveReplay.addEventListener('click', () => {
@@ -2778,6 +3571,10 @@ window.addEventListener('DOMContentLoaded', () => {
   if (achievementsPage) achievementsPage.classList.remove('active');
   if (replaysPage) replaysPage.classList.remove('active');
   if (aiSetupPage) aiSetupPage.classList.remove('active');
+  if (settingsPage) settingsPage.classList.remove('active');
+  if (shopPage) shopPage.classList.remove('active');
+  if (rankedPage) rankedPage.classList.remove('active');
+  if (profilePage) profilePage.classList.remove('active');
   if (gameChatBox) gameChatBox.style.display = 'none';
   if (spectatorBanner) spectatorBanner.style.display = 'none';
   // Apply saved theme
@@ -2785,4 +3582,7 @@ window.addEventListener('DOMContentLoaded', () => {
   updatePieceStatsColors();
   updateSoundButtons();
   initPlayerIdentity();
+  updateControlsDisplay();
+  updateCoinDisplays();
+  initTouchControls();
 });

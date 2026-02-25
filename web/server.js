@@ -87,7 +87,12 @@ const server = http.createServer((req, res) => {
       ext === '.html' ? 'text/html' :
       ext === '.css' ? 'text/css' :
       ext === '.js' ? 'application/javascript' :
-      'text/plain';
+      ext === '.wav' ? 'audio/wav' :
+      ext === '.mp3' ? 'audio/mpeg' :
+      ext === '.json' ? 'application/json' :
+      ext === '.png' ? 'image/png' :
+      ext === '.svg' ? 'image/svg+xml' :
+      'application/octet-stream';
     res.setHeader('Content-Type', type);
     res.end(data);
   });

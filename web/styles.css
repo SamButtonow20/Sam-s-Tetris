@@ -2317,3 +2317,361 @@ canvas:hover {
     width: 80px;
   }
 }
+
+/* ==================== */
+/* KEYBINDS SETTINGS    */
+/* ==================== */
+.settingsPage {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--color-bg-deep);
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+.settingsPage.active { display: flex; justify-content: center; align-items: flex-start; }
+
+.keybindsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.keybindRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.keybindAction {
+  color: var(--color-accent-cyan);
+  font-weight: bold;
+  flex: 1;
+}
+.keybindKey {
+  padding: 6px 16px;
+  background: var(--color-bg-dark);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: #fff;
+  font-family: Consolas, monospace;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 80px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.keybindKey:hover { border-color: var(--color-accent-cyan); }
+.keybindKey.listening {
+  border-color: var(--color-accent-pink);
+  background: rgba(255, 0, 110, 0.15);
+  animation: pulse 0.8s infinite;
+}
+
+/* ==================== */
+/* SHOP PAGE            */
+/* ==================== */
+.shopPage {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--color-bg-deep);
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+.shopPage.active { display: flex; justify-content: center; align-items: flex-start; }
+
+.shopCoinsBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.coinIcon { font-size: 1.4rem; }
+.coinAmount { font-size: 1.3rem; font-weight: bold; color: #ffd54f; }
+
+.shopGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.shopItem {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.shopItem:hover { border-color: var(--color-accent-cyan); transform: translateY(-2px); }
+.shopItem.owned { border-color: var(--color-accent-green); }
+.shopItem.equipped { border-color: var(--color-accent-pink); box-shadow: 0 0 12px rgba(255, 0, 110, 0.3); }
+.shopItemPreview {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 8px;
+  border-radius: 6px;
+}
+.shopItemName { font-weight: bold; color: #fff; margin-bottom: 4px; }
+.shopItemPrice { color: #ffd54f; font-size: 0.85rem; }
+.shopItemPrice.free { color: var(--color-accent-green); }
+.shopItemBtn {
+  margin-top: 8px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.shopItemBtn.buy { background: #ffd54f; color: #000; }
+.shopItemBtn.buy:hover { background: #ffe082; }
+.shopItemBtn.equip { background: var(--color-accent-cyan); color: #000; }
+.shopItemBtn.equipped { background: var(--color-accent-pink); color: #fff; }
+.shopItemBtn.locked { background: #444; color: #888; cursor: not-allowed; }
+
+.coinBadge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  background: rgba(255, 213, 79, 0.15);
+  border: 1px solid rgba(255, 213, 79, 0.3);
+  border-radius: 10px;
+  color: #ffd54f;
+}
+
+/* ==================== */
+/* RANKED PAGE          */
+/* ==================== */
+.rankedPage {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--color-bg-deep);
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+.rankedPage.active { display: flex; justify-content: center; align-items: flex-start; }
+
+.rankedInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.rankedRank { display: flex; align-items: center; gap: 8px; font-size: 1.2rem; font-weight: bold; }
+.rankIcon { font-size: 1.8rem; }
+.rankedElo { text-align: center; }
+.eloLabel { display: block; font-size: 0.75rem; color: var(--color-text-dim); text-transform: uppercase; }
+.eloValue { font-size: 1.5rem; font-weight: bold; color: var(--color-accent-cyan); }
+.rankedRecord { font-size: 0.95rem; color: var(--color-text-dim); }
+
+.rankedQueueStatus {
+  padding: 14px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-accent-cyan);
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 12px;
+  color: var(--color-accent-cyan);
+  animation: pulse 1.5s infinite;
+}
+
+.rankedLadder {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.ladderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.ladderRow.you { border-color: var(--color-accent-cyan); }
+.ladderPos { width: 30px; text-align: center; font-weight: bold; color: var(--color-accent-cyan); }
+.ladderName { flex: 1; margin: 0 10px; }
+.ladderElo { font-weight: bold; color: #ffd54f; }
+
+/* ==================== */
+/* PROFILE PAGE         */
+/* ==================== */
+.profilePage {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--color-bg-deep);
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+.profilePage.active { display: flex; justify-content: center; align-items: flex-start; }
+
+.profileCard {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.profileAvatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--color-bg-dark);
+  border: 2px solid var(--color-accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+.profileNameSection h3 { margin: 0; font-size: 1.3rem; }
+.profileRank { font-size: 0.85rem; color: var(--color-text-dim); }
+
+.profileStats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.profileStatItem {
+  padding: 10px;
+  background: var(--color-bg-dark);
+  border-radius: 8px;
+  text-align: center;
+}
+.profileStatValue { font-size: 1.2rem; font-weight: bold; color: var(--color-accent-cyan); display: block; }
+.profileStatLabel { font-size: 0.75rem; color: var(--color-text-dim); }
+
+.profileBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.profileBadge {
+  padding: 6px 12px;
+  background: var(--color-bg-dark);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  font-size: 0.8rem;
+}
+.profileBadge.earned { border-color: var(--color-accent-green); color: var(--color-accent-green); }
+.profileBadge.locked { opacity: 0.4; }
+
+.matchHistory {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+.matchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-bg-dark);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+.matchResult { font-weight: bold; min-width: 40px; }
+.matchResult.win { color: var(--color-accent-green); }
+.matchResult.loss { color: var(--color-accent-pink); }
+.matchOpponent { flex: 1; margin: 0 10px; }
+.matchEloChange { font-weight: bold; }
+.matchEloChange.positive { color: var(--color-accent-green); }
+.matchEloChange.negative { color: var(--color-accent-pink); }
+
+/* ==================== */
+/* MOBILE TOUCH CONTROLS */
+/* ==================== */
+.touchControls {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0 16px 10px;
+  pointer-events: none;
+}
+.touchRow {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  pointer-events: auto;
+  margin-bottom: 8px;
+}
+.touchBtn {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  border: 2px solid var(--color-accent-cyan);
+  background: rgba(10, 14, 39, 0.85);
+  color: var(--color-accent-cyan);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  transition: background 0.1s, transform 0.1s;
+}
+.touchBtn:active {
+  background: rgba(0, 217, 255, 0.25);
+  transform: scale(0.92);
+}
+.touchHardDrop {
+  border-color: var(--color-accent-pink);
+  color: var(--color-accent-pink);
+}
+.touchHardDrop:active {
+  background: rgba(255, 0, 110, 0.25);
+}
+
+@media (pointer: coarse), (max-width: 768px) and (hover: none) {
+  .touchControls { display: block; }
+  .controlsFooter { display: none; }
+  .gameArea { padding-bottom: 170px; }
+}
+
+/* ==================== */
+/* BACKGROUND PARTICLES */
+/* ==================== */
+.bgParticleCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.mainCanvas { position: relative; z-index: 1; }
