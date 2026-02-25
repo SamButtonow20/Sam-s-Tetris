@@ -1612,7 +1612,7 @@ function updatePlayerCount(totalPlayers) {
   
   for (let i = 0; i < boards.length; i++) {
     if (i < totalPlayers) {
-      boards[i].style.display = 'flex';
+      boards[i].style.display = '';
     } else {
       boards[i].style.display = 'none';
     }
