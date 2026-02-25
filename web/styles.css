@@ -1787,88 +1787,160 @@ canvas:hover {
 /* ==================== */
 /* PLAYER IDENTITY BAR  */
 /* ==================== */
-.playerIdentityBar {
+/* ==================== */
+/* AUTH / LOGIN PAGE    */
+/* ==================== */
+.authPage {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--color-bg-deep);
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+.authPage.active {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
+  justify-content: center;
+}
+.authContainer {
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+.authTitle {
+  font-size: 3.5rem;
+  color: var(--color-accent-cyan);
+  text-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
+  margin-bottom: 4px;
+}
+.authSubtitle {
+  color: var(--color-text-dim);
+  font-size: 1rem;
+  margin-bottom: 30px;
+}
+.authCard {
+  background: linear-gradient(135deg, rgba(15, 21, 51, 0.95), rgba(21, 29, 58, 0.95));
+  border: 1px solid var(--color-accent-purple);
+  border-radius: 14px;
+  padding: 28px 24px;
+  box-shadow: 0 0 30px rgba(131, 56, 236, 0.15);
+}
+.authTabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.authTab {
+  flex: 1;
+  padding: 10px 0;
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  color: var(--color-text-dim);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.authTab.active {
+  background: rgba(0, 217, 255, 0.15);
+  color: var(--color-accent-cyan);
+}
+.authTab:hover:not(.active) {
+  background: rgba(0, 217, 255, 0.05);
+  color: var(--color-text);
+}
+.authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.authField {
+  text-align: left;
+}
+.authField label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.authField input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+.authField input:focus {
+  border-color: var(--color-accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.2);
+}
+.authSubmit {
+  margin-top: 4px;
+  padding: 12px 0;
+  font-size: 1rem;
+  font-weight: bold;
+  width: 100%;
+}
+.authSubmit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.authError {
+  font-size: 0.8rem;
+  color: var(--color-accent-pink);
+  min-height: 1.2em;
+  text-align: center;
+}
+
+/* Logged-in user bar (replaces identityBar) */
+.userBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
   margin-bottom: 20px;
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.9), rgba(21, 29, 58, 0.9));
   border: 1px solid var(--color-accent-purple);
   border-radius: 10px;
   box-shadow: 0 0 15px rgba(131, 56, 236, 0.2);
 }
-
-.identityIcon {
-  font-size: 1.4rem;
-}
-
-.playerNameInput {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--color-accent-purple);
+.userBarIcon { font-size: 1.3rem; }
+.userBarName { font-weight: bold; color: var(--color-accent-cyan); font-size: 1rem; flex: 1; }
+.userBarCoins { font-size: 0.9rem; color: #ffd54f; }
+.userBarLogout {
+  padding: 5px 12px;
+  border: 1px solid var(--color-accent-pink);
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  color: var(--color-text);
+  background: rgba(255, 0, 110, 0.1);
+  color: var(--color-accent-pink);
   font-family: inherit;
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.playerNameInput:focus {
-  border-color: var(--color-accent-cyan);
-  box-shadow: 0 0 8px rgba(0, 217, 255, 0.3);
-}
-
-.playerNameInput::placeholder {
-  color: var(--color-text-dim);
-  opacity: 0.6;
-}
-
-.identitySaveBtn {
-  padding: 8px 16px;
-  border: 1px solid var(--color-accent-cyan);
-  border-radius: 6px;
-  background: rgba(0, 217, 255, 0.1);
-  color: var(--color-accent-cyan);
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: bold;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
-  white-space: nowrap;
 }
-
-.identitySaveBtn:hover {
-  background: rgba(0, 217, 255, 0.25);
-  box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
-}
-
-.identityStatus {
-  font-size: 0.75rem;
-  color: var(--color-accent-pink);
-  white-space: nowrap;
-  transition: color 0.3s;
-}
-
-.identityStatus.saved {
-  color: var(--color-accent-cyan);
+.userBarLogout:hover {
+  background: rgba(255, 0, 110, 0.25);
 }
 
 @media (max-width: 768px) {
-  .playerIdentityBar {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px 12px;
-  }
-  .playerNameInput {
-    min-width: 120px;
-  }
-  .identityStatus {
-    width: 100%;
-    text-align: center;
-  }
+  .authContainer { padding: 0 10px; }
+  .authCard { padding: 20px 16px; }
+  .userBar { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+  .userBarName { min-width: 80px; }
 }
 
 /* ==================== */
@@ -2385,60 +2457,96 @@ canvas:hover {
   padding: 40px 20px;
 }
 .shopPage.active { display: flex; justify-content: center; align-items: flex-start; }
+.shopContent { max-width: 700px; }
+
+.shopHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.shopHeader h2 { margin: 0; }
 
 .shopCoinsBar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  margin-bottom: 12px;
+  padding: 8px 16px;
+  background: rgba(255, 213, 79, 0.08);
+  border: 1px solid rgba(255, 213, 79, 0.25);
+  border-radius: 20px;
 }
-.coinIcon { font-size: 1.4rem; }
-.coinAmount { font-size: 1.3rem; font-weight: bold; color: #ffd54f; }
+.coinIcon { font-size: 1.2rem; }
+.coinAmount { font-size: 1.1rem; font-weight: bold; color: #ffd54f; }
+.coinLabel { font-size: 0.8rem; color: var(--color-text-dim); }
+
+.shopSectionTitle {
+  color: var(--color-accent-cyan);
+  margin: 12px 0 4px;
+  font-size: 1.1rem;
+}
+.shopHint {
+  color: var(--color-text-dim);
+  font-size: 0.8rem;
+  margin-bottom: 16px;
+}
 
 .shopGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
 }
 .shopItem {
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 14px;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px 12px;
   text-align: center;
-  transition: all 0.2s;
+  transition: all 0.25s;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.shopItem:hover { border-color: var(--color-accent-cyan); transform: translateY(-2px); }
-.shopItem.owned { border-color: var(--color-accent-green); }
-.shopItem.equipped { border-color: var(--color-accent-pink); box-shadow: 0 0 12px rgba(255, 0, 110, 0.3); }
+.shopItem:hover { border-color: var(--color-accent-cyan); transform: translateY(-3px); box-shadow: 0 4px 16px rgba(0, 217, 255, 0.15); }
+.shopItem.owned { border-color: var(--color-accent-green); background: rgba(6, 255, 165, 0.04); }
+.shopItem.equipped { border-color: var(--color-accent-pink); box-shadow: 0 0 16px rgba(255, 0, 110, 0.25); background: rgba(255, 0, 110, 0.04); }
 .shopItemPreview {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 8px;
-  border-radius: 6px;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  image-rendering: pixelated;
 }
-.shopItemName { font-weight: bold; color: #fff; margin-bottom: 4px; }
-.shopItemPrice { color: #ffd54f; font-size: 0.85rem; }
+.shopItemName { font-weight: bold; color: #fff; margin-bottom: 2px; font-size: 0.9rem; }
+.shopItemDesc { color: var(--color-text-dim); font-size: 0.72rem; margin-bottom: 6px; min-height: 2em; }
+.shopItemPrice { color: #ffd54f; font-size: 0.85rem; margin-bottom: 8px; }
 .shopItemPrice.free { color: var(--color-accent-green); }
 .shopItemBtn {
-  margin-top: 8px;
-  padding: 6px 14px;
+  width: 100%;
+  padding: 7px 0;
   border: none;
   border-radius: 6px;
   font-size: 0.8rem;
+  font-weight: bold;
   cursor: pointer;
   transition: all 0.15s;
+  margin-top: auto;
 }
 .shopItemBtn.buy { background: #ffd54f; color: #000; }
 .shopItemBtn.buy:hover { background: #ffe082; }
 .shopItemBtn.equip { background: var(--color-accent-cyan); color: #000; }
-.shopItemBtn.equipped { background: var(--color-accent-pink); color: #fff; }
-.shopItemBtn.locked { background: #444; color: #888; cursor: not-allowed; }
+.shopItemBtn.equip:hover { background: #33e0ff; }
+.shopItemBtn.equipped { background: var(--color-accent-pink); color: #fff; cursor: default; }
+.shopItemBtn.locked { background: #333; color: #666; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+  .shopGrid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .shopItem { padding: 12px 8px; }
+}
 
 .coinBadge {
   font-size: 0.75rem;

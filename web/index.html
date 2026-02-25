@@ -14,18 +14,64 @@
       <p class="subtitle">Web Multiplayer Edition</p>
     </div>
 
+    <!-- Login / Signup Page -->
+    <div class="authPage" id="authPage">
+      <div class="authContainer">
+        <h1 class="authTitle">TETRIS</h1>
+        <p class="authSubtitle">Web Multiplayer Edition</p>
+
+        <div class="authCard" id="authCard">
+          <!-- Login Tab -->
+          <div class="authTabs">
+            <button class="authTab active" id="tabLogin" data-tab="login">Log In</button>
+            <button class="authTab" id="tabSignup" data-tab="signup">Sign Up</button>
+          </div>
+
+          <div class="authForm" id="loginForm">
+            <div class="authField">
+              <label>Username</label>
+              <input type="text" id="loginUsername" placeholder="Enter username" maxlength="20" autocomplete="username" />
+            </div>
+            <div class="authField">
+              <label>Password</label>
+              <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" />
+            </div>
+            <button class="btn btn-accent authSubmit" id="btnLogin">Log In</button>
+            <div class="authError" id="loginError"></div>
+          </div>
+
+          <div class="authForm" id="signupForm" style="display:none;">
+            <div class="authField">
+              <label>Choose a Username</label>
+              <input type="text" id="signupUsername" placeholder="2-20 characters" maxlength="20" autocomplete="username" />
+            </div>
+            <div class="authField">
+              <label>Password</label>
+              <input type="password" id="signupPassword" placeholder="At least 4 characters" autocomplete="new-password" />
+            </div>
+            <div class="authField">
+              <label>Confirm Password</label>
+              <input type="password" id="signupConfirm" placeholder="Repeat password" autocomplete="new-password" />
+            </div>
+            <button class="btn btn-accent authSubmit" id="btnSignup">Create Account</button>
+            <div class="authError" id="signupError"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Welcome Page with Game Mode Cards -->
     <div class="welcomePage" id="welcomePage">
       <div class="welcomeContainer">
         <h1 class="welcomeTitle">TETRIS</h1>
         <p class="welcomeSubtitle">Web Multiplayer Edition</p>
 
-        <!-- Player Identity Bar -->
-        <div class="playerIdentityBar" id="playerIdentityBar">
-          <span class="identityIcon">👤</span>
-          <input type="text" class="playerNameInput" id="playerNameInput" placeholder="Enter your name..." maxlength="20" autocomplete="off" />
-          <button class="identitySaveBtn" id="identitySaveBtn">Set Name</button>
-          <span class="identityStatus" id="identityStatus"></span>
+        <!-- Logged-in User Bar -->
+        <div class="userBar" id="userBar">
+          <span class="userBarIcon">👤</span>
+          <span class="userBarName" id="userBarName">Player</span>
+          <span class="userBarCoins">🪙 <span id="userBarCoins">0</span></span>
+          <button class="userBarLogout" id="btnLogout">Log Out</button>
         </div>
         
         <div class="gameMode" id="gameModeSelector">
@@ -248,15 +294,6 @@
           </div>
         </div>
 
-        <div class="formStep">
-          <div class="stepNumber">2</div>
-          <div class="stepContent">
-            <label>Your Name</label>
-            <input id="name" placeholder="Your name" value="Player" />
-            <span class="formHint">So your friend knows who you are</span>
-          </div>
-        </div>
-
         <div class="spectatorOption">
           <label class="spectatorToggle">
             <input type="checkbox" id="spectatorCheck" />
@@ -407,16 +444,19 @@
 
     <!-- Shop Page -->
     <div class="shopPage" id="shopPage">
-      <div class="pageContent">
-        <h2>🛒 Shop</h2>
-        <div class="shopCoinsBar">
-          <span class="coinIcon">🪙</span>
-          <span class="coinAmount" id="shopCoinDisplay">0</span>
-          <span style="color:var(--color-text-dim);font-size:0.85em;">coins</span>
+      <div class="pageContent shopContent">
+        <div class="shopHeader">
+          <h2>🛒 Shop</h2>
+          <div class="shopCoinsBar">
+            <span class="coinIcon">🪙</span>
+            <span class="coinAmount" id="shopCoinDisplay">0</span>
+            <span class="coinLabel">coins</span>
+          </div>
         </div>
-        <h3 style="color:var(--color-accent-cyan);margin:12px 0 8px;">Piece Skins</h3>
+        <h3 class="shopSectionTitle">Piece Skins</h3>
+        <p class="shopHint">Earn coins by playing games. Buy and equip skins to customize your blocks!</p>
         <div class="shopGrid" id="shopGrid"></div>
-        <button id="btnBackFromShop" class="btn btn-accent" style="width:100%;margin-top:12px;">Back to Menu</button>
+        <button id="btnBackFromShop" class="btn btn-accent" style="width:100%;margin-top:16px;">Back to Menu</button>
       </div>
     </div>
 

@@ -656,8 +656,10 @@ function updateCoinDisplays() {
   const coins = loadCoins();
   const cd = document.getElementById('coinDisplay');
   const scd = document.getElementById('shopCoinDisplay');
+  const ubc = document.getElementById('userBarCoins');
   if (cd) cd.textContent = coins;
   if (scd) scd.textContent = coins;
+  if (ubc) ubc.textContent = coins;
 }
 // Earn coins: 1 per 1000 score, 1 per line, 5 per tetris, 3 per t-spin, bonus for wins
 function earnGameCoins(g, won = false) {
@@ -694,12 +696,14 @@ function buySkin(id) {
   if (!spendCoins(skin.price)) return false;
   ownedSkins.push(id);
   saveOwnedSkins(ownedSkins);
+  scheduleSyncProfile();
   return true;
 }
 function equipSkin(id) {
   if (!ownedSkins.includes(id)) return;
   equippedSkin = id;
   saveEquippedSkin(id);
+  scheduleSyncProfile();
 }
 
 // ==================== RANKED / ELO SYSTEM (Local) ====================
@@ -1314,7 +1318,6 @@ const menu = document.getElementById('menu');
 const btnConnect = document.getElementById('btnConnect');
 const onlineForm = document.getElementById('onlineForm');
 const roomInput = document.getElementById('room');
-const nameInput = document.getElementById('name');
 
 const formWrapper = onlineForm.querySelector('.formWrapper');
 const connectingState = document.getElementById('connectingState');
@@ -1333,10 +1336,24 @@ const btnBackFromLeaderboard = document.getElementById('btnBackFromLeaderboard')
 const btnClearLeaderboard = document.getElementById('btnClearLeaderboard');
 const leaderboardEntries = document.getElementById('leaderboardEntries');
 
-// Player identity elements
-const playerNameInput = document.getElementById('playerNameInput');
-const identitySaveBtn = document.getElementById('identitySaveBtn');
-const identityStatus = document.getElementById('identityStatus');
+// Auth page elements
+const authPage = document.getElementById('authPage');
+const tabLogin = document.getElementById('tabLogin');
+const tabSignup = document.getElementById('tabSignup');
+const loginForm = document.getElementById('loginForm');
+const signupForm = document.getElementById('signupForm');
+const loginUsername = document.getElementById('loginUsername');
+const loginPassword = document.getElementById('loginPassword');
+const signupUsername = document.getElementById('signupUsername');
+const signupPassword = document.getElementById('signupPassword');
+const signupConfirm = document.getElementById('signupConfirm');
+const btnLogin = document.getElementById('btnLogin');
+const btnSignup = document.getElementById('btnSignup');
+const loginError = document.getElementById('loginError');
+const signupError = document.getElementById('signupError');
+const userBarName = document.getElementById('userBarName');
+const userBarCoins = document.getElementById('userBarCoins');
+const btnLogout = document.getElementById('btnLogout');
 const finalPlayerName = document.getElementById('finalPlayerName');
 
 const welcomePage = document.getElementById('welcomePage');
@@ -1554,7 +1571,7 @@ function sendChat(inputEl) {
   const text = inputEl.value.trim();
   if (!text || !ws) return;
   send({ type: 'chat', text });
-  const myName = nameInput.value.trim() || 'You';
+  const myName = getCurrentPlayerName();
   addChatMessage(myName, text, isSpectator, gameChatMessages && gameChatBox && gameChatBox.style.display !== 'none' ? 'game' : 'lobby');
   inputEl.value = '';
 }
@@ -1676,6 +1693,7 @@ function showGameOver() {
     coinEl.textContent = `🪙 +${coinsEarned} coins earned`;
   }
   updateCoinDisplays();
+  scheduleSyncProfile();
   setStatus('Game Over');
 }
 
@@ -2585,63 +2603,186 @@ window.addEventListener('keyup', (e) => {
   if (e.key === keybinds.softDrop) { game.softDrop = false; if (replayRecorder) replayRecorder.record('softOff'); }
 });
 
-// ==================== PLAYER IDENTITY ====================
+// ==================== AUTH / LOGIN SYSTEM ====================
+let authToken = localStorage.getItem('tetrisAuthToken') || '';
+let authUsername = localStorage.getItem('tetrisAuthUser') || '';
+
 function getPlayerName() {
-  return localStorage.getItem('tetrisPlayerName') || '';
+  return authUsername || '';
 }
 
-function setPlayerName(name) {
-  const trimmed = name.trim().substring(0, 20);
-  localStorage.setItem('tetrisPlayerName', trimmed);
-  // Sync with online form name input
-  if (nameInput) nameInput.value = trimmed || 'Player';
-  return trimmed;
+function getCurrentPlayerName() {
+  return authUsername || 'Player';
 }
 
-function initPlayerIdentity() {
-  const saved = getPlayerName();
-  if (playerNameInput) {
-    playerNameInput.value = saved;
-    if (saved) {
-      identityStatus.textContent = 'Playing as: ' + saved;
-      identityStatus.classList.add('saved');
-      identitySaveBtn.textContent = '✓ Saved';
-    }
+function isLoggedIn() {
+  return !!(authToken && authUsername);
+}
+
+// Sync local profile data to server
+async function syncProfileToServer() {
+  if (!authToken) return;
+  try {
+    const profile = {
+      coins: loadCoins(),
+      ownedSkins: ownedSkins,
+      equippedSkin: equippedSkin,
+      stats: loadStats(),
+      ranked: loadRankedData(),
+      achievements: loadAchievements(),
+      keybinds: keybinds
+    };
+    await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+      body: JSON.stringify({ profile })
+    });
+  } catch (e) { console.warn('Profile sync failed:', e); }
+}
+
+// Load profile from server into localStorage
+function loadProfileFromServer(profile) {
+  if (!profile) return;
+  if (typeof profile.coins === 'number') saveCoins(profile.coins);
+  if (Array.isArray(profile.ownedSkins)) { ownedSkins = profile.ownedSkins; saveOwnedSkins(ownedSkins); }
+  if (profile.equippedSkin) { equippedSkin = profile.equippedSkin; saveEquippedSkin(equippedSkin); }
+  if (profile.stats) saveStats(profile.stats);
+  if (profile.ranked) saveRankedData(profile.ranked);
+  if (profile.achievements) localStorage.setItem('tetrisAchievements', JSON.stringify(profile.achievements));
+  if (profile.keybinds) { keybinds = { ...DEFAULT_KEYBINDS, ...profile.keybinds }; saveKeybinds(keybinds); }
+  updateCoinDisplays();
+}
+
+async function doLogin(username, password) {
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Login failed');
+  authToken = data.token;
+  authUsername = data.username;
+  localStorage.setItem('tetrisAuthToken', authToken);
+  localStorage.setItem('tetrisAuthUser', authUsername);
+  loadProfileFromServer(data.profile);
+  return data;
+}
+
+async function doSignup(username, password) {
+  const res = await fetch('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Registration failed');
+  authToken = data.token;
+  authUsername = data.username;
+  localStorage.setItem('tetrisAuthToken', authToken);
+  localStorage.setItem('tetrisAuthUser', authUsername);
+  loadProfileFromServer(data.profile);
+  return data;
+}
+
+function doLogout() {
+  authToken = '';
+  authUsername = '';
+  localStorage.removeItem('tetrisAuthToken');
+  localStorage.removeItem('tetrisAuthUser');
+  // Return to auth page
+  welcomePage.classList.remove('active');
+  if (authPage) authPage.classList.add('active');
+}
+
+function showWelcomeAfterAuth() {
+  if (authPage) authPage.classList.remove('active');
+  welcomePage.classList.add('active');
+  // Update user bar
+  if (userBarName) userBarName.textContent = authUsername;
+  updateCoinDisplays();
+}
+
+// Debounced profile sync — called after game over, coin changes, etc.
+let syncTimer = null;
+function scheduleSyncProfile() {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncProfileToServer(), 2000);
+}
+
+// Hook into existing save functions to trigger server sync
+const _origAddCoins = addCoins;
+const _origSpendCoins = spendCoins;
+addCoins = function(amount) {
+  const result = _origAddCoins(amount);
+  if (userBarCoins) userBarCoins.textContent = loadCoins();
+  scheduleSyncProfile();
+  return result;
+};
+spendCoins = function(amount) {
+  const result = _origSpendCoins(amount);
+  if (userBarCoins) userBarCoins.textContent = loadCoins();
+  scheduleSyncProfile();
+  return result;
+};
+
+// Auth page tab switching + form handlers
+if (tabLogin) tabLogin.addEventListener('click', () => {
+  tabLogin.classList.add('active'); tabSignup.classList.remove('active');
+  loginForm.style.display = ''; signupForm.style.display = 'none';
+  if (loginError) loginError.textContent = '';
+});
+if (tabSignup) tabSignup.addEventListener('click', () => {
+  tabSignup.classList.add('active'); tabLogin.classList.remove('active');
+  signupForm.style.display = ''; loginForm.style.display = 'none';
+  if (signupError) signupError.textContent = '';
+});
+
+if (btnLogin) btnLogin.addEventListener('click', async () => {
+  if (loginError) loginError.textContent = '';
+  const u = loginUsername ? loginUsername.value.trim() : '';
+  const p = loginPassword ? loginPassword.value : '';
+  if (!u || !p) { if (loginError) loginError.textContent = 'Fill in all fields'; return; }
+  btnLogin.disabled = true; btnLogin.textContent = 'Logging in...';
+  try {
+    await doLogin(u, p);
+    showWelcomeAfterAuth();
+  } catch (e) {
+    if (loginError) loginError.textContent = e.message;
   }
-  // Pre-fill online form
-  if (nameInput && saved) nameInput.value = saved;
-}
+  btnLogin.disabled = false; btnLogin.textContent = 'Log In';
+});
 
-if (identitySaveBtn) {
-  identitySaveBtn.addEventListener('click', () => {
-    const name = playerNameInput.value.trim();
-    if (!name) {
-      identityStatus.textContent = 'Please enter a name!';
-      identityStatus.classList.remove('saved');
-      playerNameInput.focus();
-      return;
-    }
-    setPlayerName(name);
-    identityStatus.textContent = 'Playing as: ' + name;
-    identityStatus.classList.add('saved');
-    identitySaveBtn.textContent = '✓ Saved';
-    setTimeout(() => { identitySaveBtn.textContent = 'Set Name'; }, 2000);
-  });
-}
+if (btnSignup) btnSignup.addEventListener('click', async () => {
+  if (signupError) signupError.textContent = '';
+  const u = signupUsername ? signupUsername.value.trim() : '';
+  const p = signupPassword ? signupPassword.value : '';
+  const c = signupConfirm ? signupConfirm.value : '';
+  if (!u || !p || !c) { if (signupError) signupError.textContent = 'Fill in all fields'; return; }
+  if (p !== c) { if (signupError) signupError.textContent = 'Passwords do not match'; return; }
+  if (p.length < 4) { if (signupError) signupError.textContent = 'Password must be at least 4 characters'; return; }
+  if (u.length < 2) { if (signupError) signupError.textContent = 'Username must be at least 2 characters'; return; }
+  btnSignup.disabled = true; btnSignup.textContent = 'Creating...';
+  try {
+    await doSignup(u, p);
+    showWelcomeAfterAuth();
+  } catch (e) {
+    if (signupError) signupError.textContent = e.message;
+  }
+  btnSignup.disabled = false; btnSignup.textContent = 'Create Account';
+});
 
-if (playerNameInput) {
-  playerNameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      identitySaveBtn.click();
-    }
-  });
-  // Update save button text when name changes
-  playerNameInput.addEventListener('input', () => {
-    identitySaveBtn.textContent = 'Set Name';
-  });
-}
+if (btnLogout) btnLogout.addEventListener('click', doLogout);
 
+// Enter key on auth fields
+[loginUsername, loginPassword].forEach(el => {
+  if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); btnLogin.click(); } });
+});
+[signupUsername, signupPassword, signupConfirm].forEach(el => {
+  if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); btnSignup.click(); } });
+});
+
+// ==================== LEADERBOARD ====================
 function loadLeaderboard() {
   const scores = JSON.parse(localStorage.getItem('tetrisLeaderboard') || '[]');
   return scores;
@@ -2651,41 +2792,63 @@ function saveLeaderboard(entry) {
   let scores = loadLeaderboard();
   scores.push(entry);
   scores.sort((a, b) => b.score - a.score);
-  scores = scores.slice(0, 50); // Keep top 50
+  scores = scores.slice(0, 50);
   localStorage.setItem('tetrisLeaderboard', JSON.stringify(scores));
 }
 
-function getCurrentPlayerName() {
-  // Use saved player name, fall back to online form, fall back to 'Player'
-  return getPlayerName() || (nameInput ? nameInput.value.trim() : '') || 'Player';
-}
-
 function displayLeaderboard() {
-  const scores = loadLeaderboard();
-  leaderboardEntries.innerHTML = '';
-  
-  if (scores.length === 0) {
-    leaderboardEntries.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-text-dim);">No scores yet. Play a game to get on the leaderboard!</div>';
-    return;
+  leaderboardEntries.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-text-dim);">Loading...</div>';
+
+  // Try server leaderboard first, fall back to local
+  fetch('/api/leaderboard').then(r => r.json()).then(data => {
+    if (data.leaderboard && data.leaderboard.length > 0) {
+      leaderboardEntries.innerHTML = '';
+      data.leaderboard.forEach((entry, idx) => {
+        const div = document.createElement('div');
+        div.className = 'leaderboardEntry';
+        if (idx === 0) div.classList.add('top1');
+        else if (idx === 1) div.classList.add('top2');
+        else if (idx === 2) div.classList.add('top3');
+        const isYou = entry.name === authUsername;
+        div.innerHTML = `
+          <div class="rankCol">${idx + 1}</div>
+          <div class="nameCol"${isYou ? ' style="color:var(--color-accent-cyan);font-weight:bold;"' : ''}>${entry.name}${isYou ? ' (You)' : ''}</div>
+          <div class="scoreCol">${entry.score.toLocaleString()}</div>
+          <div class="linesCol">${entry.lines || '-'}</div>
+          <div class="levelCol">ELO ${entry.elo || '-'}</div>
+          <div class="timeCol">${entry.games}G</div>
+        `;
+        leaderboardEntries.appendChild(div);
+      });
+    } else {
+      showLocalLeaderboard();
+    }
+  }).catch(() => showLocalLeaderboard());
+
+  function showLocalLeaderboard() {
+    const scores = loadLeaderboard();
+    leaderboardEntries.innerHTML = '';
+    if (scores.length === 0) {
+      leaderboardEntries.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-text-dim);">No scores yet. Play a game to get on the leaderboard!</div>';
+      return;
+    }
+    scores.forEach((entry, idx) => {
+      const div = document.createElement('div');
+      div.className = 'leaderboardEntry';
+      if (idx === 0) div.classList.add('top1');
+      else if (idx === 1) div.classList.add('top2');
+      else if (idx === 2) div.classList.add('top3');
+      div.innerHTML = `
+        <div class="rankCol">${idx + 1}</div>
+        <div class="nameCol">${entry.name || 'Anonymous'}</div>
+        <div class="scoreCol">${entry.score.toLocaleString()}</div>
+        <div class="linesCol">${entry.lines}</div>
+        <div class="levelCol">${entry.level || '-'}</div>
+        <div class="timeCol">${entry.time}</div>
+      `;
+      leaderboardEntries.appendChild(div);
+    });
   }
-  
-  scores.forEach((entry, idx) => {
-    const div = document.createElement('div');
-    div.className = 'leaderboardEntry';
-    if (idx === 0) div.classList.add('top1');
-    else if (idx === 1) div.classList.add('top2');
-    else if (idx === 2) div.classList.add('top3');
-    
-    div.innerHTML = `
-      <div class="rankCol">${idx + 1}</div>
-      <div class="nameCol">${entry.name || 'Anonymous'}</div>
-      <div class="scoreCol">${entry.score.toLocaleString()}</div>
-      <div class="linesCol">${entry.lines}</div>
-      <div class="levelCol">${entry.level || '-'}</div>
-      <div class="timeCol">${entry.time}</div>
-    `;
-    leaderboardEntries.appendChild(div);
-  });
 }
 
 function showLeaderboard() {
@@ -2950,33 +3113,9 @@ function updateSoundButtons() {
   if (volumeSlider) volumeSlider.value = sound.volume * 100;
 }
 
-// Check if player has set a name — show a prompt if not, but don't block
+// Check if player is logged in
 function ensurePlayerName() {
-  const name = getPlayerName();
-  if (!name) {
-    // Auto-save whatever is in the input, or prompt
-    if (playerNameInput && playerNameInput.value.trim()) {
-      setPlayerName(playerNameInput.value.trim());
-      return true;
-    }
-    // Flash the identity bar to draw attention
-    const bar = document.getElementById('playerIdentityBar');
-    if (bar) {
-      bar.style.boxShadow = '0 0 20px rgba(255, 0, 110, 0.6)';
-      bar.style.borderColor = 'var(--color-accent-pink)';
-      if (playerNameInput) playerNameInput.focus();
-      if (identityStatus) {
-        identityStatus.textContent = 'Enter a name for the leaderboard!';
-        identityStatus.classList.remove('saved');
-      }
-      setTimeout(() => {
-        bar.style.boxShadow = '';
-        bar.style.borderColor = '';
-      }, 3000);
-    }
-    return false;
-  }
-  return true;
+  return isLoggedIn();
 }
 
 // ==================== SETTINGS / KEYBINDS PAGE ====================
@@ -3066,7 +3205,7 @@ function displayShop() {
       btnHtml = `<button class="shopItemBtn ${canAfford ? 'buy' : 'locked'}" data-skin="${id}" ${canAfford ? '' : 'disabled'}>🪙 ${skin.price}</button>`;
     }
 
-    item.innerHTML = `<div class="shopItemName">${skin.name}</div><div style="font-size:0.8rem;color:var(--color-text-dim);margin-bottom:4px;">${skin.desc}</div>${btnHtml}`;
+    item.innerHTML = `<div class="shopItemName">${skin.name}</div><div class="shopItemDesc">${skin.desc}</div><div class="shopItemPrice${skin.price === 0 ? ' free' : ''}">${skin.price === 0 ? 'Free' : '🪙 ' + skin.price}</div>${btnHtml}`;
     item.insertBefore(previewCanvas, item.firstChild);
     shopGrid.appendChild(item);
   }
@@ -3360,6 +3499,7 @@ function handleRankedGameOver(playerWon) {
   setTimeout(() => toast.classList.add('show'), 10);
   setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 4000);
   if (playerWon) addCoins(20); // Ranked win bonus
+  scheduleSyncProfile();
 }
 
 // Card click handlers from welcome page
@@ -3368,9 +3508,6 @@ cardClassic.addEventListener('click', () => {
   startClassic();
 });
 cardOnline.addEventListener('click', () => {
-  // Sync player name to online form
-  const saved = getPlayerName();
-  if (saved && nameInput) nameInput.value = saved;
   welcomePage.classList.remove('active');
   menu.classList.remove('active');
   onlineForm.classList.add('active');
@@ -3561,7 +3698,6 @@ if (chatToggle) chatToggle.addEventListener('click', toggleGameChat);
 // Initialize on page load
 window.addEventListener('DOMContentLoaded', () => {
   updatePlayerCount(1);
-  welcomePage.classList.add('active');
   menu.classList.remove('active');
   gameContainer.style.display = 'none';
   leaderboardPage.classList.remove('active');
@@ -3577,11 +3713,35 @@ window.addEventListener('DOMContentLoaded', () => {
   if (profilePage) profilePage.classList.remove('active');
   if (gameChatBox) gameChatBox.style.display = 'none';
   if (spectatorBanner) spectatorBanner.style.display = 'none';
+
+  // Show auth page or welcome page depending on login state
+  if (isLoggedIn()) {
+    // Validate token with server
+    fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+      body: JSON.stringify({})
+    }).then(r => r.json()).then(data => {
+      if (data.ok) {
+        loadProfileFromServer(data.profile);
+        showWelcomeAfterAuth();
+      } else {
+        // Token invalid, show login
+        doLogout();
+      }
+    }).catch(() => {
+      // Server unreachable, proceed with cached data
+      showWelcomeAfterAuth();
+    });
+  } else {
+    if (authPage) authPage.classList.add('active');
+    welcomePage.classList.remove('active');
+  }
+
   // Apply saved theme
   applyTheme(currentThemeName);
   updatePieceStatsColors();
   updateSoundButtons();
-  initPlayerIdentity();
   updateControlsDisplay();
   updateCoinDisplays();
   initTouchControls();
