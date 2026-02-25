@@ -1049,83 +1049,64 @@ input:focus {
 /* Adaptive grid layout based on player count */
 .gameArea.players-1 {
   grid-template-columns: 1fr;
-  max-width: 400px;
+  max-width: 520px;
   margin: 0 auto;
 }
 
-/* Single-player enhanced layout: board + side panel */
-.gameArea.players-1 .playerBoard {
+/* ======================================= */
+/*  Shared sidebar grid for board layouts  */
+/* ======================================= */
+.gameArea .playerBoard {
   display: grid;
-  grid-template-columns: auto 110px;
+  grid-template-columns: 1fr 90px;
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "header  header"
     "board   sidebar"
     "footer  sidebar";
-  gap: 6px;
-  padding: 8px;
+  gap: 4px;
+  padding: 6px;
   align-items: start;
 }
 
-.gameArea.players-1 .boardHeader {
-  grid-area: header;
+.gameArea .playerBoard .boardHeader  { grid-area: header; }
+.gameArea .playerBoard .mainCanvas   { grid-area: board; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
+.gameArea .playerBoard .boardFooter  { grid-area: footer; }
+.gameArea .playerBoard .nextPieceBox { grid-area: sidebar; width: 100%; padding: 6px; border-radius: 4px; }
+.gameArea .playerBoard .nextPieceBox canvas { width: 100%; height: auto; }
+.gameArea .playerBoard .pieceStatsPanel { grid-column: 2; width: 100%; position: relative; left: auto; top: auto; transform: none; margin-top: 4px; }
+.gameArea .playerBoard .b2bIndicator { grid-column: 2; }
+
+/* --- Single-player overrides (bigger board + sidebar) --- */
+.gameArea.players-1 .playerBoard {
+  grid-template-columns: 1fr 120px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .gameArea.players-1 .mainCanvas {
-  grid-area: board;
-  width: 100%;
-  max-width: 240px;
-  height: auto;
-  aspect-ratio: 1 / 2;
-  image-rendering: pixelated;
+  max-width: 340px;
 }
 
 .gameArea.players-1 .boardFooter {
-  grid-area: footer;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .gameArea.players-1 .boardFooter .footerLabel {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
 }
 
 .gameArea.players-1 .boardFooter .footerValue {
-  font-size: 1rem;
-}
-
-.gameArea.players-1 .nextPieceBox {
-  grid-area: sidebar;
-  width: 100%;
-  padding: 6px;
-  border-radius: 4px;
-}
-
-.gameArea.players-1 .nextPieceBox canvas {
-  width: 100%;
-  height: auto;
+  font-size: 1.1rem;
 }
 
 .gameArea.players-1 .nextLabel {
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   margin-bottom: 3px;
 }
 
-.gameArea.players-1 .pieceStatsPanel {
-  grid-column: 2;
-  width: 100%;
-  position: relative;
-  left: auto;
-  top: auto;
-  transform: none;
-  margin-top: 4px;
-}
-
-.gameArea.players-1 .b2bIndicator {
-  grid-column: 2;
-}
-
 .gameArea.players-1 .playerTitle {
-  font-size: 0.6rem;
+  font-size: 0.65rem;
 }
 
 .gameArea.players-1 .levelBadge,
@@ -1143,13 +1124,37 @@ input:focus {
   font-size: 0.55rem;
 }
 
+/* --- 2-player overrides --- */
 .gameArea.players-2 {
   grid-template-columns: 1fr 1fr;
 }
 
+.gameArea.players-2 .playerBoard {
+  grid-template-columns: 1fr 80px;
+  gap: 3px;
+  padding: 4px;
+}
+
+.gameArea.players-2 .nextLabel {
+  font-size: 0.5rem;
+}
+
+/* --- 3/4 player overrides --- */
 .gameArea.players-3,
 .gameArea.players-4 {
   grid-template-columns: 1fr 1fr;
+}
+
+.gameArea.players-3 .playerBoard,
+.gameArea.players-4 .playerBoard {
+  grid-template-columns: 1fr 60px;
+  gap: 2px;
+  padding: 3px;
+}
+
+.gameArea.players-3 .nextLabel,
+.gameArea.players-4 .nextLabel {
+  font-size: 0.4rem;
 }
 
 .playerCard {
@@ -1166,19 +1171,11 @@ input:focus {
 }
 
 .playerBoard {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 4px;
   background: linear-gradient(135deg, rgba(15, 21, 51, 0.6), rgba(21, 29, 58, 0.6));
   border: 1px solid rgba(0, 217, 255, 0.2);
   border-radius: 3px;
   animation: smoothFade 0.4s ease-out;
   will-change: transform;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: fit-content;
-  flex-wrap: wrap;
 }
 
 .boardHeader {
@@ -1225,10 +1222,6 @@ input:focus {
 .statusBadge {
   background: rgba(255, 0, 110, 0.2);
   color: var(--color-accent-pink);
-}
-
-.mainCanvas {
-  flex-shrink: 0;
 }
 
 .boardFooter {
@@ -1530,13 +1523,18 @@ canvas:hover {
   }
 
   .gameArea.players-1 .mainCanvas {
-    max-width: 180px;
-    width: 100%;
-    height: auto;
+    max-width: 200px;
   }
 
   .gameArea.players-1 .boardFooter .footerValue {
     font-size: 0.85rem;
+  }
+
+  /* VS boards on small screens */
+  .gameArea.players-2 .playerBoard {
+    grid-template-columns: 1fr 60px;
+    gap: 2px;
+    padding: 3px;
   }
 
   .gameContainer {
