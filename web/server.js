@@ -9,6 +9,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 
 const rooms = new Map(); // room -> { players: [{ws,name}], spectators: [{ws,name}], started: false, seed: null }
+const rankedQueue = []; // [{ws, name, elo}] — players waiting for ranked match
 
 // ==================== USER AUTH / PROFILES ====================
 const USERS_FILE = path.join(ROOT, 'users.json');
@@ -234,6 +235,51 @@ wss.on('connection', (ws) => {
     let msg;
     try { msg = JSON.parse(raw.toString()); } catch { return; }
 
+    // ==================== RANKED MATCHMAKING ====================
+    if (msg.type === 'ranked_queue') {
+      const name = String(msg.name || 'Player');
+      const elo = Number(msg.elo) || 1000;
+      // Remove if already in queue
+      const existIdx = rankedQueue.findIndex(q => q.ws === ws);
+      if (existIdx >= 0) rankedQueue.splice(existIdx, 1);
+      rankedQueue.push({ ws, name, elo });
+      ws._ranked = true;
+      ws._rankedOpponent = null;
+
+      // Try to match two players
+      if (rankedQueue.length >= 2) {
+        const p1 = rankedQueue.shift();
+        const p2 = rankedQueue.shift();
+        const seed = Math.floor(Math.random() * 1_000_000);
+        // Link them
+        p1.ws._rankedOpponent = p2.ws;
+        p2.ws._rankedOpponent = p1.ws;
+        send(p1.ws, { type: 'ranked_matched', seed, opponentName: p2.name, opponentElo: p2.elo });
+        send(p2.ws, { type: 'ranked_matched', seed, opponentName: p1.name, opponentElo: p1.elo });
+      } else {
+        // Notify queue position
+        send(ws, { type: 'ranked_queue_pos', count: rankedQueue.length });
+      }
+      return;
+    }
+
+    if (msg.type === 'ranked_cancel') {
+      const idx = rankedQueue.findIndex(q => q.ws === ws);
+      if (idx >= 0) rankedQueue.splice(idx, 1);
+      ws._ranked = false;
+      return;
+    }
+
+    if (msg.type === 'ranked_snapshot' || msg.type === 'ranked_attack') {
+      // Forward to opponent
+      const opp = ws._rankedOpponent;
+      if (opp && opp.readyState === opp.OPEN) {
+        const fwdType = msg.type === 'ranked_snapshot' ? 'ranked_opponent_snapshot' : 'ranked_attack';
+        send(opp, { ...msg, type: fwdType });
+      }
+      return;
+    }
+
     if (msg.type === 'join') {
       const roomName = String(msg.room || 'default');
       const name = String(msg.name || 'Player');
@@ -334,8 +380,28 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.on('close', () => removeClient(ws));
-  ws.on('error', () => removeClient(ws));
+  ws.on('close', () => {
+    // Clean up ranked queue
+    const rIdx = rankedQueue.findIndex(q => q.ws === ws);
+    if (rIdx >= 0) rankedQueue.splice(rIdx, 1);
+    // Notify ranked opponent if in a match
+    if (ws._rankedOpponent) {
+      const opp = ws._rankedOpponent;
+      opp._rankedOpponent = null;
+      send(opp, { type: 'ranked_opponent_left' });
+    }
+    removeClient(ws);
+  });
+  ws.on('error', () => {
+    const rIdx = rankedQueue.findIndex(q => q.ws === ws);
+    if (rIdx >= 0) rankedQueue.splice(rIdx, 1);
+    if (ws._rankedOpponent) {
+      const opp = ws._rankedOpponent;
+      opp._rankedOpponent = null;
+      send(opp, { type: 'ranked_opponent_left' });
+    }
+    removeClient(ws);
+  });
 });
 
 server.listen(PORT, HOST, () => {

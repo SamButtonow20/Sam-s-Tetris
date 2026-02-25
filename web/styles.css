@@ -1049,8 +1049,96 @@ input:focus {
 /* Adaptive grid layout based on player count */
 .gameArea.players-1 {
   grid-template-columns: 1fr;
-  max-width: 300px;
+  max-width: 600px;
   margin: 0 auto;
+}
+
+/* Single-player enhanced layout: board + side panel */
+.gameArea.players-1 .playerBoard {
+  display: grid;
+  grid-template-columns: auto 140px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header  header"
+    "board   sidebar"
+    "footer  sidebar";
+  gap: 8px;
+  padding: 12px;
+  align-items: start;
+}
+
+.gameArea.players-1 .boardHeader {
+  grid-area: header;
+}
+
+.gameArea.players-1 .mainCanvas {
+  grid-area: board;
+  width: 300px;
+  height: 600px;
+  image-rendering: pixelated;
+}
+
+.gameArea.players-1 .boardFooter {
+  grid-area: footer;
+  font-size: 0.85rem;
+}
+
+.gameArea.players-1 .boardFooter .footerLabel {
+  font-size: 0.75rem;
+}
+
+.gameArea.players-1 .boardFooter .footerValue {
+  font-size: 1.2rem;
+}
+
+.gameArea.players-1 .nextPieceBox {
+  grid-area: sidebar;
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.gameArea.players-1 .nextPieceBox canvas {
+  width: 100%;
+  height: auto;
+}
+
+.gameArea.players-1 .nextLabel {
+  font-size: 0.7rem;
+  margin-bottom: 4px;
+}
+
+.gameArea.players-1 .pieceStatsPanel {
+  grid-column: 2;
+  width: 100%;
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  margin-top: 4px;
+}
+
+.gameArea.players-1 .b2bIndicator {
+  grid-column: 2;
+}
+
+.gameArea.players-1 .playerTitle {
+  font-size: 0.75rem;
+}
+
+.gameArea.players-1 .levelBadge,
+.gameArea.players-1 .statusBadge {
+  font-size: 0.65rem;
+  padding: 3px 6px;
+}
+
+.gameArea.players-1 .timeBadge {
+  font-size: 0.65rem;
+  padding: 3px 6px;
+}
+
+.gameArea.players-1 .coinBadge {
+  font-size: 0.65rem;
 }
 
 .gameArea.players-2 {
@@ -1175,11 +1263,11 @@ input:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
-  padding: 2px;
+  gap: 4px;
+  padding: 6px;
   background: rgba(131, 56, 236, 0.1);
   border: 1px solid rgba(131, 56, 236, 0.3);
-  border-radius: 2px;
+  border-radius: 4px;
   width: 100%;
 }
 
@@ -1430,6 +1518,22 @@ canvas:hover {
   .gameArea {
     grid-template-columns: 1fr 1fr;
     gap: 6px;
+  }
+
+  /* Single-player: still side-panel but smaller */
+  .gameArea.players-1 .playerBoard {
+    grid-template-columns: 1fr 100px;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .gameArea.players-1 .mainCanvas {
+    width: 100%;
+    height: auto;
+  }
+
+  .gameArea.players-1 .boardFooter .footerValue {
+    font-size: 1rem;
   }
 
   .gameContainer {
@@ -2640,6 +2744,28 @@ canvas:hover {
 .eloLabel { display: block; font-size: 0.75rem; color: var(--color-text-dim); text-transform: uppercase; }
 .eloValue { font-size: 1.5rem; font-weight: bold; color: var(--color-accent-cyan); }
 .rankedRecord { font-size: 0.95rem; color: var(--color-text-dim); }
+
+.rankedModeSelect {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rankedModeBtn {
+  border: 2px solid var(--color-border) !important;
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-dim) !important;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.rankedModeBtn.active {
+  border-color: var(--color-accent-cyan) !important;
+  background: rgba(0, 217, 255, 0.15) !important;
+  color: var(--color-accent-cyan) !important;
+  opacity: 1;
+  box-shadow: 0 0 12px rgba(0, 217, 255, 0.3);
+}
 
 .rankedQueueStatus {
   padding: 14px;

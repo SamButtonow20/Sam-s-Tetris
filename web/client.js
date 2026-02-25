@@ -808,52 +808,60 @@ class BgParticle {
   }
 }
 
-let bgParticles = [];
-let bgParticleCanvas = null;
-let bgParticleCtx = null;
+// Per-board bg particle state (supports up to 4 boards)
+const boardBgParticles = [[], [], [], []];
+const boardBgCanvas = [null, null, null, null];
+const boardBgCtx = [null, null, null, null];
 
 function initBgParticles() {
   const cfg = BG_PARTICLES[currentThemeName];
-  bgParticles = [];
-  if (!cfg || cfg.count === 0) return;
-  // Create canvas if not exists
-  const board = document.getElementById('player1Board');
-  if (!board) return;
-  if (!bgParticleCanvas) {
-    bgParticleCanvas = document.createElement('canvas');
-    bgParticleCanvas.className = 'bgParticleCanvas';
-    bgParticleCanvas.width = BOARD_W;
-    bgParticleCanvas.height = BOARD_H;
-    // Insert before the main canvas
-    const mainCanvas = board.querySelector('.mainCanvas');
-    if (mainCanvas) mainCanvas.parentNode.insertBefore(bgParticleCanvas, mainCanvas);
-    bgParticleCtx = bgParticleCanvas.getContext('2d');
-  }
-  for (let i = 0; i < cfg.count; i++) {
-    bgParticles.push(new BgParticle(BOARD_W, BOARD_H, cfg));
+  const boardIds = ['player1Board', 'player2Board', 'player3Board', 'player4Board'];
+  for (let i = 0; i < 4; i++) {
+    boardBgParticles[i] = [];
+    const board = document.getElementById(boardIds[i]);
+    if (!board || board.style.display === 'none') continue;
+    if (!cfg || cfg.count === 0) continue;
+    // Create canvas if not exists for this board
+    if (!boardBgCanvas[i]) {
+      const c = document.createElement('canvas');
+      c.className = 'bgParticleCanvas';
+      c.width = BOARD_W;
+      c.height = BOARD_H;
+      const mainCanvas = board.querySelector('.mainCanvas');
+      if (mainCanvas) mainCanvas.parentNode.insertBefore(c, mainCanvas);
+      boardBgCanvas[i] = c;
+      boardBgCtx[i] = c.getContext('2d');
+    }
+    for (let j = 0; j < cfg.count; j++) {
+      boardBgParticles[i].push(new BgParticle(BOARD_W, BOARD_H, cfg));
+    }
   }
 }
 
 function updateBgParticles(dt) {
-  for (const p of bgParticles) p.update(dt);
+  for (let i = 0; i < 4; i++) {
+    for (const p of boardBgParticles[i]) p.update(dt);
+  }
 }
 
 function drawBgParticles() {
-  if (!bgParticleCtx) return;
-  bgParticleCtx.clearRect(0, 0, BOARD_W, BOARD_H);
   const cfg = BG_PARTICLES[currentThemeName];
-  if (!cfg) return;
-  // Retro scanlines
-  if (cfg.type === 'scanlines') {
-    bgParticleCtx.fillStyle = 'rgba(255,255,255,0.03)';
-    for (let y = 0; y < BOARD_H; y += 4) {
-      bgParticleCtx.fillRect(0, y, BOARD_W, 1);
+  for (let i = 0; i < 4; i++) {
+    const ctx = boardBgCtx[i];
+    if (!ctx) continue;
+    ctx.clearRect(0, 0, BOARD_W, BOARD_H);
+    if (!cfg) continue;
+    if (cfg.type === 'scanlines') {
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      for (let y = 0; y < BOARD_H; y += 4) {
+        ctx.fillRect(0, y, BOARD_W, 1);
+      }
+      continue;
     }
-    return;
+    ctx.save();
+    for (const p of boardBgParticles[i]) p.draw(ctx);
+    ctx.restore();
   }
-  bgParticleCtx.save();
-  for (const p of bgParticles) p.draw(bgParticleCtx);
-  bgParticleCtx.restore();
 }
 
 class RNG {
@@ -2428,11 +2436,21 @@ function loop(ts) {
       aiGame.update(dt);
       aiOpponent.update(dt);
     }
+    // Send attacks to opponent in ranked vs player
+    if (isRankedVsPlayer && rankedWs && rankedWs.readyState === WebSocket.OPEN) {
+      if (game.lastAttack > 0) {
+        rankedWs.send(JSON.stringify({ type: 'ranked_attack', lines: game.lastAttack }));
+      }
+    }
     if (game.gameOver && !sentGameOver) {
       sentGameOver = true;
       sound.playGameOver();
       sound.stopMusic();
       updateStatsOnGameEnd(game);
+      // Notify opponent we lost
+      if (isRankedVsPlayer && rankedWs && rankedWs.readyState === WebSocket.OPEN) {
+        rankedWs.send(JSON.stringify({ type: 'ranked_snapshot', grid: game.grid, score: game.score, lines: game.lines, game_over: true }));
+      }
     }
   } else if (mode === 'replay') {
     // Replay playback (not affected by isPaused — uses its own pause)
@@ -2485,6 +2503,29 @@ function loop(ts) {
     oppLinesEls[0].textContent = aiGame.lines;
     oppStatusEls[0].textContent = aiGame.gameOver ? 'Topped Out' : 'Playing';
     for (let i = 1; i < 3; i++) drawGrid(octxes[i], blankGrid);
+  } else if (mode === 'ai' && isRankedVsPlayer) {
+    // Ranked vs Player — draw opponent board from WebSocket data
+    drawGrid(octxes[0], opponents[0].grid);
+    if (opponents[0].piece) drawOpponentPiece(octxes[0], opponents[0].piece);
+    if (opponents[0].next) drawNextPiece(nextCtxes[1], opponents[0].next, next2Canvas.width, next2Canvas.height);
+    oppScoreEls[0].textContent = opponents[0].score;
+    oppLinesEls[0].textContent = opponents[0].lines;
+    oppStatusEls[0].textContent = opponents[0].game_over ? 'Topped Out' : 'Playing';
+    for (let i = 1; i < 3; i++) drawGrid(octxes[i], blankGrid);
+    // Send our snapshot to opponent
+    rankedSnapshotTimer += dt;
+    if (rankedWs && rankedWs.readyState === WebSocket.OPEN && rankedSnapshotTimer > 100) {
+      rankedSnapshotTimer = 0;
+      rankedWs.send(JSON.stringify({
+        type: 'ranked_snapshot',
+        grid: game.grid,
+        score: game.score,
+        lines: game.lines,
+        game_over: game.gameOver,
+        piece: game.current ? { kind: game.current.kind, rotation: game.current.rotation, x: game.current.x, y: game.current.y } : null,
+        next: game.next ? { kind: game.next.kind, rotation: 0 } : null
+      }));
+    }
   } else {
     for (let i = 0; i < 3; i++) drawGrid(octxes[i], blankGrid);
   }
@@ -2535,8 +2576,8 @@ function loop(ts) {
       checkWinner(); // Check if you won or if it's a draw
     }
   }
-  // Also check if AI lost in ranked
-  if (mode === 'ai' && aiGame && aiGame.gameOver && !game.gameOver && isRankedMatch && !shownGameOver) {
+  // Also check if AI lost in ranked (vs AI only, vs Player handled by websocket)
+  if (mode === 'ai' && aiGame && aiGame.gameOver && !game.gameOver && isRankedMatch && !isRankedVsPlayer && !shownGameOver) {
     shownGameOver = true;
     showGameOver();
     handleRankedGameOver(true);
@@ -3263,6 +3304,8 @@ function displayRankedInfo() {
 
 let rankedSearching = false;
 let rankedSearchTimeout = null;
+let rankedModeVsPlayer = false; // false = AI, true = Player
+let rankedWs = null; // separate websocket for ranked matchmaking
 
 function findRankedMatch() {
   if (rankedSearching) return;
@@ -3271,28 +3314,81 @@ function findRankedMatch() {
   const queueStatus = document.getElementById('rankedQueueStatus');
   const findBtn = document.getElementById('btnFindRankedMatch');
   const cancelBtn = document.getElementById('btnCancelQueue');
-  if (queueStatus) queueStatus.style.display = 'block';
+  if (queueStatus) { queueStatus.style.display = 'block'; queueStatus.textContent = 'Searching for opponent...'; }
   if (findBtn) findBtn.style.display = 'none';
   if (cancelBtn) cancelBtn.style.display = 'block';
 
-  // Simulate matchmaking — in a real implementation this would go through the server
-  // For now, match against AI with ELO-scaled difficulty
-  rankedSearchTimeout = setTimeout(() => {
-    if (!rankedSearching) return;
-    rankedSearching = false;
-    if (queueStatus) queueStatus.style.display = 'none';
-    if (findBtn) findBtn.style.display = 'block';
-    if (cancelBtn) cancelBtn.style.display = 'none';
-
-    // Start a ranked match vs AI
-    rankedPage.classList.remove('active');
-    startRankedMatch();
-  }, 2000 + Math.random() * 3000); // 2-5 second "search"
+  if (rankedModeVsPlayer) {
+    // Real matchmaking via WebSocket
+    const rd = loadRankedData();
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    rankedWs = new WebSocket(`${protocol}//${location.host}`);
+    rankedWs.onopen = () => {
+      rankedWs.send(JSON.stringify({ type: 'ranked_queue', name: getCurrentPlayerName(), elo: rd.elo }));
+    };
+    rankedWs.onmessage = (e) => {
+      let msg;
+      try { msg = JSON.parse(e.data); } catch { return; }
+      if (msg.type === 'ranked_matched') {
+        rankedSearching = false;
+        if (queueStatus) queueStatus.style.display = 'none';
+        if (findBtn) findBtn.style.display = 'block';
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        rankedPage.classList.remove('active');
+        startRankedMatchVsPlayer(msg);
+      } else if (msg.type === 'ranked_queue_pos') {
+        if (queueStatus) queueStatus.textContent = `Searching... (${msg.count} in queue)`;
+      } else if (msg.type === 'ranked_opponent_snapshot') {
+        // Receive opponent board data during ranked match
+        opponents[0].grid = msg.grid || opponents[0].grid;
+        opponents[0].score = msg.score || 0;
+        opponents[0].lines = msg.lines || 0;
+        opponents[0].game_over = msg.game_over || false;
+        if (msg.piece) opponents[0].piece = msg.piece;
+        if (msg.next) opponents[0].next = msg.next;
+        oppScoreEls[0].textContent = opponents[0].score;
+        oppLinesEls[0].textContent = opponents[0].lines;
+        if (msg.game_over && !opponents[0]._notifiedOver) {
+          opponents[0]._notifiedOver = true;
+          if (!game.gameOver) handleRankedGameOver(true);
+        }
+      } else if (msg.type === 'ranked_attack') {
+        const lines = msg.lines || 0;
+        if (lines > 0 && game && !game.gameOver) game.addGarbage(lines);
+      } else if (msg.type === 'ranked_opponent_left') {
+        if (!game.gameOver && !shownGameOver) handleRankedGameOver(true);
+      }
+    };
+    rankedWs.onclose = () => {
+      if (rankedSearching) {
+        rankedSearching = false;
+        if (queueStatus) queueStatus.style.display = 'none';
+        if (findBtn) findBtn.style.display = 'block';
+        if (cancelBtn) cancelBtn.style.display = 'none';
+      }
+    };
+  } else {
+    // AI matchmaking — simulate search delay then start
+    rankedSearchTimeout = setTimeout(() => {
+      if (!rankedSearching) return;
+      rankedSearching = false;
+      if (queueStatus) queueStatus.style.display = 'none';
+      if (findBtn) findBtn.style.display = 'block';
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      rankedPage.classList.remove('active');
+      startRankedMatch();
+    }, 2000 + Math.random() * 3000);
+  }
 }
 
 function cancelRankedQueue() {
   rankedSearching = false;
   if (rankedSearchTimeout) { clearTimeout(rankedSearchTimeout); rankedSearchTimeout = null; }
+  if (rankedWs) {
+    rankedWs.send(JSON.stringify({ type: 'ranked_cancel' }));
+    rankedWs.close();
+    rankedWs = null;
+  }
   const queueStatus = document.getElementById('rankedQueueStatus');
   const findBtn = document.getElementById('btnFindRankedMatch');
   const cancelBtn = document.getElementById('btnCancelQueue');
@@ -3352,8 +3448,54 @@ function startRankedMatch() {
 }
 
 let isRankedMatch = false;
+let isRankedVsPlayer = false;
 let rankedOpponentElo = 1000;
 let rankedOpponentName = 'Opponent';
+let rankedSnapshotTimer = 0;
+
+function startRankedMatchVsPlayer(msg) {
+  const rd = loadRankedData();
+  rankedOpponentElo = msg.opponentElo || 1000;
+  rankedOpponentName = msg.opponentName || 'Opponent';
+  isRankedMatch = true;
+  isRankedVsPlayer = true;
+
+  const seed = msg.seed;
+  game = new Game(seed);
+  aiGame = null;
+  aiOpponent = null;
+  replayRecorder = new ReplayRecorder(seed);
+  floatingTexts = [];
+  mode = 'ai'; // reuse 2-player layout
+  isPaused = false;
+  onlineReady = false;
+  sentGameOver = false;
+  shownGameOver = false;
+  rankedSnapshotTimer = 0;
+
+  welcomePage.classList.remove('active');
+  menu.classList.remove('active');
+  onlineForm.classList.remove('active');
+  if (settingsPage) settingsPage.classList.remove('active');
+  if (shopPage) shopPage.classList.remove('active');
+  if (rankedPage) rankedPage.classList.remove('active');
+  if (profilePage) profilePage.classList.remove('active');
+  gameContainer.style.display = 'flex';
+  gameArea.className = 'gameArea players-2';
+  if (gameChatBox) gameChatBox.style.display = 'none';
+  if (spectatorBanner) spectatorBanner.style.display = 'none';
+  if (pieceStatsPanel) pieceStatsPanel.style.display = '';
+  opponents = [{ grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, next: null, _notifiedOver: false }, { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, next: null }, { grid: createEmptyGrid(), score: 0, lines: 0, game_over: false, next: null }];
+  oppNameEls[0].textContent = rankedOpponentName;
+  modeEl.textContent = 'Mode: Ranked 1v1';
+  updatePlayerCount(2);
+  sound.init();
+  sound.startMusic();
+  initBgParticles();
+  updateCoinDisplays();
+  lastTs = performance.now();
+  requestAnimationFrame(loop);
+}
 
 function showRankedPage() {
   welcomePage.classList.remove('active');
@@ -3488,7 +3630,14 @@ function initTouchControls() {
 function handleRankedGameOver(playerWon) {
   if (!isRankedMatch) return;
   isRankedMatch = false;
+  const wasVsPlayer = isRankedVsPlayer;
+  isRankedVsPlayer = false;
   const change = recordRankedResult(rankedOpponentName, rankedOpponentElo, playerWon);
+  // Clean up ranked websocket
+  if (wasVsPlayer && rankedWs) {
+    try { rankedWs.close(); } catch {}
+    rankedWs = null;
+  }
   // Show rank change notification
   const changeText = change >= 0 ? `+${change}` : `${change}`;
   const changeColor = change >= 0 ? 'var(--color-accent-green)' : 'var(--color-accent-pink)';
@@ -3582,6 +3731,20 @@ if (btnBackFromShop) btnBackFromShop.addEventListener('click', () => { shopPage.
 if (btnBackFromRanked) btnBackFromRanked.addEventListener('click', () => { cancelRankedQueue(); rankedPage.classList.remove('active'); welcomePage.classList.add('active'); });
 if (btnFindRankedMatch) btnFindRankedMatch.addEventListener('click', findRankedMatch);
 if (btnCancelQueue) btnCancelQueue.addEventListener('click', cancelRankedQueue);
+
+// Ranked mode toggle (AI / Player)
+const btnRankedVsAI = document.getElementById('btnRankedVsAI');
+const btnRankedVsPlayer = document.getElementById('btnRankedVsPlayer');
+if (btnRankedVsAI) btnRankedVsAI.addEventListener('click', () => {
+  rankedModeVsPlayer = false;
+  btnRankedVsAI.classList.add('active');
+  if (btnRankedVsPlayer) btnRankedVsPlayer.classList.remove('active');
+});
+if (btnRankedVsPlayer) btnRankedVsPlayer.addEventListener('click', () => {
+  rankedModeVsPlayer = true;
+  btnRankedVsPlayer.classList.add('active');
+  if (btnRankedVsAI) btnRankedVsAI.classList.remove('active');
+});
 if (btnBackFromProfile) btnBackFromProfile.addEventListener('click', () => { profilePage.classList.remove('active'); welcomePage.classList.add('active'); });
 
 // Save replay button in game over

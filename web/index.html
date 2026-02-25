@@ -385,6 +385,13 @@
             <span id="rankedWins">0</span>W / <span id="rankedLosses">0</span>L
           </div>
         </div>
+
+        <!-- Mode Selection -->
+        <div class="rankedModeSelect">
+          <button id="btnRankedVsAI" class="btn btn-accent rankedModeBtn active" style="flex:1;">🤖 vs AI</button>
+          <button id="btnRankedVsPlayer" class="btn btn-accent rankedModeBtn" style="flex:1;">👥 vs Player</button>
+        </div>
+
         <div id="rankedQueueStatus" class="rankedQueueStatus" style="display:none;">Searching for opponent...</div>
         <button id="btnFindRankedMatch" class="btn btn-accent" style="width:100%;margin-bottom:8px;">🔍 Find Match</button>
         <button id="btnCancelQueue" class="btn btn-secondary" style="width:100%;margin-bottom:8px;display:none;">Cancel Search</button>
@@ -440,7 +447,7 @@
           </div>
           <div class="nextPieceBox">
             <div class="nextLabel">NEXT</div>
-            <canvas id="nextBoard" width="70" height="70"></canvas>
+            <canvas id="nextBoard" width="120" height="120"></canvas>
           </div>
 
           <!-- Piece Statistics -->
