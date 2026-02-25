@@ -3,6 +3,7 @@ const path = require('path');
 const http = require('http');
 const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
+const { Pool } = require('pg');
 
 const PORT = Number(process.env.PORT || process.argv[2] || 8080);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -12,15 +13,76 @@ const rooms = new Map(); // room -> { players: [{ws,name}], spectators: [{ws,nam
 const rankedQueue = []; // [{ws, name, elo}] — players waiting for ranked match
 
 // ==================== USER AUTH / PROFILES ====================
-const USERS_FILE = path.join(ROOT, 'users.json');
+// Uses PostgreSQL when DATABASE_URL is set (Railway), otherwise falls back to local JSON file.
 
-function loadUsers() {
-  try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); }
-  catch { return {}; }
+const DATABASE_URL = process.env.DATABASE_URL;
+let pool = null;
+let useDB = false;
+
+if (DATABASE_URL) {
+  pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  useDB = true;
+  console.log('[DB] Using PostgreSQL for account storage');
+} else {
+  console.log('[DB] No DATABASE_URL — using local users.json (data will not persist across deploys)');
 }
-function saveUsers(users) {
+
+async function initDB() {
+  if (!useDB) return;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        username_lower VARCHAR(20) PRIMARY KEY,
+        username      VARCHAR(20) NOT NULL,
+        salt          VARCHAR(32) NOT NULL,
+        hash          VARCHAR(128) NOT NULL,
+        token         VARCHAR(64),
+        created_at    BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000)::BIGINT,
+        profile       JSONB NOT NULL DEFAULT '{}'::jsonb
+      );
+    `);
+    console.log('[DB] users table ready');
+  } finally {
+    client.release();
+  }
+}
+
+// ----- JSON file fallback (local dev) -----
+const USERS_FILE = path.join(ROOT, 'users.json');
+function loadUsersFile() {
+  try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); } catch { return {}; }
+}
+function saveUsersFile(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
+
+// ----- DB helpers -----
+async function dbGetUser(usernameLower) {
+  const { rows } = await pool.query('SELECT * FROM users WHERE username_lower = $1', [usernameLower]);
+  return rows[0] || null;
+}
+async function dbGetUserByToken(token) {
+  const { rows } = await pool.query('SELECT * FROM users WHERE token = $1', [token]);
+  return rows[0] || null;
+}
+async function dbCreateUser(usernameLower, username, salt, hash, token, profile) {
+  await pool.query(
+    'INSERT INTO users (username_lower, username, salt, hash, token, profile) VALUES ($1,$2,$3,$4,$5,$6)',
+    [usernameLower, username, salt, hash, token, JSON.stringify(profile)]
+  );
+}
+async function dbUpdateToken(usernameLower, token) {
+  await pool.query('UPDATE users SET token = $1 WHERE username_lower = $2', [token, usernameLower]);
+}
+async function dbUpdateProfile(usernameLower, profile) {
+  await pool.query('UPDATE users SET profile = $1 WHERE username_lower = $2', [JSON.stringify(profile), usernameLower]);
+}
+async function dbGetLeaderboard() {
+  const { rows } = await pool.query('SELECT username, profile FROM users');
+  return rows;
+}
+
 function hashPassword(password, salt) {
   return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
 }
@@ -125,28 +187,31 @@ const server = http.createServer(async (req, res) => {
       const name = String(username).trim().substring(0, 20);
       if (name.length < 2) return sendJSON(res, 400, { error: 'Username must be at least 2 characters' });
       if (password.length < 4) return sendJSON(res, 400, { error: 'Password must be at least 4 characters' });
-      const users = loadUsers();
       const nameLower = name.toLowerCase();
-      if (users[nameLower]) return sendJSON(res, 409, { error: 'Username already taken' });
       const salt = crypto.randomBytes(16).toString('hex');
       const hash = hashPassword(password, salt);
       const token = generateToken();
-      users[nameLower] = {
-        username: name,
-        salt, hash, token,
-        createdAt: Date.now(),
-        profile: {
-          coins: 0,
-          ownedSkins: ['default'],
-          equippedSkin: 'default',
-          stats: { gamesPlayed: 0, totalScore: 0, bestScore: 0, totalLines: 0, bestLines: 0, bestCombo: 0, totalTetris: 0, totalTSpins: 0, totalPerfectClears: 0, totalTime: 0, piecesPlaced: 0, totalB2B: 0 },
-          ranked: { elo: 1000, wins: 0, losses: 0, history: [] },
-          achievements: {},
-          keybinds: null
-        }
+      const defaultProfile = {
+        coins: 0,
+        ownedSkins: ['default'],
+        equippedSkin: 'default',
+        stats: { gamesPlayed: 0, totalScore: 0, bestScore: 0, totalLines: 0, bestLines: 0, bestCombo: 0, totalTetris: 0, totalTSpins: 0, totalPerfectClears: 0, totalTime: 0, piecesPlaced: 0, totalB2B: 0 },
+        ranked: { elo: 1000, wins: 0, losses: 0, history: [] },
+        achievements: {},
+        keybinds: null
       };
-      saveUsers(users);
-      return sendJSON(res, 200, { ok: true, token, username: name, profile: users[nameLower].profile });
+
+      if (useDB) {
+        const existing = await dbGetUser(nameLower);
+        if (existing) return sendJSON(res, 409, { error: 'Username already taken' });
+        await dbCreateUser(nameLower, name, salt, hash, token, defaultProfile);
+      } else {
+        const users = loadUsersFile();
+        if (users[nameLower]) return sendJSON(res, 409, { error: 'Username already taken' });
+        users[nameLower] = { username: name, salt, hash, token, createdAt: Date.now(), profile: defaultProfile };
+        saveUsersFile(users);
+      }
+      return sendJSON(res, 200, { ok: true, token, username: name, profile: defaultProfile });
     } catch (e) { return sendJSON(res, 400, { error: e.message }); }
   }
 
@@ -154,16 +219,26 @@ const server = http.createServer(async (req, res) => {
     try {
       const { username, password } = await parseBody(req);
       if (!username || !password) return sendJSON(res, 400, { error: 'Username and password required' });
-      const users = loadUsers();
       const nameLower = String(username).trim().toLowerCase();
-      const user = users[nameLower];
-      if (!user) return sendJSON(res, 401, { error: 'Invalid username or password' });
-      const hash = hashPassword(password, user.salt);
-      if (hash !== user.hash) return sendJSON(res, 401, { error: 'Invalid username or password' });
-      // Rotate token
-      user.token = generateToken();
-      saveUsers(users);
-      return sendJSON(res, 200, { ok: true, token: user.token, username: user.username, profile: user.profile });
+
+      if (useDB) {
+        const row = await dbGetUser(nameLower);
+        if (!row) return sendJSON(res, 401, { error: 'Invalid username or password' });
+        const hash = hashPassword(password, row.salt);
+        if (hash !== row.hash) return sendJSON(res, 401, { error: 'Invalid username or password' });
+        const token = generateToken();
+        await dbUpdateToken(nameLower, token);
+        return sendJSON(res, 200, { ok: true, token, username: row.username, profile: row.profile });
+      } else {
+        const users = loadUsersFile();
+        const user = users[nameLower];
+        if (!user) return sendJSON(res, 401, { error: 'Invalid username or password' });
+        const hash = hashPassword(password, user.salt);
+        if (hash !== user.hash) return sendJSON(res, 401, { error: 'Invalid username or password' });
+        user.token = generateToken();
+        saveUsersFile(users);
+        return sendJSON(res, 200, { ok: true, token: user.token, username: user.username, profile: user.profile });
+      }
     } catch (e) { return sendJSON(res, 400, { error: e.message }); }
   }
 
@@ -171,30 +246,44 @@ const server = http.createServer(async (req, res) => {
     try {
       const auth = req.headers.authorization;
       const body = await parseBody(req);
-      // Support both: Authorization header (normal) and body.token (sendBeacon on page close)
       let token;
-      if (auth && auth.startsWith('Bearer ')) {
-        token = auth.slice(7);
-      } else if (body.token) {
-        token = body.token;
-      }
+      if (auth && auth.startsWith('Bearer ')) { token = auth.slice(7); }
+      else if (body.token) { token = body.token; }
       if (!token) return sendJSON(res, 401, { error: 'Not authenticated' });
-      const users = loadUsers();
-      const userEntry = Object.values(users).find(u => u.token === token);
-      if (!userEntry) return sendJSON(res, 401, { error: 'Invalid session' });
-      const { profile } = body;
-      if (profile) {
-        // Merge profile fields (don't let client set arbitrary stuff)
-        if (typeof profile.coins === 'number') userEntry.profile.coins = Math.max(0, profile.coins);
-        if (Array.isArray(profile.ownedSkins)) userEntry.profile.ownedSkins = profile.ownedSkins;
-        if (typeof profile.equippedSkin === 'string') userEntry.profile.equippedSkin = profile.equippedSkin;
-        if (profile.stats && typeof profile.stats === 'object') userEntry.profile.stats = profile.stats;
-        if (profile.ranked && typeof profile.ranked === 'object') userEntry.profile.ranked = profile.ranked;
-        if (profile.achievements && typeof profile.achievements === 'object') userEntry.profile.achievements = profile.achievements;
-        if (profile.keybinds) userEntry.profile.keybinds = profile.keybinds;
-        saveUsers(users);
+
+      if (useDB) {
+        const row = await dbGetUserByToken(token);
+        if (!row) return sendJSON(res, 401, { error: 'Invalid session' });
+        let prof = row.profile || {};
+        const { profile } = body;
+        if (profile) {
+          if (typeof profile.coins === 'number') prof.coins = Math.max(0, profile.coins);
+          if (Array.isArray(profile.ownedSkins)) prof.ownedSkins = profile.ownedSkins;
+          if (typeof profile.equippedSkin === 'string') prof.equippedSkin = profile.equippedSkin;
+          if (profile.stats && typeof profile.stats === 'object') prof.stats = profile.stats;
+          if (profile.ranked && typeof profile.ranked === 'object') prof.ranked = profile.ranked;
+          if (profile.achievements && typeof profile.achievements === 'object') prof.achievements = profile.achievements;
+          if (profile.keybinds) prof.keybinds = profile.keybinds;
+          await dbUpdateProfile(row.username_lower, prof);
+        }
+        return sendJSON(res, 200, { ok: true, username: row.username, profile: prof });
+      } else {
+        const users = loadUsersFile();
+        const userEntry = Object.values(users).find(u => u.token === token);
+        if (!userEntry) return sendJSON(res, 401, { error: 'Invalid session' });
+        const { profile } = body;
+        if (profile) {
+          if (typeof profile.coins === 'number') userEntry.profile.coins = Math.max(0, profile.coins);
+          if (Array.isArray(profile.ownedSkins)) userEntry.profile.ownedSkins = profile.ownedSkins;
+          if (typeof profile.equippedSkin === 'string') userEntry.profile.equippedSkin = profile.equippedSkin;
+          if (profile.stats && typeof profile.stats === 'object') userEntry.profile.stats = profile.stats;
+          if (profile.ranked && typeof profile.ranked === 'object') userEntry.profile.ranked = profile.ranked;
+          if (profile.achievements && typeof profile.achievements === 'object') userEntry.profile.achievements = profile.achievements;
+          if (profile.keybinds) userEntry.profile.keybinds = profile.keybinds;
+          saveUsersFile(users);
+        }
+        return sendJSON(res, 200, { ok: true, username: userEntry.username, profile: userEntry.profile });
       }
-      return sendJSON(res, 200, { ok: true, username: userEntry.username, profile: userEntry.profile });
     } catch (e) { return sendJSON(res, 400, { error: e.message }); }
   }
 
@@ -204,21 +293,40 @@ const server = http.createServer(async (req, res) => {
       const auth = req.headers.authorization;
       if (!auth || !auth.startsWith('Bearer ')) return sendJSON(res, 401, { error: 'Not authenticated' });
       const token = auth.slice(7);
-      const users = loadUsers();
-      const userEntry = Object.values(users).find(u => u.token === token);
-      if (!userEntry) return sendJSON(res, 401, { error: 'Invalid session' });
-      return sendJSON(res, 200, { ok: true, username: userEntry.username, profile: userEntry.profile });
+
+      if (useDB) {
+        const row = await dbGetUserByToken(token);
+        if (!row) return sendJSON(res, 401, { error: 'Invalid session' });
+        return sendJSON(res, 200, { ok: true, username: row.username, profile: row.profile });
+      } else {
+        const users = loadUsersFile();
+        const userEntry = Object.values(users).find(u => u.token === token);
+        if (!userEntry) return sendJSON(res, 401, { error: 'Invalid session' });
+        return sendJSON(res, 200, { ok: true, username: userEntry.username, profile: userEntry.profile });
+      }
     } catch (e) { return sendJSON(res, 400, { error: e.message }); }
   }
 
   if (req.method === 'GET' && req.url === '/api/leaderboard') {
-    const users = loadUsers();
-    const board = Object.values(users)
-      .filter(u => u.profile.stats.gamesPlayed > 0)
-      .map(u => ({ name: u.username, score: u.profile.stats.bestScore, lines: u.profile.stats.bestLines, games: u.profile.stats.gamesPlayed, elo: u.profile.ranked.elo }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 50);
-    return sendJSON(res, 200, { leaderboard: board });
+    try {
+      if (useDB) {
+        const rows = await dbGetLeaderboard();
+        const board = rows
+          .filter(r => r.profile && r.profile.stats && r.profile.stats.gamesPlayed > 0)
+          .map(r => ({ name: r.username, score: r.profile.stats.bestScore, lines: r.profile.stats.bestLines, games: r.profile.stats.gamesPlayed, elo: (r.profile.ranked || {}).elo || 1000 }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 50);
+        return sendJSON(res, 200, { leaderboard: board });
+      } else {
+        const users = loadUsersFile();
+        const board = Object.values(users)
+          .filter(u => u.profile.stats.gamesPlayed > 0)
+          .map(u => ({ name: u.username, score: u.profile.stats.bestScore, lines: u.profile.stats.bestLines, games: u.profile.stats.gamesPlayed, elo: u.profile.ranked.elo }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 50);
+        return sendJSON(res, 200, { leaderboard: board });
+      }
+    } catch (e) { return sendJSON(res, 500, { error: 'Leaderboard error' }); }
   }
 
   // ==================== STATIC FILE SERVER ====================
@@ -424,7 +532,17 @@ wss.on('connection', (ws) => {
   });
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`Sam Tetris Web running at http://127.0.0.1:${PORT}`);
-  console.log(`WebSocket endpoint: ws://127.0.0.1:${PORT}`);
-});
+// Initialize DB (if configured) then start listening
+(async () => {
+  try {
+    await initDB();
+  } catch (e) {
+    console.error('[DB] Failed to initialize database:', e.message);
+    console.log('[DB] Falling back to local users.json');
+    useDB = false;
+  }
+  server.listen(PORT, HOST, () => {
+    console.log(`Sam Tetris Web running at http://127.0.0.1:${PORT}`);
+    console.log(`WebSocket endpoint: ws://127.0.0.1:${PORT}`);
+  });
+})();
