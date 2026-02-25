@@ -3025,3 +3025,152 @@ canvas:hover {
 .boardFooter { position: relative; z-index: 1; }
 .pieceStatsPanel { z-index: 1; }
 .b2bIndicator { z-index: 2; }
+
+/* ====================================================== */
+/* MOBILE-SPECIFIC OVERRIDES                               */
+/* ====================================================== */
+
+/* Detect mobile: touch device OR narrow screen */
+@media (pointer: coarse) and (max-width: 768px),
+       (max-width: 480px) and (hover: none) {
+
+  /* ---- Welcome page: hide multiplayer modes ---- */
+  #cardOnline, #cardAI, #cardRanked {
+    display: none !important;
+  }
+  /* Make Classic card full-width and prominent */
+  .playModes {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+  #cardClassic {
+    padding: 28px 20px;
+  }
+  #cardClassic .modeIcon { font-size: 2.5rem; }
+  #cardClassic .modeName { font-size: 1.4rem; }
+  #cardClassic .modeDescription { font-size: 0.9rem; }
+
+  /* Add a mobile-only note below Classic */
+  #cardClassic .modeDescription::after {
+    content: '  Optimized for mobile!';
+    color: var(--color-accent-green);
+    font-weight: bold;
+  }
+
+  /* Hide keyboard controls hint */
+  .welcomeControls { display: none; }
+
+  /* Simplify welcome — smaller title, tighter spacing */
+  .welcomeTitle { font-size: 2.4rem; margin-bottom: 4px; }
+  .welcomeSubtitle { font-size: 0.8rem; margin-bottom: 16px; }
+  .gameMode { margin-bottom: 20px; gap: 14px; }
+  .quickLinks { gap: 6px; }
+  .quickTile { padding: 7px 12px; }
+  .quickLabel { font-size: 0.75rem; }
+
+  /* ---- Game layout: maximize board for single player ---- */
+  .header { display: none; }
+
+  .gameArea.players-1 {
+    --board-h: min(58dvh, 58vh, 440px);
+    --sidebar-w: 68px;
+    --board-gap: 3px;
+    --board-pad: 4px;
+    --footer-size: 0.6rem;
+    --footer-label: 0.5rem;
+    --footer-value: 0.75rem;
+    --title-size: 0.5rem;
+    --badge-size: 0.4rem;
+    --next-label: 0.42rem;
+    padding-bottom: 150px; /* room for touch controls */
+  }
+
+  /* Hide piece stats on mobile to save space */
+  .pieceStatsPanel { display: none !important; }
+  .b2bIndicator { display: none !important; }
+
+  /* ---- Touch controls: bigger, better layout ---- */
+  .touchControls {
+    display: block;
+    bottom: 6px;
+    padding: 0 10px 6px;
+  }
+  .touchRow {
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+  .touchBtn {
+    width: 72px;
+    height: 56px;
+    border-radius: 14px;
+    font-size: 1.5rem;
+  }
+  /* Pause button styling */
+  .touchPause {
+    width: 50px;
+    height: 50px;
+    border-color: var(--color-accent-purple);
+    color: var(--color-accent-purple);
+    font-size: 1.2rem;
+    border-radius: 50%;
+  }
+  .touchPause:active {
+    background: rgba(131, 56, 236, 0.3);
+  }
+
+  /* Bottom row: make directional buttons wider */
+  .touchRowBottom .touchBtn {
+    flex: 1;
+    max-width: 100px;
+  }
+  .touchRowBottom {
+    padding: 0 8px;
+  }
+
+  /* ---- Pause menu mobile tweaks ---- */
+  .pauseContent {
+    padding: 24px 16px;
+    max-width: 90vw;
+    width: 320px;
+  }
+  .pauseContent h2 { font-size: 1.4rem; }
+
+  /* ---- Game over mobile tweaks ---- */
+  .gameOverContent {
+    padding: 20px 14px;
+    max-width: 90vw;
+    width: 320px;
+  }
+
+  /* ---- Theme selector compact ---- */
+  .themeSelector { margin-top: 12px; }
+  .soundControls { margin-top: 8px; }
+  .soundControls .themeBtn { padding: 5px 10px; font-size: 0.7rem; }
+  .volumeSlider { max-width: 120px; }
+
+  /* ---- Auth page mobile ---- */
+  .authContainer { padding: 16px; }
+  .authTitle { font-size: 2.2rem; }
+  .authCard { padding: 16px; }
+}
+
+/* Extra-small phones (iPhone SE, etc.) */
+@media (pointer: coarse) and (max-width: 380px) {
+  .gameArea.players-1 {
+    --board-h: min(50dvh, 50vh, 360px);
+    --sidebar-w: 58px;
+  }
+  .touchBtn {
+    width: 60px;
+    height: 48px;
+    font-size: 1.3rem;
+  }
+  .touchPause {
+    width: 42px;
+    height: 42px;
+    font-size: 1rem;
+  }
+  .quickTile { padding: 5px 8px; }
+  .quickLabel { font-size: 0.7rem; }
+  .quickIcon { font-size: 1rem; }
+}

@@ -3648,6 +3648,7 @@ function initTouchControls() {
   const td = document.getElementById('touchDown');
   const trot = document.getElementById('touchRotate');
   const thd = document.getElementById('touchHardDrop');
+  const tpause = document.getElementById('touchPause');
 
   if (!tl) return; // No touch controls in DOM
 
@@ -3663,10 +3664,37 @@ function initTouchControls() {
   }
 
   // Use touchstart for responsive feel
-  tl.addEventListener('touchstart', (e) => { e.preventDefault(); touchAction('left'); }, { passive: false });
-  tr.addEventListener('touchstart', (e) => { e.preventDefault(); touchAction('right'); }, { passive: false });
   trot.addEventListener('touchstart', (e) => { e.preventDefault(); touchAction('rotate'); }, { passive: false });
   thd.addEventListener('touchstart', (e) => { e.preventDefault(); touchAction('hardDrop'); }, { passive: false });
+
+  // Pause button
+  if (tpause) {
+    tpause.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      sound.init();
+      togglePause();
+    }, { passive: false });
+  }
+
+  // Hold-to-repeat for left/right (initial delay then repeat)
+  function setupRepeat(btn, action) {
+    let repeatTimeout = null, repeatInterval = null;
+    btn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      touchAction(action);
+      repeatTimeout = setTimeout(() => {
+        repeatInterval = setInterval(() => touchAction(action), 60);
+      }, 180); // DAS-like initial delay
+    }, { passive: false });
+    const stop = () => {
+      if (repeatTimeout) { clearTimeout(repeatTimeout); repeatTimeout = null; }
+      if (repeatInterval) { clearInterval(repeatInterval); repeatInterval = null; }
+    };
+    btn.addEventListener('touchend', stop);
+    btn.addEventListener('touchcancel', stop);
+  }
+  setupRepeat(tl, 'left');
+  setupRepeat(tr, 'right');
 
   // Soft drop hold
   let softDropInterval = null;
