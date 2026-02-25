@@ -2673,7 +2673,7 @@ window.addEventListener('keydown', (e) => {
   // Allow ESC at any time to pause/resume
   if (e.key === 'Escape') {
     e.preventDefault();
-    if ((mode === 'classic' || mode === 'online') && !game.gameOver) {
+    if ((mode === 'classic' || mode === 'online' || mode === 'ai') && !game.gameOver) {
       togglePause();
     }
     return;
