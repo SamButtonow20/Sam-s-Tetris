@@ -1049,43 +1049,58 @@ input:focus {
 /* Adaptive grid layout based on player count */
 .gameArea.players-1 {
   grid-template-columns: 1fr;
-  max-width: 520px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
-/* ======================================= */
-/*  Shared sidebar grid for board layouts  */
-/* ======================================= */
+/* ============================================================ */
+/*  Board layouts — HEIGHT-driven so boards don't overflow       */
+/*  Canvas aspect-ratio: 1/2 (10 cols × 20 rows Tetris board)   */
+/* ============================================================ */
+
+/* Base grid: board on left, sidebar panel on right */
 .gameArea .playerBoard {
   display: grid;
-  grid-template-columns: 1fr 90px;
+  grid-template-columns: auto auto;
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "header  header"
     "board   sidebar"
     "footer  sidebar";
-  gap: 4px;
-  padding: 6px;
+  gap: 6px;
+  padding: 8px;
   align-items: start;
+  justify-content: center;
 }
 
-.gameArea .playerBoard .boardHeader  { grid-area: header; }
-.gameArea .playerBoard .mainCanvas   { grid-area: board; width: 100%; height: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; }
-.gameArea .playerBoard .boardFooter  { grid-area: footer; }
-.gameArea .playerBoard .nextPieceBox { grid-area: sidebar; width: 100%; padding: 6px; border-radius: 4px; }
+.gameArea .playerBoard .boardHeader   { grid-area: header; width: 100%; }
+.gameArea .playerBoard .boardFooter   { grid-area: footer; }
+.gameArea .playerBoard .nextPieceBox  { grid-area: sidebar; width: 80px; padding: 6px; border-radius: 4px; }
 .gameArea .playerBoard .nextPieceBox canvas { width: 100%; height: auto; }
 .gameArea .playerBoard .pieceStatsPanel { grid-column: 2; width: 100%; position: relative; left: auto; top: auto; transform: none; margin-top: 4px; }
-.gameArea .playerBoard .b2bIndicator { grid-column: 2; }
+.gameArea .playerBoard .b2bIndicator  { grid-column: 2; }
 
-/* --- Single-player overrides (bigger board + sidebar) --- */
+/* Canvas: height-constrained, width derived from aspect-ratio */
+.gameArea .playerBoard .mainCanvas {
+  grid-area: board;
+  aspect-ratio: 1 / 2;
+  image-rendering: pixelated;
+  height: min(60vh, 440px);
+  width: auto;
+}
+
+/* ─── Single-player: larger board + wider sidebar ─── */
 .gameArea.players-1 .playerBoard {
-  grid-template-columns: 1fr 120px;
-  gap: 8px;
-  padding: 10px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .gameArea.players-1 .mainCanvas {
-  max-width: 340px;
+  height: min(70vh, 540px);
+}
+
+.gameArea.players-1 .nextPieceBox {
+  width: 110px;
 }
 
 .gameArea.players-1 .boardFooter {
@@ -1124,22 +1139,25 @@ input:focus {
   font-size: 0.55rem;
 }
 
-/* --- 2-player overrides --- */
+/* ─── 2-player: equal side-by-side ─── */
 .gameArea.players-2 {
   grid-template-columns: 1fr 1fr;
 }
 
 .gameArea.players-2 .playerBoard {
-  grid-template-columns: 1fr 80px;
-  gap: 3px;
-  padding: 4px;
+  gap: 4px;
+  padding: 6px;
+}
+
+.gameArea.players-2 .mainCanvas {
+  height: min(62vh, 480px);
 }
 
 .gameArea.players-2 .nextLabel {
   font-size: 0.5rem;
 }
 
-/* --- 3/4 player overrides --- */
+/* ─── 3/4 player: compact ─── */
 .gameArea.players-3,
 .gameArea.players-4 {
   grid-template-columns: 1fr 1fr;
@@ -1147,9 +1165,18 @@ input:focus {
 
 .gameArea.players-3 .playerBoard,
 .gameArea.players-4 .playerBoard {
-  grid-template-columns: 1fr 60px;
-  gap: 2px;
-  padding: 3px;
+  gap: 3px;
+  padding: 4px;
+}
+
+.gameArea.players-3 .mainCanvas,
+.gameArea.players-4 .mainCanvas {
+  height: min(45vh, 340px);
+}
+
+.gameArea.players-3 .nextPieceBox,
+.gameArea.players-4 .nextPieceBox {
+  width: 60px;
 }
 
 .gameArea.players-3 .nextLabel,
@@ -1495,10 +1522,12 @@ canvas:hover {
   pointer-events: none;
 }
 
-/* Responsive */
+/* ==================== */
+/* RESPONSIVE LAYOUTS   */
+/* ==================== */
+
 @media (max-width: 1024px) {
   .gameArea {
-    grid-template-columns: 1fr 1fr;
     max-width: 100%;
     gap: 8px;
   }
@@ -1511,85 +1540,138 @@ canvas:hover {
   }
 
   .gameArea {
-    grid-template-columns: 1fr 1fr;
     gap: 6px;
-  }
-
-  /* Single-player: still side-panel but smaller */
-  .gameArea.players-1 .playerBoard {
-    grid-template-columns: 1fr 90px;
-    gap: 4px;
-    padding: 4px;
-  }
-
-  .gameArea.players-1 .mainCanvas {
-    max-width: 200px;
-  }
-
-  .gameArea.players-1 .boardFooter .footerValue {
-    font-size: 0.85rem;
-  }
-
-  /* VS boards on small screens */
-  .gameArea.players-2 .playerBoard {
-    grid-template-columns: 1fr 60px;
-    gap: 2px;
-    padding: 3px;
   }
 
   .gameContainer {
     min-height: auto;
   }
 
-  .playerBoard {
-    gap: 3px;
-    padding: 4px;
+  /* ─ All boards: shrink heights for tablets ─ */
+  .gameArea .playerBoard .mainCanvas {
+    height: min(50vh, 380px);
+  }
+  .gameArea.players-1 .mainCanvas {
+    height: min(58vh, 440px);
+  }
+  .gameArea.players-2 .mainCanvas {
+    height: min(50vh, 380px);
+  }
+  .gameArea.players-3 .mainCanvas,
+  .gameArea.players-4 .mainCanvas {
+    height: min(35vh, 260px);
   }
 
-  .playerBoard canvas {
-    width: 100%;
-    height: auto;
+  /* ─ Shrink sidebars ─ */
+  .gameArea .playerBoard .nextPieceBox {
+    width: 70px;
+  }
+  .gameArea.players-1 .nextPieceBox {
+    width: 90px;
+  }
+  .gameArea.players-2 .nextPieceBox {
+    width: 65px;
+  }
+  .gameArea.players-3 .nextPieceBox,
+  .gameArea.players-4 .nextPieceBox {
+    width: 50px;
   }
 
+  /* ─ Reduce gaps & padding ─ */
+  .gameArea .playerBoard {
+    gap: 4px;
+    padding: 5px;
+  }
+  .gameArea.players-1 .playerBoard {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  /* ─ Smaller fonts ─ */
   .boardHeader {
     gap: 2px;
     padding-bottom: 2px;
   }
-
   .playerTitle {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
-
   .levelBadge, .statusBadge {
     font-size: 0.45rem;
     padding: 1px 3px;
   }
-
   .boardFooter {
     gap: 4px;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
-
   .nextPieceBox {
     gap: 2px;
     padding: 3px;
   }
-
   .nextLabel {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
     margin-bottom: 2px;
   }
-
   .controlsContent {
     gap: 8px;
   }
-
   .controlsLabel {
     font-size: 0.6rem;
   }
-
   .controlRow {
     font-size: 0.55rem;
+  }
+  .gameArea.players-1 .boardFooter .footerValue {
+    font-size: 0.9rem;
+  }
+  .gameArea.players-1 .boardFooter .footerLabel {
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* ─ Phone: stack 2-player vertically ─ */
+  .gameArea.players-2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* ─ Smaller board heights for phones ─ */
+  .gameArea .playerBoard .mainCanvas {
+    height: min(38vh, 280px);
+  }
+  .gameArea.players-1 .mainCanvas {
+    height: min(50vh, 360px);
+  }
+  .gameArea.players-2 .mainCanvas {
+    height: min(35vh, 260px);
+  }
+  .gameArea.players-3 .mainCanvas,
+  .gameArea.players-4 .mainCanvas {
+    height: min(28vh, 200px);
+  }
+
+  /* ─ Tighter sidebars ─ */
+  .gameArea .playerBoard .nextPieceBox {
+    width: 60px;
+  }
+  .gameArea.players-1 .nextPieceBox {
+    width: 80px;
+  }
+  .gameArea.players-2 .nextPieceBox {
+    width: 60px;
+  }
+  .gameArea.players-3 .nextPieceBox,
+  .gameArea.players-4 .nextPieceBox {
+    width: 45px;
+  }
+
+  /* ─ Minimal gaps ─ */
+  .gameArea .playerBoard {
+    gap: 3px;
+    padding: 4px;
+  }
+  .gameArea.players-1 .playerBoard {
+    gap: 4px;
+    padding: 6px;
   }
 }
 
