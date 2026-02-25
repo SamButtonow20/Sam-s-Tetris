@@ -1049,21 +1049,21 @@ input:focus {
 /* Adaptive grid layout based on player count */
 .gameArea.players-1 {
   grid-template-columns: 1fr;
-  max-width: 600px;
+  max-width: 400px;
   margin: 0 auto;
 }
 
 /* Single-player enhanced layout: board + side panel */
 .gameArea.players-1 .playerBoard {
   display: grid;
-  grid-template-columns: auto 140px;
+  grid-template-columns: auto 110px;
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "header  header"
     "board   sidebar"
     "footer  sidebar";
-  gap: 8px;
-  padding: 12px;
+  gap: 6px;
+  padding: 8px;
   align-items: start;
 }
 
@@ -1073,29 +1073,31 @@ input:focus {
 
 .gameArea.players-1 .mainCanvas {
   grid-area: board;
-  width: 300px;
-  height: 600px;
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  aspect-ratio: 1 / 2;
   image-rendering: pixelated;
 }
 
 .gameArea.players-1 .boardFooter {
   grid-area: footer;
-  font-size: 0.85rem;
-}
-
-.gameArea.players-1 .boardFooter .footerLabel {
   font-size: 0.75rem;
 }
 
+.gameArea.players-1 .boardFooter .footerLabel {
+  font-size: 0.65rem;
+}
+
 .gameArea.players-1 .boardFooter .footerValue {
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .gameArea.players-1 .nextPieceBox {
   grid-area: sidebar;
   width: 100%;
-  padding: 8px;
-  border-radius: 6px;
+  padding: 6px;
+  border-radius: 4px;
 }
 
 .gameArea.players-1 .nextPieceBox canvas {
@@ -1104,8 +1106,8 @@ input:focus {
 }
 
 .gameArea.players-1 .nextLabel {
-  font-size: 0.7rem;
-  margin-bottom: 4px;
+  font-size: 0.6rem;
+  margin-bottom: 3px;
 }
 
 .gameArea.players-1 .pieceStatsPanel {
@@ -1123,22 +1125,22 @@ input:focus {
 }
 
 .gameArea.players-1 .playerTitle {
-  font-size: 0.75rem;
+  font-size: 0.6rem;
 }
 
 .gameArea.players-1 .levelBadge,
 .gameArea.players-1 .statusBadge {
-  font-size: 0.65rem;
-  padding: 3px 6px;
+  font-size: 0.55rem;
+  padding: 2px 5px;
 }
 
 .gameArea.players-1 .timeBadge {
-  font-size: 0.65rem;
-  padding: 3px 6px;
+  font-size: 0.55rem;
+  padding: 2px 5px;
 }
 
 .gameArea.players-1 .coinBadge {
-  font-size: 0.65rem;
+  font-size: 0.55rem;
 }
 
 .gameArea.players-2 {
@@ -1522,18 +1524,19 @@ canvas:hover {
 
   /* Single-player: still side-panel but smaller */
   .gameArea.players-1 .playerBoard {
-    grid-template-columns: 1fr 100px;
+    grid-template-columns: 1fr 90px;
     gap: 4px;
-    padding: 6px;
+    padding: 4px;
   }
 
   .gameArea.players-1 .mainCanvas {
+    max-width: 180px;
     width: 100%;
     height: auto;
   }
 
   .gameArea.players-1 .boardFooter .footerValue {
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
 
   .gameContainer {
