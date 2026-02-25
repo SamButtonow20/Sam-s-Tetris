@@ -75,137 +75,45 @@
         </div>
         
         <div class="gameMode" id="gameModeSelector">
-          <!-- Classic Card -->
-          <div class="modeCard" id="cardClassic">
-            <div class="modeIcon">🎮</div>
-            <h2 class="modeName">Classic</h2>
-            <p class="modeDescription">Solo gameplay at your own pace. Clear lines, climb the leaderboard, and master the game.</p>
-            <div class="modeFeatures">
-              <span>✓ Single Player</span>
-              <span>✓ Focus Mode</span>
-              <span>✓ Track Stats</span>
+
+          <!-- PRIMARY: Play Modes (large cards) -->
+          <div class="playModes">
+            <div class="modeCard primary" id="cardClassic">
+              <div class="modeIcon">🎮</div>
+              <h2 class="modeName">Classic</h2>
+              <p class="modeDescription">Solo gameplay. Clear lines and climb the leaderboard.</p>
+            </div>
+
+            <div class="modeCard primary" id="cardOnline">
+              <div class="modeIcon">👥</div>
+              <h2 class="modeName">Online</h2>
+              <p class="modeDescription">Battle up to 4 players in real-time multiplayer.</p>
+            </div>
+
+            <div class="modeCard primary" id="cardAI">
+              <div class="modeIcon">🤖</div>
+              <h2 class="modeName">VS AI</h2>
+              <p class="modeDescription">Challenge the AI at adjustable difficulty levels.</p>
+            </div>
+
+            <div class="modeCard primary" id="cardRanked">
+              <div class="modeIcon">⚔️</div>
+              <h2 class="modeName">Ranked</h2>
+              <p class="modeDescription">Compete in ELO-rated 1v1 matches.</p>
             </div>
           </div>
 
-          <!-- Online Multiplayer Card -->
-          <div class="modeCard" id="cardOnline">
-            <div class="modeIcon">👥</div>
-            <h2 class="modeName">Online Multiplayer</h2>
-            <p class="modeDescription">Battle up to 4 players online. Share a room code with friends and compete in real-time.</p>
-            <div class="modeFeatures">
-              <span>✓ 1v1 to 4-Player</span>
-              <span>✓ Real-time Sync</span>
-              <span>✓ Custom Room Settings</span>
-            </div>
+          <!-- SECONDARY: Quick-access tiles -->
+          <div class="quickLinks">
+            <div class="quickTile" id="cardLeaderboard"><span class="quickIcon">🏆</span><span class="quickLabel">Leaderboard</span></div>
+            <div class="quickTile" id="cardStats"><span class="quickIcon">📊</span><span class="quickLabel">Stats</span></div>
+            <div class="quickTile" id="cardAchievements"><span class="quickIcon">🏅</span><span class="quickLabel">Achievements</span></div>
+            <div class="quickTile" id="cardReplays"><span class="quickIcon">🎬</span><span class="quickLabel">Replays</span></div>
+            <div class="quickTile" id="cardShop"><span class="quickIcon">🛒</span><span class="quickLabel">Shop</span></div>
+            <div class="quickTile" id="cardProfile"><span class="quickIcon">👤</span><span class="quickLabel">Profile</span></div>
+            <div class="quickTile" id="cardSettings"><span class="quickIcon">⚙️</span><span class="quickLabel">Settings</span></div>
           </div>
 
-          <!-- VS AI Card -->
-          <div class="modeCard" id="cardAI">
-            <div class="modeIcon">🤖</div>
-            <h2 class="modeName">VS AI</h2>
-            <p class="modeDescription">Challenge the AI opponent at adjustable difficulty. See if you can beat the machine!</p>
-            <div class="modeFeatures">
-              <span>✓ Adjustable Difficulty</span>
-              <span>✓ Same Piece Sequence</span>
-              <span>✓ Head-to-Head</span>
-            </div>
-          </div>
-
-          <!-- Leaderboard Card -->
-          <div class="modeCard" id="cardLeaderboard">
-            <div class="modeIcon">🏆</div>
-            <h2 class="modeName">Leaderboard</h2>
-            <p class="modeDescription">View top scores and track your progress. Compete for the highest scores.</p>
-            <div class="modeFeatures">
-              <span>✓ Top 50 Scores</span>
-              <span>✓ Rankings</span>
-              <span>✓ Best Times</span>
-            </div>
-          </div>
-
-          <!-- Stats Card -->
-          <div class="modeCard" id="cardStats">
-            <div class="modeIcon">📊</div>
-            <h2 class="modeName">Stats</h2>
-            <p class="modeDescription">View your lifetime statistics — total lines, games played, average score, and more.</p>
-            <div class="modeFeatures">
-              <span>✓ Lifetime Stats</span>
-              <span>✓ Personal Bests</span>
-              <span>✓ Detailed Breakdown</span>
-            </div>
-          </div>
-
-          <!-- Achievements Card -->
-          <div class="modeCard" id="cardAchievements">
-            <div class="modeIcon">🏅</div>
-            <h2 class="modeName">Achievements</h2>
-            <p class="modeDescription">Unlock badges and track your Tetris milestones in the trophy case.</p>
-            <div class="modeFeatures">
-              <span>✓ 16 Achievements</span>
-              <span>✓ Trophy Case</span>
-              <span>✓ Milestone Tracking</span>
-            </div>
-          </div>
-
-          <!-- Replays Card -->
-          <div class="modeCard" id="cardReplays">
-            <div class="modeIcon">🎬</div>
-            <h2 class="modeName">Replays</h2>
-            <p class="modeDescription">Watch recordings of your best games. Save, export, and share replays.</p>
-            <div class="modeFeatures">
-              <span>✓ Record Games</span>
-              <span>✓ Export/Import</span>
-              <span>✓ Playback</span>
-            </div>
-          </div>
-
-          <!-- Ranked 1v1 Card -->
-          <div class="modeCard" id="cardRanked">
-            <div class="modeIcon">⚔️</div>
-            <h2 class="modeName">Ranked 1v1</h2>
-            <p class="modeDescription">Compete in ranked matches. Climb the ELO ladder and prove your skill.</p>
-            <div class="modeFeatures">
-              <span>✓ ELO Rating</span>
-              <span>✓ Matchmaking</span>
-              <span>✓ Rank Ladder</span>
-            </div>
-          </div>
-
-          <!-- Shop Card -->
-          <div class="modeCard" id="cardShop">
-            <div class="modeIcon">🛒</div>
-            <h2 class="modeName">Shop</h2>
-            <p class="modeDescription">Spend your hard-earned coins on custom piece skins and block styles.</p>
-            <div class="modeFeatures">
-              <span>✓ Piece Skins</span>
-              <span>✓ Earn Coins</span>
-              <span>✓ Customize Blocks</span>
-            </div>
-          </div>
-
-          <!-- Settings Card -->
-          <div class="modeCard" id="cardSettings">
-            <div class="modeIcon">⚙️</div>
-            <h2 class="modeName">Settings</h2>
-            <p class="modeDescription">Customize your controls, keybinds, and game preferences.</p>
-            <div class="modeFeatures">
-              <span>✓ Custom Keybinds</span>
-              <span>✓ Control Options</span>
-              <span>✓ Preferences</span>
-            </div>
-          </div>
-
-          <!-- Profile Card -->
-          <div class="modeCard" id="cardProfile">
-            <div class="modeIcon">👤</div>
-            <h2 class="modeName">Profile</h2>
-            <p class="modeDescription">View your player profile, match history, rank, and earned badges.</p>
-            <div class="modeFeatures">
-              <span>✓ Match History</span>
-              <span>✓ Rank Display</span>
-              <span>✓ Badge Showcase</span>
-            </div>
-          </div>
         </div>
 
         <p class="welcomeControls">
