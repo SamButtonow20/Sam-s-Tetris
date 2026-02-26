@@ -18,13 +18,13 @@ const THEMES = {
   neon: {
     name: 'Neon', icon: '💜',
     bg: '#0b0b16', grid: '#1f1f35',
-    colors: { '.': '#0b0b16', '1': '#00ffff', '2': '#ffd650', '3': '#dc3cff', '4': '#00ffaa', '5': '#ff4678', '6': '#78aaff', '7': '#ffa03c', '8': '#868686' },
+    colors: { '.': '#0b0b16', '1': '#00ffff', '2': '#ffe033', '3': '#ee33ff', '4': '#00ffaa', '5': '#ff3366', '6': '#5599ff', '7': '#ff9922', '8': '#868686' },
     cssVars: { '--color-bg-deep': '#0a0e27', '--color-bg-dark': '#0f1533', '--color-bg-card': '#151d3a', '--color-accent-cyan': '#00d9ff', '--color-accent-pink': '#ff006e', '--color-accent-purple': '#8338ec', '--color-accent-green': '#06ffa5', '--color-border': '#2a3566' }
   },
   retro: {
     name: 'Retro', icon: '🕹️',
     bg: '#000000', grid: '#1a1a1a',
-    colors: { '.': '#000000', '1': '#00b8d4', '2': '#e6c200', '3': '#9c27b0', '4': '#4caf50', '5': '#f44336', '6': '#2196f3', '7': '#ff9800', '8': '#757575' },
+    colors: { '.': '#000000', '1': '#00ccee', '2': '#eebb00', '3': '#bb22cc', '4': '#33cc33', '5': '#ee2222', '6': '#2288ff', '7': '#ff8800', '8': '#757575' },
     cssVars: { '--color-bg-deep': '#0d0d0d', '--color-bg-dark': '#1a1a1a', '--color-bg-card': '#262626', '--color-accent-cyan': '#00b8d4', '--color-accent-pink': '#f44336', '--color-accent-purple': '#9c27b0', '--color-accent-green': '#4caf50', '--color-border': '#404040' }
   },
   pastel: {
@@ -42,7 +42,7 @@ const THEMES = {
   ocean: {
     name: 'Ocean', icon: '🌊',
     bg: '#0a1628', grid: '#152238',
-    colors: { '.': '#0a1628', '1': '#00e5ff', '2': '#ffd54f', '3': '#7c4dff', '4': '#64ffda', '5': '#ff5252', '6': '#448aff', '7': '#ffab40', '8': '#607d8b' },
+    colors: { '.': '#0a1628', '1': '#00eeff', '2': '#ffdd33', '3': '#8844ff', '4': '#33ffcc', '5': '#ff4444', '6': '#4499ff', '7': '#ffaa22', '8': '#607d8b' },
     cssVars: { '--color-bg-deep': '#0a1628', '--color-bg-dark': '#0d1f3c', '--color-bg-card': '#132840', '--color-accent-cyan': '#00e5ff', '--color-accent-pink': '#ff5252', '--color-accent-purple': '#7c4dff', '--color-accent-green': '#64ffda', '--color-border': '#1e3a5f' }
   }
 };
@@ -678,32 +678,32 @@ function earnGameCoins(g, won = false) {
 // ==================== PIECE SKINS SYSTEM ====================
 const PIECE_SKINS = {
   default:   { name: 'Default',    price: 0,   style: 'flat',      desc: 'Classic flat blocks',            color1: null, color2: null },
-  rounded:   { name: 'Rounded',    price: 50,  style: 'rounded',   desc: 'Smooth rounded corners',         color1: '#42a5f5', color2: '#66bb6a' },
-  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro 8-bit pixel art',          color1: '#e53935', color2: '#43a047' },
-  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Vibrant neon glow',              color1: '#00e5ff', color2: '#76ff03' },
-  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Smooth color fades',             color1: '#ab47bc', color2: '#26c6da' },
-  glass:     { name: 'Glass',      price: 150, style: 'glass',     desc: 'Transparent crystal look',       color1: '#80deea', color2: '#ce93d8' },
-  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Polished chrome finish',         color1: '#b0bec5', color2: '#90a4ae' },
-  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting spectrum colors',       color1: '#ff1744', color2: '#651fff' },
-  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Funky polka-dot pattern',        color1: '#ff9100', color2: '#ffea00' },
-  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'Hollow wireframe blocks',        color1: '#69f0ae', color2: '#40c4ff' },
-  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Sweet bubblegum swirls',         color1: '#f06292', color2: '#ba68c8' },
-  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'Molten lava core',               color1: '#ff3d00', color2: '#ff6e40' },
-  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Frozen arctic crystal',          color1: '#4fc3f7', color2: '#b3e5fc' },
-  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Swirling cosmic nebula',         color1: '#7c4dff', color2: '#ea80fc' },
-  gold:      { name: '24K Gold',   price: 500, style: 'gold',      desc: 'Luxurious solid gold',           color1: '#ffd700', color2: '#ffab00' },
+  rounded:   { name: 'Rounded',    price: 50,  style: 'rounded',   desc: 'Smooth rounded corners',         color1: '#00bfff', color2: '#00ff80' },
+  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro 8-bit pixel art',          color1: '#ff2222', color2: '#22ee22' },
+  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Vibrant neon glow',              color1: '#00ffff', color2: '#7fff00' },
+  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Smooth color fades',             color1: '#cc00ff', color2: '#00e5ff' },
+  glass:     { name: 'Glass',      price: 150, style: 'glass',     desc: 'Transparent crystal look',       color1: '#66ffff', color2: '#ff66ff' },
+  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Polished chrome finish',         color1: '#c0d8e8', color2: '#8899aa' },
+  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting spectrum colors',       color1: '#ff0044', color2: '#7700ff' },
+  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Funky polka-dot pattern',        color1: '#ff8800', color2: '#ffee00' },
+  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'Hollow wireframe blocks',        color1: '#39ff14', color2: '#00ccff' },
+  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Sweet bubblegum swirls',         color1: '#ff3388', color2: '#cc44ff' },
+  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'Molten lava core',               color1: '#ff3300', color2: '#ff7700' },
+  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Frozen arctic crystal',          color1: '#00ddff', color2: '#aaeeff' },
+  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Swirling cosmic nebula',         color1: '#8833ff', color2: '#ff44dd' },
+  gold:      { name: '24K Gold',   price: 500, style: 'gold',      desc: 'Luxurious solid gold',           color1: '#ffd700', color2: '#ffaa00' },
 };
 
 // ==================== BOARD THEMES SYSTEM ====================
 const BOARD_THEMES = {
   default:    { name: 'Default',     price: 0,   desc: 'Standard dark grid',       borderColor: null, bgOverlay: null },
-  midnight:   { name: 'Midnight',    price: 100, desc: 'Deep blue midnight sky',    borderColor: '#1a237e', bgOverlay: 'rgba(13,71,161,0.08)' },
-  sakura:     { name: 'Sakura',      price: 150, desc: 'Soft cherry-blossom pink',  borderColor: '#e91e63', bgOverlay: 'rgba(233,30,99,0.05)' },
-  emerald:    { name: 'Emerald',     price: 150, desc: 'Rich emerald green',        borderColor: '#00c853', bgOverlay: 'rgba(0,200,83,0.05)' },
-  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Fiery molten lava border',  borderColor: '#ff3d00', bgOverlay: 'rgba(255,61,0,0.06)' },
-  arctic:     { name: 'Arctic',      price: 200, desc: 'Cool icy blue tones',       borderColor: '#00b0ff', bgOverlay: 'rgba(0,176,255,0.06)' },
-  royal:      { name: 'Royal',       price: 250, desc: 'Purple & gold royalty',      borderColor: '#9c27b0', bgOverlay: 'rgba(156,39,176,0.06)' },
-  hologram:   { name: 'Hologram',    price: 350, desc: 'Iridescent shifting border', borderColor: '#00e5ff', bgOverlay: 'rgba(0,229,255,0.04)' },
+  midnight:   { name: 'Midnight',    price: 100, desc: 'Deep blue midnight sky',    borderColor: '#2244cc', bgOverlay: 'rgba(13,71,161,0.12)' },
+  sakura:     { name: 'Sakura',      price: 150, desc: 'Soft cherry-blossom pink',  borderColor: '#ff2277', bgOverlay: 'rgba(255,34,119,0.07)' },
+  emerald:    { name: 'Emerald',     price: 150, desc: 'Rich emerald green',        borderColor: '#00ff66', bgOverlay: 'rgba(0,255,102,0.07)' },
+  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Fiery molten lava border',  borderColor: '#ff4400', bgOverlay: 'rgba(255,68,0,0.09)' },
+  arctic:     { name: 'Arctic',      price: 200, desc: 'Cool icy blue tones',       borderColor: '#00ccff', bgOverlay: 'rgba(0,204,255,0.08)' },
+  royal:      { name: 'Royal',       price: 250, desc: 'Purple & gold royalty',      borderColor: '#bb44ff', bgOverlay: 'rgba(187,68,255,0.08)' },
+  hologram:   { name: 'Hologram',    price: 350, desc: 'Iridescent shifting border', borderColor: '#00ffcc', bgOverlay: 'rgba(0,255,204,0.06)' },
   void:       { name: 'The Void',    price: 500, desc: 'Pure darkness, no gridlines', borderColor: '#000', bgOverlay: null, noGrid: true },
 };
 
@@ -723,14 +723,14 @@ const TRAIL_EFFECTS = {
 // ==================== PLAYER TITLES SYSTEM ====================
 const PLAYER_TITLES = {
   none:        { name: 'None',         price: 0,   desc: 'No title displayed', color: '#aaa' },
-  rookie:      { name: 'Rookie',       price: 50,  desc: 'Just getting started', color: '#90caf9' },
-  stacker:     { name: 'Stacker',      price: 100, desc: 'Dedicated block stacker', color: '#00d9ff' },
-  speedster:   { name: 'Speedster',    price: 150, desc: 'Fast and furious', color: '#ffd54f' },
-  tactician:   { name: 'Tactician',    price: 200, desc: 'Strategic mind', color: '#06ffa5' },
-  destroyer:   { name: 'Destroyer',    price: 250, desc: 'Line-clearing machine', color: '#ff006e' },
+  rookie:      { name: 'Rookie',       price: 50,  desc: 'Just getting started', color: '#44bbff' },
+  stacker:     { name: 'Stacker',      price: 100, desc: 'Dedicated block stacker', color: '#00ddff' },
+  speedster:   { name: 'Speedster',    price: 150, desc: 'Fast and furious', color: '#ffcc00' },
+  tactician:   { name: 'Tactician',    price: 200, desc: 'Strategic mind', color: '#00ff88' },
+  destroyer:   { name: 'Destroyer',    price: 250, desc: 'Line-clearing machine', color: '#ff0066' },
   champion:    { name: 'Champion',     price: 400, desc: 'Proven winner', color: '#ffd700' },
-  legend:      { name: 'Legend',       price: 600, desc: 'Absolutely legendary', color: '#e040fb' },
-  godlike:     { name: 'Godlike',      price: 1000, desc: 'Beyond mortal skill', color: '#ff1744' },
+  legend:      { name: 'Legend',       price: 600, desc: 'Absolutely legendary', color: '#dd33ff' },
+  godlike:     { name: 'Godlike',      price: 1000, desc: 'Beyond mortal skill', color: '#ff1133' },
 };
 
 // ==================== AVATAR SYSTEM ====================
@@ -2509,23 +2509,23 @@ function spawnTrailEffect(boardX, boardY, cols) {
   if (effect === 'none') return;
   const cx = boardX + cols * CELL / 2;
   const cy = boardY;
-  const count = effect === 'shockwave' ? 1 : (effect === 'confetti' ? 20 : 12);
+  const count = effect === 'shockwave' ? 1 : (effect === 'confetti' ? 30 : 18);
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const speed = 0.5 + Math.random() * 2;
+    const speed = 1.0 + Math.random() * 3;
     const p = {
       x: cx + (Math.random() - 0.5) * cols * CELL,
       y: cy + Math.random() * 4,
       vx: Math.cos(angle) * speed * (effect === 'shockwave' ? 0 : 1),
-      vy: -Math.random() * 2 - 0.5,
-      life: 0.6 + Math.random() * 0.4,
-      maxLife: 0.6 + Math.random() * 0.4,
-      size: 2 + Math.random() * 3,
+      vy: -Math.random() * 3 - 1.0,
+      life: 1.0 + Math.random() * 0.6,
+      maxLife: 1.0 + Math.random() * 0.6,
+      size: 4 + Math.random() * 5,
       effect: effect,
       hue: Math.random() * 360,
       radius: 0,
     };
-    if (effect === 'shockwave') { p.x = cx; p.y = cy; p.radius = 2; p.maxRadius = cols * CELL * 0.6; }
+    if (effect === 'shockwave') { p.x = cx; p.y = cy; p.radius = 2; p.maxRadius = cols * CELL * 0.8; }
     trailParticles.push(p);
   }
 }
@@ -2544,47 +2544,57 @@ function updateTrailParticles(dt) {
 function drawTrailParticles(ctx) {
   for (const p of trailParticles) {
     const alpha = Math.max(0, p.life / p.maxLife);
+    ctx.shadowBlur = 8;
     switch (p.effect) {
       case 'spark':
-        ctx.fillStyle = `rgba(255,220,100,${alpha})`;
-        ctx.fillRect(p.x, p.y, p.size * 0.8, p.size * 0.8);
+        ctx.fillStyle = `rgba(255,230,50,${alpha})`;
+        ctx.shadowColor = 'rgba(255,220,100,0.8)';
+        ctx.fillRect(p.x - p.size * 0.4, p.y - p.size * 0.4, p.size * 0.8, p.size * 0.8);
         break;
       case 'flame':
-        ctx.fillStyle = `rgba(255,${Math.floor(80 + 100 * alpha)},0,${alpha * 0.9})`;
+        ctx.fillStyle = `rgba(255,${Math.floor(60 + 120 * alpha)},0,${alpha})`;
+        ctx.shadowColor = 'rgba(255,80,0,0.8)';
         ctx.beginPath(); ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2); ctx.fill();
         break;
       case 'ice_trail':
-        ctx.fillStyle = `rgba(150,220,255,${alpha * 0.8})`;
-        ctx.fillRect(p.x - 1, p.y - 1, p.size * 0.6, p.size * 0.6);
+        ctx.fillStyle = `rgba(100,220,255,${alpha * 0.9})`;
+        ctx.shadowColor = 'rgba(100,220,255,0.7)';
+        ctx.fillRect(p.x - 1, p.y - 1, p.size * 0.7, p.size * 0.7);
         break;
       case 'confetti':
-        ctx.fillStyle = `hsla(${p.hue},90%,60%,${alpha})`;
+        ctx.fillStyle = `hsla(${p.hue},100%,65%,${alpha})`;
+        ctx.shadowColor = `hsla(${p.hue},100%,65%,0.6)`;
         ctx.fillRect(p.x, p.y, p.size, p.size * 0.5);
         break;
       case 'lightning':
-        ctx.strokeStyle = `rgba(180,200,255,${alpha})`;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + (Math.random() - 0.5) * 8, p.y - 6 * alpha); ctx.stroke();
+        ctx.strokeStyle = `rgba(200,220,255,${alpha})`;
+        ctx.shadowColor = 'rgba(180,200,255,0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + (Math.random() - 0.5) * 12, p.y - 8 * alpha); ctx.stroke();
         ctx.lineWidth = 1;
         break;
       case 'stardust':
-        ctx.fillStyle = `rgba(255,255,200,${alpha})`;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * alpha * 0.5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
+        ctx.fillStyle = `rgba(255,255,180,${alpha})`;
+        ctx.shadowColor = 'rgba(255,255,200,0.8)';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * alpha * 0.6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.6})`;
         ctx.fillRect(p.x - 0.5, p.y - p.size, 1, p.size * 2);
         ctx.fillRect(p.x - p.size, p.y - 0.5, p.size * 2, 1);
         break;
       case 'toxic':
-        ctx.fillStyle = `rgba(0,255,60,${alpha * 0.7})`;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 0.7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(0,255,50,${alpha * 0.85})`;
+        ctx.shadowColor = 'rgba(0,255,50,0.8)';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 0.8, 0, Math.PI * 2); ctx.fill();
         break;
       case 'shockwave':
-        ctx.strokeStyle = `rgba(0,200,255,${alpha * 0.6})`;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(0,220,255,${alpha * 0.7})`;
+        ctx.shadowColor = 'rgba(0,220,255,0.6)';
+        ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.stroke();
         ctx.lineWidth = 1;
         break;
     }
+    ctx.shadowBlur = 0;
   }
 }
 
@@ -3753,32 +3763,14 @@ function drawShopPreview() {
     drawCell(ctx, 3, 6, '2'); drawCell(ctx, 4, 6, '2'); drawCell(ctx, 3, 5, '2'); drawCell(ctx, 4, 5, '2');
     ctx.restore();
   } else if (currentShopTab === 'trails') {
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, 200, 200);
-    ctx.fillStyle = '#666';
-    ctx.font = '14px Consolas';
-    ctx.textAlign = 'center';
-    ctx.fillText('Trail shows on hard drop', 100, 100);
-    const effect = previewId;
-    if (effect !== 'none') {
-      const t = performance.now() / 1000;
-      for (let i = 0; i < 8; i++) {
-        const px = 60 + i * 12;
-        const py = 120 + Math.sin(t * 3 + i) * 15;
-        const alpha = 0.4 + 0.4 * Math.sin(t * 2 + i * 0.5);
-        switch(effect) {
-          case 'spark': ctx.fillStyle = `rgba(255,220,100,${alpha})`; break;
-          case 'flame': ctx.fillStyle = `rgba(255,120,0,${alpha})`; break;
-          case 'ice_trail': ctx.fillStyle = `rgba(150,220,255,${alpha})`; break;
-          case 'confetti': ctx.fillStyle = `hsla(${i*45},90%,60%,${alpha})`; break;
-          case 'lightning': ctx.fillStyle = `rgba(180,200,255,${alpha})`; break;
-          case 'stardust': ctx.fillStyle = `rgba(255,255,200,${alpha})`; break;
-          case 'toxic': ctx.fillStyle = `rgba(0,255,60,${alpha})`; break;
-          case 'shockwave': ctx.fillStyle = `rgba(0,200,255,${alpha})`; break;
-          default: ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        }
-        ctx.beginPath(); ctx.arc(px, py, 3 + Math.random() * 2, 0, Math.PI * 2); ctx.fill();
-      }
+    // Draw animated trail preview scaled to 200x200 using drawTrailCardFrame logic
+    ctx.save();
+    ctx.scale(2, 2); // drawTrailCardFrame draws in 100x100, scale up to 200x200
+    drawTrailCardFrame(ctx, previewId, performance.now());
+    ctx.restore();
+    // Start animation loop for trail top preview
+    if (!shopPreviewAnimFrame) {
+      animateShopPreview();
     }
   } else if (currentShopTab === 'titles') {
     ctx.fillStyle = '#111';
@@ -3825,6 +3817,22 @@ function drawShopPreview() {
   }
 }
 
+// Animation loop for the top shop preview panel (trail tab)
+let shopPreviewAnimFrame = null;
+function animateShopPreview() {
+  const pc = document.getElementById('shopPreviewCanvas');
+  if (!pc || currentShopTab !== 'trails') { shopPreviewAnimFrame = null; return; }
+  const ctx = pc.getContext('2d');
+  const { equipped } = getShopCatalog('trails');
+  const previewId = previewingItem || equipped;
+  ctx.clearRect(0, 0, pc.width, pc.height);
+  ctx.save();
+  ctx.scale(2, 2);
+  drawTrailCardFrame(ctx, previewId, performance.now());
+  ctx.restore();
+  shopPreviewAnimFrame = requestAnimationFrame(animateShopPreview);
+}
+
 // Draw a single frame of the trail card animation
 function drawTrailCardFrame(ctx, trailId, time) {
   ctx.clearRect(0, 0, 100, 100);
@@ -3852,14 +3860,14 @@ function drawTrailCardFrame(ctx, trailId, time) {
   
   // Draw trail particles behind the piece
   const trailColors = {
-    spark: ['#ffe066', '#ffcc00', '#ff9900'],
-    flame: ['#ff6600', '#ff3300', '#ff9900', '#ffcc00'],
-    ice_trail: ['#80d8ff', '#40c4ff', '#b3e5fc', '#e0f7fa'],
-    confetti: ['#ff4081', '#536dfe', '#69f0ae', '#ffd740', '#e040fb'],
-    lightning: ['#b3e5fc', '#82b1ff', '#e8eaf6', '#ffffff'],
-    stardust: ['#fff9c4', '#fff59d', '#ffe082', '#ffffff'],
-    toxic: ['#00ff41', '#76ff03', '#64dd17', '#00e676'],
-    shockwave: ['#00e5ff', '#18ffff', '#84ffff', '#00b8d4'],
+    spark: ['#ffe033', '#ffcc00', '#ffaa00'],
+    flame: ['#ff4400', '#ff2200', '#ff8800', '#ffcc00'],
+    ice_trail: ['#44ddff', '#00bbff', '#88eeff', '#ccf7ff'],
+    confetti: ['#ff1177', '#4466ff', '#33ff88', '#ffcc00', '#dd22ff'],
+    lightning: ['#88ccff', '#5599ff', '#ddeeff', '#ffffff'],
+    stardust: ['#ffee88', '#ffdd44', '#ffcc33', '#ffffff'],
+    toxic: ['#00ff33', '#66ff00', '#44dd00', '#00ff66'],
+    shockwave: ['#00eeff', '#00ffff', '#66ffff', '#00bbdd'],
   };
   const colors = trailColors[trailId] || ['#ffffff'];
   
@@ -4089,7 +4097,8 @@ function displayShop() {
       btnHtml = `<button class="shopItemBtn ${canAfford ? 'buy' : 'locked'}" data-id="${id}" data-cat="${currentShopTab}" ${canAfford ? '' : 'disabled'}>🪙 ${item.price}</button>`;
     }
 
-    el.innerHTML += `<div class="shopItemName">${item.name}</div><div class="shopItemDesc">${item.desc}</div><div class="shopItemPrice${item.price === 0 ? ' free' : ''}">${item.price === 0 ? 'Free' : '🪙 ' + item.price}</div>${btnHtml}`;
+    // Use insertAdjacentHTML to preserve already-appended canvas elements
+    el.insertAdjacentHTML('beforeend', `<div class="shopItemName">${item.name}</div><div class="shopItemDesc">${item.desc}</div><div class="shopItemPrice${item.price === 0 ? ' free' : ''}">${item.price === 0 ? 'Free' : '🪙 ' + item.price}</div>${btnHtml}`);
     
     // Click-to-preview: clicking the item card (not the button) shows a preview
     el.addEventListener('click', (e) => {
@@ -4143,8 +4152,10 @@ function displayShop() {
 
   // Start trail preview animations if on trails tab
   if (shopTrailAnimFrame) { cancelAnimationFrame(shopTrailAnimFrame); shopTrailAnimFrame = null; }
+  if (shopPreviewAnimFrame) { cancelAnimationFrame(shopPreviewAnimFrame); shopPreviewAnimFrame = null; }
   if (currentShopTab === 'trails') {
     animateShopTrailPreviews();
+    animateShopPreview();
   }
 }
 
