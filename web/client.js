@@ -677,40 +677,140 @@ function earnGameCoins(g, won = false) {
 
 // ==================== PIECE SKINS SYSTEM ====================
 const PIECE_SKINS = {
-  default: { name: 'Default', price: 0, style: 'flat', desc: 'Classic flat blocks' },
-  rounded: { name: 'Rounded', price: 50, style: 'rounded', desc: 'Smooth rounded corners' },
-  pixelated: { name: 'Pixelated', price: 75, style: 'pixelated', desc: 'Retro pixel art style' },
-  glowing: { name: 'Glowing', price: 100, style: 'glowing', desc: 'Neon glow effect' },
-  gradient: { name: 'Gradient', price: 120, style: 'gradient', desc: 'Smooth color gradients' },
-  glass: { name: 'Glass', price: 150, style: 'glass', desc: 'Transparent glass look' },
-  metallic: { name: 'Metallic', price: 200, style: 'metallic', desc: 'Shiny metal finish' },
-  rainbow: { name: 'Rainbow', price: 300, style: 'rainbow', desc: 'Shifting rainbow colors' },
+  default:   { name: 'Default',    price: 0,   style: 'flat',      desc: 'Classic flat blocks' },
+  rounded:   { name: 'Rounded',    price: 50,  style: 'rounded',   desc: 'Smooth rounded corners' },
+  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro pixel art style' },
+  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Neon glow effect' },
+  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Smooth color gradients' },
+  glass:     { name: 'Glass',      price: 150, style: 'glass',     desc: 'Transparent glass look' },
+  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Shiny metal finish' },
+  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting rainbow colors' },
+  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Polka-dot pattern overlay' },
+  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'Hollow outline blocks' },
+  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Sweet candy swirl effect' },
+  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'Smoldering hot blocks' },
+  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Frozen crystalline look' },
+  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Swirling cosmic dust' },
+  gold:      { name: '24K Gold',   price: 500, style: 'gold',      desc: 'Luxurious solid gold' },
 };
-function loadOwnedSkins() {
-  try { return JSON.parse(localStorage.getItem('tetrisOwnedSkins') || '["default"]'); }
-  catch { return ['default']; }
+
+// ==================== BOARD THEMES SYSTEM ====================
+const BOARD_THEMES = {
+  default:    { name: 'Default',     price: 0,   desc: 'Standard dark grid',       borderColor: null, bgOverlay: null },
+  midnight:   { name: 'Midnight',    price: 100, desc: 'Deep blue midnight sky',    borderColor: '#1a237e', bgOverlay: 'rgba(13,71,161,0.08)' },
+  sakura:     { name: 'Sakura',      price: 150, desc: 'Soft cherry-blossom pink',  borderColor: '#e91e63', bgOverlay: 'rgba(233,30,99,0.05)' },
+  emerald:    { name: 'Emerald',     price: 150, desc: 'Rich emerald green',        borderColor: '#00c853', bgOverlay: 'rgba(0,200,83,0.05)' },
+  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Fiery molten lava border',  borderColor: '#ff3d00', bgOverlay: 'rgba(255,61,0,0.06)' },
+  arctic:     { name: 'Arctic',      price: 200, desc: 'Cool icy blue tones',       borderColor: '#00b0ff', bgOverlay: 'rgba(0,176,255,0.06)' },
+  royal:      { name: 'Royal',       price: 250, desc: 'Purple & gold royalty',      borderColor: '#9c27b0', bgOverlay: 'rgba(156,39,176,0.06)' },
+  hologram:   { name: 'Hologram',    price: 350, desc: 'Iridescent shifting border', borderColor: '#00e5ff', bgOverlay: 'rgba(0,229,255,0.04)' },
+  void:       { name: 'The Void',    price: 500, desc: 'Pure darkness, no gridlines', borderColor: '#000', bgOverlay: null, noGrid: true },
+};
+
+// ==================== TRAIL EFFECTS SYSTEM ====================
+const TRAIL_EFFECTS = {
+  none:      { name: 'None',       price: 0,   desc: 'No hard-drop trail' },
+  spark:     { name: 'Sparks',     price: 75,  desc: 'Tiny sparks on landing' },
+  flame:     { name: 'Flame',      price: 120, desc: 'Fiery flame trail' },
+  ice_trail: { name: 'Frost',      price: 120, desc: 'Chilly frost particles' },
+  confetti:  { name: 'Confetti',   price: 150, desc: 'Celebration confetti burst' },
+  lightning: { name: 'Lightning',  price: 200, desc: 'Electric lightning bolts' },
+  stardust:  { name: 'Stardust',   price: 250, desc: 'Glittering star particles' },
+  toxic:     { name: 'Toxic',      price: 180, desc: 'Neon green toxic drip' },
+  shockwave: { name: 'Shockwave',  price: 300, desc: 'Pulsing shockwave ring' },
+};
+
+// ==================== PLAYER TITLES SYSTEM ====================
+const PLAYER_TITLES = {
+  none:        { name: 'None',         price: 0,   desc: 'No title displayed', color: '#aaa' },
+  rookie:      { name: 'Rookie',       price: 50,  desc: 'Just getting started', color: '#90caf9' },
+  stacker:     { name: 'Stacker',      price: 100, desc: 'Dedicated block stacker', color: '#00d9ff' },
+  speedster:   { name: 'Speedster',    price: 150, desc: 'Fast and furious', color: '#ffd54f' },
+  tactician:   { name: 'Tactician',    price: 200, desc: 'Strategic mind', color: '#06ffa5' },
+  destroyer:   { name: 'Destroyer',    price: 250, desc: 'Line-clearing machine', color: '#ff006e' },
+  champion:    { name: 'Champion',     price: 400, desc: 'Proven winner', color: '#ffd700' },
+  legend:      { name: 'Legend',       price: 600, desc: 'Absolutely legendary', color: '#e040fb' },
+  godlike:     { name: 'Godlike',      price: 1000, desc: 'Beyond mortal skill', color: '#ff1744' },
+};
+
+// ==================== AVATAR SYSTEM ====================
+const PLAYER_AVATARS = {
+  default:    { name: 'Default',      price: 0,   desc: 'Standard player icon',   emoji: '👤' },
+  fire:       { name: 'Fire',         price: 75,  desc: 'Bring the heat',          emoji: '🔥' },
+  lightning:  { name: 'Lightning',    price: 75,  desc: 'Strike fast',             emoji: '⚡' },
+  skull:      { name: 'Skull',        price: 100, desc: 'Fear the reaper',         emoji: '💀' },
+  robot:      { name: 'Robot',        price: 100, desc: 'Beep boop',               emoji: '🤖' },
+  alien:      { name: 'Alien',        price: 120, desc: 'From another world',      emoji: '👾' },
+  wizard:     { name: 'Wizard',       price: 150, desc: 'Master of blocks',        emoji: '🧙' },
+  ninja:      { name: 'Ninja',        price: 150, desc: 'Silent and deadly',       emoji: '🥷' },
+  dragon:     { name: 'Dragon',       price: 200, desc: 'Unleash the beast',       emoji: '🐉' },
+  crown:      { name: 'Crown',        price: 300, desc: 'Royalty arrives',          emoji: '👑' },
+  diamond:    { name: 'Diamond',      price: 400, desc: 'Flawless brilliance',     emoji: '💎' },
+  unicorn:    { name: 'Unicorn',      price: 500, desc: 'Rare and majestic',       emoji: '🦄' },
+};
+
+// ==================== SHOP PERSISTENCE (generic per-category) ====================
+function loadOwned(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+  catch { return [...fallback]; }
 }
-function saveOwnedSkins(list) { localStorage.setItem('tetrisOwnedSkins', JSON.stringify(list)); }
-function loadEquippedSkin() { return localStorage.getItem('tetrisEquippedSkin') || 'default'; }
-function saveEquippedSkin(id) { localStorage.setItem('tetrisEquippedSkin', id); }
-let ownedSkins = loadOwnedSkins();
+function saveOwned(key, list) { localStorage.setItem(key, JSON.stringify(list)); }
+function loadEquipped(key, fallback) { return localStorage.getItem(key) || fallback; }
+function saveEquipped(key, id) { localStorage.setItem(key, id); }
+
+function loadOwnedSkins() { return loadOwned('tetrisOwnedSkins', ['default']); }
+function saveOwnedSkins(list) { saveOwned('tetrisOwnedSkins', list); }
+function loadEquippedSkin() { return loadEquipped('tetrisEquippedSkin', 'default'); }
+function saveEquippedSkin(id) { saveEquipped('tetrisEquippedSkin', id); }
+
+let ownedSkins  = loadOwnedSkins();
 let equippedSkin = loadEquippedSkin();
 
-function buySkin(id) {
-  const skin = PIECE_SKINS[id];
-  if (!skin || ownedSkins.includes(id)) return false;
-  if (!spendCoins(skin.price)) return false;
-  ownedSkins.push(id);
-  saveOwnedSkins(ownedSkins);
+let ownedBoards   = loadOwned('tetrisOwnedBoards',  ['default']);
+let equippedBoard  = loadEquipped('tetrisEquippedBoard', 'default');
+
+let ownedTrails   = loadOwned('tetrisOwnedTrails',  ['none']);
+let equippedTrail  = loadEquipped('tetrisEquippedTrail', 'none');
+
+let ownedTitles   = loadOwned('tetrisOwnedTitles',  ['none']);
+let equippedTitle  = loadEquipped('tetrisEquippedTitle', 'none');
+
+let ownedAvatars  = loadOwned('tetrisOwnedAvatars', ['default']);
+let equippedAvatar = loadEquipped('tetrisEquippedAvatar', 'default');
+
+// Current shop tab
+let currentShopTab = 'skins';
+
+function buyShopItem(category, id) {
+  const catalogs = { skins: PIECE_SKINS, boards: BOARD_THEMES, trails: TRAIL_EFFECTS, titles: PLAYER_TITLES, avatars: PLAYER_AVATARS };
+  const ownedMap = { skins: ownedSkins, boards: ownedBoards, trails: ownedTrails, titles: ownedTitles, avatars: ownedAvatars };
+  const saveMap  = { skins: (l) => saveOwnedSkins(l), boards: (l) => saveOwned('tetrisOwnedBoards', l), trails: (l) => saveOwned('tetrisOwnedTrails', l), titles: (l) => saveOwned('tetrisOwnedTitles', l), avatars: (l) => saveOwned('tetrisOwnedAvatars', l) };
+  const cat = catalogs[category];
+  const owned = ownedMap[category];
+  if (!cat || !cat[id] || owned.includes(id)) return false;
+  if (!spendCoins(cat[id].price)) return false;
+  owned.push(id);
+  saveMap[category](owned);
   scheduleSyncProfile();
   return true;
 }
-function equipSkin(id) {
-  if (!ownedSkins.includes(id)) return;
-  equippedSkin = id;
-  saveEquippedSkin(id);
+
+function equipShopItem(category, id) {
+  const ownedMap = { skins: ownedSkins, boards: ownedBoards, trails: ownedTrails, titles: ownedTitles, avatars: ownedAvatars };
+  if (!ownedMap[category].includes(id)) return;
+  switch(category) {
+    case 'skins':  equippedSkin  = id; saveEquippedSkin(id); break;
+    case 'boards': equippedBoard = id; saveEquipped('tetrisEquippedBoard', id);
+      gridOverlay = buildGridOverlay(); break;
+    case 'trails': equippedTrail = id; saveEquipped('tetrisEquippedTrail', id); break;
+    case 'titles': equippedTitle = id; saveEquipped('tetrisEquippedTitle', id); break;
+    case 'avatars': equippedAvatar = id; saveEquipped('tetrisEquippedAvatar', id); break;
+  }
   scheduleSyncProfile();
 }
+
+function buySkin(id) { return buyShopItem('skins', id); }
+function equipSkin(id) { equipShopItem('skins', id); }
 
 // ==================== RANKED / ELO SYSTEM (Local) ====================
 const RANK_TIERS = [
@@ -1088,6 +1188,18 @@ class Game {
     this.groundedMs = this.lockDelayMs;
     sound.playDrop();
     if (replayRecorder) replayRecorder.record('drop');
+    // Trail effect at landing position
+    if (equippedTrail !== 'none') {
+      const shape = this.shape(this.current);
+      let minC = 10, maxC = 0, maxR = 0;
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+        if (shape[r][c] !== '.') { minC = Math.min(minC, c); maxC = Math.max(maxC, c); maxR = Math.max(maxR, r); }
+      }
+      const bx = (this.current.x + minC) * CELL;
+      const by = (this.current.y + maxR + 1) * CELL;
+      const cols = maxC - minC + 1;
+      spawnTrailEffect(bx, by, cols);
+    }
   }
 
   detectTSpin() {
@@ -1490,16 +1602,24 @@ const blankGrid = createEmptyGrid();
 
 function buildGridOverlay() {
   const theme = THEMES[currentThemeName];
+  const boardTheme = BOARD_THEMES[equippedBoard] || BOARD_THEMES.default;
   const layer = document.createElement('canvas');
   layer.width = BOARD_W;
   layer.height = BOARD_H;
   const ctx = layer.getContext('2d');
   ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, BOARD_W, BOARD_H);
-  ctx.strokeStyle = theme.grid;
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
+  // Board theme background overlay
+  if (boardTheme.bgOverlay) {
+    ctx.fillStyle = boardTheme.bgOverlay;
+    ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+  }
+  if (!boardTheme.noGrid) {
+    ctx.strokeStyle = boardTheme.borderColor || theme.grid;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
+      }
     }
   }
   return layer;
@@ -2240,7 +2360,6 @@ function drawCell(ctx, x, y, v) {
     case 'pixelated': {
       ctx.fillStyle = color;
       ctx.fillRect(px, py, sz, sz);
-      // Pixel grid effect
       ctx.fillStyle = 'rgba(0,0,0,0.15)';
       const ps = sz / 3;
       for (let gx = 0; gx < 3; gx++) for (let gy = 0; gy < 3; gy++) {
@@ -2269,14 +2388,12 @@ function drawCell(ctx, x, y, v) {
       ctx.globalAlpha = 0.6;
       ctx.fillRect(px, py, sz, sz);
       ctx.globalAlpha = 1;
-      // Highlight
       ctx.fillStyle = 'rgba(255,255,255,0.25)';
       ctx.fillRect(px + 1, py + 1, sz - 2, sz / 3);
       break;
     case 'metallic': {
       ctx.fillStyle = color;
       ctx.fillRect(px, py, sz, sz);
-      // Metallic sheen
       const mg = ctx.createLinearGradient(px, py, px, py + sz);
       mg.addColorStop(0, 'rgba(255,255,255,0.35)');
       mg.addColorStop(0.5, 'rgba(255,255,255,0.05)');
@@ -2291,9 +2408,182 @@ function drawCell(ctx, x, y, v) {
       ctx.fillRect(px, py, sz, sz);
       break;
     }
+    case 'dotted': {
+      ctx.fillStyle = color;
+      ctx.fillRect(px, py, sz, sz);
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      const dotR = sz * 0.15;
+      ctx.beginPath();
+      ctx.arc(px + sz * 0.3, py + sz * 0.3, dotR, 0, Math.PI * 2);
+      ctx.arc(px + sz * 0.7, py + sz * 0.7, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    case 'outline':
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(px + 1, py + 1, sz - 2, sz - 2);
+      ctx.lineWidth = 1;
+      break;
+    case 'candy': {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(px, py, sz, sz, 6);
+      ctx.fill();
+      // Swirl highlight
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(px + sz / 2, py + sz / 2, sz * 0.25, 0, Math.PI * 1.5);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      // Shine dot
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.arc(px + sz * 0.3, py + sz * 0.3, 2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    case 'ember': {
+      ctx.fillStyle = color;
+      ctx.fillRect(px, py, sz, sz);
+      // Hot gradient overlay
+      const eg = ctx.createRadialGradient(px + sz / 2, py + sz / 2, 0, px + sz / 2, py + sz / 2, sz);
+      eg.addColorStop(0, 'rgba(255,200,0,0.3)');
+      eg.addColorStop(0.6, 'rgba(255,80,0,0.15)');
+      eg.addColorStop(1, 'rgba(0,0,0,0.1)');
+      ctx.fillStyle = eg;
+      ctx.fillRect(px, py, sz, sz);
+      break;
+    }
+    case 'ice': {
+      ctx.fillStyle = color;
+      ctx.fillRect(px, py, sz, sz);
+      // Frost overlay
+      ctx.fillStyle = 'rgba(180,230,255,0.25)';
+      ctx.fillRect(px, py, sz, sz * 0.4);
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(px + 2, py + 2, 3, 3);
+      ctx.fillRect(px + sz - 5, py + sz * 0.5, 2, 4);
+      break;
+    }
+    case 'galaxy': {
+      const hue2 = ((x * 47 + y * 31 + performance.now() / 30) % 360);
+      const gg = ctx.createRadialGradient(px + sz / 2, py + sz / 2, 0, px + sz / 2, py + sz / 2, sz);
+      gg.addColorStop(0, `hsl(${hue2}, 90%, 70%)`);
+      gg.addColorStop(0.5, color);
+      gg.addColorStop(1, `hsl(${(hue2 + 120) % 360}, 70%, 20%)`);
+      ctx.fillStyle = gg;
+      ctx.fillRect(px, py, sz, sz);
+      // Tiny stars
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillRect(px + sz * 0.2, py + sz * 0.2, 1, 1);
+      ctx.fillRect(px + sz * 0.7, py + sz * 0.6, 1, 1);
+      break;
+    }
+    case 'gold': {
+      const goldGrad = ctx.createLinearGradient(px, py, px + sz, py + sz);
+      goldGrad.addColorStop(0, '#ffd700');
+      goldGrad.addColorStop(0.3, '#fff8b0');
+      goldGrad.addColorStop(0.5, '#ffd700');
+      goldGrad.addColorStop(0.7, '#b8860b');
+      goldGrad.addColorStop(1, '#ffd700');
+      ctx.fillStyle = goldGrad;
+      ctx.fillRect(px, py, sz, sz);
+      // Sheen
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillRect(px + 1, py + 1, sz - 2, sz * 0.3);
+      break;
+    }
     default: // flat
       ctx.fillStyle = color;
       ctx.fillRect(px, py, sz, sz);
+  }
+}
+
+// ==================== TRAIL EFFECT RENDERING ====================
+let trailParticles = [];
+function spawnTrailEffect(boardX, boardY, cols) {
+  const effect = equippedTrail;
+  if (effect === 'none') return;
+  const cx = boardX + cols * CELL / 2;
+  const cy = boardY;
+  const count = effect === 'shockwave' ? 1 : (effect === 'confetti' ? 20 : 12);
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 0.5 + Math.random() * 2;
+    const p = {
+      x: cx + (Math.random() - 0.5) * cols * CELL,
+      y: cy + Math.random() * 4,
+      vx: Math.cos(angle) * speed * (effect === 'shockwave' ? 0 : 1),
+      vy: -Math.random() * 2 - 0.5,
+      life: 0.6 + Math.random() * 0.4,
+      maxLife: 0.6 + Math.random() * 0.4,
+      size: 2 + Math.random() * 3,
+      effect: effect,
+      hue: Math.random() * 360,
+      radius: 0,
+    };
+    if (effect === 'shockwave') { p.x = cx; p.y = cy; p.radius = 2; p.maxRadius = cols * CELL * 0.6; }
+    trailParticles.push(p);
+  }
+}
+function updateTrailParticles(dt) {
+  for (let i = trailParticles.length - 1; i >= 0; i--) {
+    const p = trailParticles[i];
+    p.life -= dt;
+    if (p.life <= 0) { trailParticles.splice(i, 1); continue; }
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.effect === 'flame' || p.effect === 'ember') p.vy -= 0.05;
+    if (p.effect === 'ice_trail') p.vy += 0.02;
+    if (p.effect === 'shockwave') p.radius += (p.maxRadius - p.radius) * 0.1;
+  }
+}
+function drawTrailParticles(ctx) {
+  for (const p of trailParticles) {
+    const alpha = Math.max(0, p.life / p.maxLife);
+    switch (p.effect) {
+      case 'spark':
+        ctx.fillStyle = `rgba(255,220,100,${alpha})`;
+        ctx.fillRect(p.x, p.y, p.size * 0.8, p.size * 0.8);
+        break;
+      case 'flame':
+        ctx.fillStyle = `rgba(255,${Math.floor(80 + 100 * alpha)},0,${alpha * 0.9})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'ice_trail':
+        ctx.fillStyle = `rgba(150,220,255,${alpha * 0.8})`;
+        ctx.fillRect(p.x - 1, p.y - 1, p.size * 0.6, p.size * 0.6);
+        break;
+      case 'confetti':
+        ctx.fillStyle = `hsla(${p.hue},90%,60%,${alpha})`;
+        ctx.fillRect(p.x, p.y, p.size, p.size * 0.5);
+        break;
+      case 'lightning':
+        ctx.strokeStyle = `rgba(180,200,255,${alpha})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + (Math.random() - 0.5) * 8, p.y - 6 * alpha); ctx.stroke();
+        ctx.lineWidth = 1;
+        break;
+      case 'stardust':
+        ctx.fillStyle = `rgba(255,255,200,${alpha})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * alpha * 0.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
+        ctx.fillRect(p.x - 0.5, p.y - p.size, 1, p.size * 2);
+        ctx.fillRect(p.x - p.size, p.y - 0.5, p.size * 2, 1);
+        break;
+      case 'toxic':
+        ctx.fillStyle = `rgba(0,255,60,${alpha * 0.7})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 0.7, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'shockwave':
+        ctx.strokeStyle = `rgba(0,200,255,${alpha * 0.6})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1;
+        break;
+    }
   }
 }
 
@@ -2525,6 +2815,7 @@ function loop(ts) {
   // Update floating texts and screen shake
   updateFloatingTexts(dt);
   updateBgParticles(dt);
+  updateTrailParticles(dt);
   drawBgParticles();
 
   // Apply screen shake to main canvas
@@ -2537,6 +2828,7 @@ function loop(ts) {
   drawGrid(bctx, renderGame.grid);
   if (!renderGame.gameOver) drawPiece(bctx, renderGame.current);
   drawParticles(bctx);
+  drawTrailParticles(bctx);
   drawFloatingTexts(bctx);
   bctx.restore();
   
@@ -3282,73 +3574,268 @@ function showSettingsPage() {
 }
 
 // ==================== SHOP PAGE ====================
+function getShopCatalog(category) {
+  switch(category) {
+    case 'skins':   return { catalog: PIECE_SKINS,    owned: ownedSkins,   equipped: equippedSkin };
+    case 'boards':  return { catalog: BOARD_THEMES,    owned: ownedBoards,  equipped: equippedBoard };
+    case 'trails':  return { catalog: TRAIL_EFFECTS,   owned: ownedTrails,  equipped: equippedTrail };
+    case 'titles':  return { catalog: PLAYER_TITLES,   owned: ownedTitles,  equipped: equippedTitle };
+    case 'avatars': return { catalog: PLAYER_AVATARS,  owned: ownedAvatars, equipped: equippedAvatar };
+    default:        return { catalog: PIECE_SKINS,     owned: ownedSkins,   equipped: equippedSkin };
+  }
+}
+
+function drawShopPreview() {
+  const pc = document.getElementById('shopPreviewCanvas');
+  if (!pc) return;
+  const ctx = pc.getContext('2d');
+  ctx.clearRect(0, 0, pc.width, pc.height);
+
+  if (currentShopTab === 'skins') {
+    // Draw a 4x4 T-piece preview with the current equipped skin
+    const scale = 200 / (5 * CELL);
+    ctx.save();
+    ctx.scale(scale, scale);
+    // Draw dark bg
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, 5 * CELL, 5 * CELL);
+    // Draw T-piece shape
+    const shape = [['.','1','.'],['.','.','.'],['1','1','1'],['.','.','.']];
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
+      if (shape[r][c] !== '.') drawCell(ctx, c + 1, r + 0.5, shape[r][c]);
+    }
+    ctx.restore();
+  } else if (currentShopTab === 'boards') {
+    // Draw a mini grid preview
+    const bTheme = BOARD_THEMES[equippedBoard] || BOARD_THEMES.default;
+    const theme = THEMES[currentThemeName];
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, 200, 200);
+    if (bTheme.bgOverlay) { ctx.fillStyle = bTheme.bgOverlay; ctx.fillRect(0, 0, 200, 200); }
+    if (!bTheme.noGrid) {
+      ctx.strokeStyle = bTheme.borderColor || theme.grid;
+      const cs = 20;
+      for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) ctx.strokeRect(c * cs, r * cs, cs, cs);
+    }
+    // Draw some sample pieces
+    const scale = 200 / (10 * CELL);
+    ctx.save(); ctx.scale(scale, scale);
+    drawCell(ctx, 2, 7, '1'); drawCell(ctx, 3, 7, '1'); drawCell(ctx, 4, 7, '1'); drawCell(ctx, 5, 7, '1');
+    drawCell(ctx, 3, 6, '2'); drawCell(ctx, 4, 6, '2'); drawCell(ctx, 3, 5, '2'); drawCell(ctx, 4, 5, '2');
+    ctx.restore();
+  } else if (currentShopTab === 'trails') {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, 200, 200);
+    ctx.fillStyle = '#666';
+    ctx.font = '14px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText('Trail shows on hard drop', 100, 100);
+    // Draw some sample trail particles
+    const effect = equippedTrail;
+    if (effect !== 'none') {
+      const t = performance.now() / 1000;
+      for (let i = 0; i < 8; i++) {
+        const px = 60 + i * 12;
+        const py = 120 + Math.sin(t * 3 + i) * 15;
+        const alpha = 0.4 + 0.4 * Math.sin(t * 2 + i * 0.5);
+        switch(effect) {
+          case 'spark': ctx.fillStyle = `rgba(255,220,100,${alpha})`; break;
+          case 'flame': ctx.fillStyle = `rgba(255,120,0,${alpha})`; break;
+          case 'ice_trail': ctx.fillStyle = `rgba(150,220,255,${alpha})`; break;
+          case 'confetti': ctx.fillStyle = `hsla(${i*45},90%,60%,${alpha})`; break;
+          case 'lightning': ctx.fillStyle = `rgba(180,200,255,${alpha})`; break;
+          case 'stardust': ctx.fillStyle = `rgba(255,255,200,${alpha})`; break;
+          case 'toxic': ctx.fillStyle = `rgba(0,255,60,${alpha})`; break;
+          case 'shockwave': ctx.fillStyle = `rgba(0,200,255,${alpha})`; break;
+          default: ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        }
+        ctx.beginPath(); ctx.arc(px, py, 3 + Math.random() * 2, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  } else if (currentShopTab === 'titles') {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, 200, 200);
+    const titleData = PLAYER_TITLES[equippedTitle];
+    if (titleData && equippedTitle !== 'none') {
+      ctx.font = 'bold 22px Consolas';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = titleData.color;
+      ctx.shadowColor = titleData.color;
+      ctx.shadowBlur = 10;
+      ctx.fillText(titleData.name, 100, 90);
+      ctx.shadowBlur = 0;
+      ctx.font = '14px Consolas';
+      ctx.fillStyle = '#aaa';
+      ctx.fillText('Your display title', 100, 120);
+    } else {
+      ctx.font = '14px Consolas';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#666';
+      ctx.fillText('No title equipped', 100, 100);
+    }
+  } else if (currentShopTab === 'avatars') {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, 200, 200);
+    const avatarData = PLAYER_AVATARS[equippedAvatar];
+    if (avatarData) {
+      ctx.font = '64px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(avatarData.emoji, 100, 90);
+      ctx.font = '14px Consolas';
+      ctx.fillStyle = '#aaa';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(avatarData.name, 100, 140);
+    }
+  }
+}
+
 function displayShop() {
   if (!shopGrid) return;
   shopGrid.innerHTML = '';
   updateCoinDisplays();
-  for (const [id, skin] of Object.entries(PIECE_SKINS)) {
-    const owned = ownedSkins.includes(id);
-    const equipped = equippedSkin === id;
-    const item = document.createElement('div');
-    item.className = `shopItem${owned ? ' owned' : ''}${equipped ? ' equipped' : ''}`;
 
-    // Create preview canvas
-    const previewCanvas = document.createElement('canvas');
-    previewCanvas.width = 60;
-    previewCanvas.height = 60;
-    previewCanvas.className = 'shopItemPreview';
-    const pctx = previewCanvas.getContext('2d');
-    // Draw sample block with this skin
-    const savedSkin = equippedSkin;
-    equippedSkin = id;
-    const sampleColors = ['1', '2', '3', '4'];
-    for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) {
-      const origCELL = CELL;
-      // Scale the preview
-      pctx.save();
-      pctx.scale(60 / (2 * CELL), 60 / (2 * CELL));
-      drawCell(pctx, c, r, sampleColors[(r * 2 + c) % 4]);
-      pctx.restore();
+  // Update tab active states
+  const tabContainer = document.getElementById('shopTabs');
+  if (tabContainer) {
+    tabContainer.querySelectorAll('.shopTab').forEach(t => {
+      t.classList.toggle('active', t.dataset.category === currentShopTab);
+    });
+  }
+
+  const { catalog, owned, equipped } = getShopCatalog(currentShopTab);
+
+  for (const [id, item] of Object.entries(catalog)) {
+    const isOwned = owned.includes(id);
+    const isEquipped = equipped === id;
+    const el = document.createElement('div');
+    el.className = `shopItem${isOwned ? ' owned' : ''}${isEquipped ? ' equipped' : ''}`;
+
+    // Create preview
+    if (currentShopTab === 'skins') {
+      const previewCanvas = document.createElement('canvas');
+      previewCanvas.width = 60;
+      previewCanvas.height = 60;
+      previewCanvas.className = 'shopItemPreview';
+      const pctx = previewCanvas.getContext('2d');
+      const savedSkin = equippedSkin;
+      equippedSkin = id;
+      const sampleColors = ['1', '2', '3', '4'];
+      for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) {
+        pctx.save();
+        pctx.scale(60 / (2 * CELL), 60 / (2 * CELL));
+        drawCell(pctx, c, r, sampleColors[(r * 2 + c) % 4]);
+        pctx.restore();
+      }
+      equippedSkin = savedSkin;
+      el.appendChild(previewCanvas);
+    } else if (currentShopTab === 'boards') {
+      const previewCanvas = document.createElement('canvas');
+      previewCanvas.width = 60;
+      previewCanvas.height = 60;
+      previewCanvas.className = 'shopItemPreview';
+      const pctx = previewCanvas.getContext('2d');
+      const theme = THEMES[currentThemeName];
+      pctx.fillStyle = theme.bg;
+      pctx.fillRect(0, 0, 60, 60);
+      if (item.bgOverlay) { pctx.fillStyle = item.bgOverlay; pctx.fillRect(0, 0, 60, 60); }
+      if (!item.noGrid) {
+        pctx.strokeStyle = item.borderColor || theme.grid;
+        for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) pctx.strokeRect(c * 10, r * 10, 10, 10);
+      }
+      el.appendChild(previewCanvas);
+    } else if (currentShopTab === 'trails') {
+      const previewCanvas = document.createElement('canvas');
+      previewCanvas.width = 60;
+      previewCanvas.height = 60;
+      previewCanvas.className = 'shopItemPreview';
+      const pctx = previewCanvas.getContext('2d');
+      pctx.fillStyle = '#111';
+      pctx.fillRect(0, 0, 60, 60);
+      if (id !== 'none') {
+        for (let i = 0; i < 5; i++) {
+          const alpha = 0.3 + i * 0.14;
+          const px = 10 + i * 10;
+          const py = 20 + Math.sin(i * 1.2) * 8;
+          switch(id) {
+            case 'spark': pctx.fillStyle = `rgba(255,220,100,${alpha})`; break;
+            case 'flame': pctx.fillStyle = `rgba(255,120,0,${alpha})`; break;
+            case 'ice_trail': pctx.fillStyle = `rgba(150,220,255,${alpha})`; break;
+            case 'confetti': pctx.fillStyle = `hsla(${i*72},90%,60%,${alpha})`; break;
+            case 'lightning': pctx.fillStyle = `rgba(180,200,255,${alpha})`; break;
+            case 'stardust': pctx.fillStyle = `rgba(255,255,200,${alpha})`; break;
+            case 'toxic': pctx.fillStyle = `rgba(0,255,60,${alpha})`; break;
+            case 'shockwave': pctx.fillStyle = `rgba(0,200,255,${alpha})`; break;
+            default: pctx.fillStyle = `rgba(255,255,255,${alpha})`;
+          }
+          pctx.beginPath(); pctx.arc(px, py, 3, 0, Math.PI * 2); pctx.fill();
+        }
+      }
+      el.appendChild(previewCanvas);
+    } else if (currentShopTab === 'titles') {
+      const titlePreview = document.createElement('div');
+      titlePreview.className = 'shopItemPreview shopTitlePreview';
+      titlePreview.style.color = item.color;
+      titlePreview.style.textShadow = `0 0 8px ${item.color}`;
+      titlePreview.textContent = id === 'none' ? '—' : item.name;
+      el.appendChild(titlePreview);
+    } else if (currentShopTab === 'avatars') {
+      const avatarPreview = document.createElement('div');
+      avatarPreview.className = 'shopItemPreview shopAvatarPreview';
+      avatarPreview.textContent = item.emoji;
+      el.appendChild(avatarPreview);
     }
-    equippedSkin = savedSkin;
 
     let btnHtml = '';
-    if (equipped) {
+    if (isEquipped) {
       btnHtml = `<button class="shopItemBtn equipped" disabled>✓ Equipped</button>`;
-    } else if (owned) {
-      btnHtml = `<button class="shopItemBtn equip" data-skin="${id}">Equip</button>`;
-    } else if (skin.price === 0) {
-      btnHtml = `<button class="shopItemBtn equip" data-skin="${id}">Equip</button>`;
+    } else if (isOwned || item.price === 0) {
+      btnHtml = `<button class="shopItemBtn equip" data-id="${id}" data-cat="${currentShopTab}">Equip</button>`;
     } else {
-      const canAfford = loadCoins() >= skin.price;
-      btnHtml = `<button class="shopItemBtn ${canAfford ? 'buy' : 'locked'}" data-skin="${id}" ${canAfford ? '' : 'disabled'}>🪙 ${skin.price}</button>`;
+      const canAfford = loadCoins() >= item.price;
+      btnHtml = `<button class="shopItemBtn ${canAfford ? 'buy' : 'locked'}" data-id="${id}" data-cat="${currentShopTab}" ${canAfford ? '' : 'disabled'}>🪙 ${item.price}</button>`;
     }
 
-    item.innerHTML = `<div class="shopItemName">${skin.name}</div><div class="shopItemDesc">${skin.desc}</div><div class="shopItemPrice${skin.price === 0 ? ' free' : ''}">${skin.price === 0 ? 'Free' : '🪙 ' + skin.price}</div>${btnHtml}`;
-    item.insertBefore(previewCanvas, item.firstChild);
-    shopGrid.appendChild(item);
+    el.innerHTML += `<div class="shopItemName">${item.name}</div><div class="shopItemDesc">${item.desc}</div><div class="shopItemPrice${item.price === 0 ? ' free' : ''}">${item.price === 0 ? 'Free' : '🪙 ' + item.price}</div>${btnHtml}`;
+    shopGrid.appendChild(el);
   }
+
   // Event delegation for shop buttons
   shopGrid.querySelectorAll('.shopItemBtn.buy').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const skinId = btn.dataset.skin;
-      if (buySkin(skinId)) { equipSkin(skinId); displayShop(); }
+      const cat = btn.dataset.cat;
+      const id = btn.dataset.id;
+      if (buyShopItem(cat, id)) { equipShopItem(cat, id); displayShop(); }
     });
   });
   shopGrid.querySelectorAll('.shopItemBtn.equip').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      equipSkin(btn.dataset.skin);
+      equipShopItem(btn.dataset.cat, btn.dataset.id);
       displayShop();
     });
   });
+
+  drawShopPreview();
 }
 
 function showShopPage() {
   welcomePage.classList.remove('active');
   shopPage.classList.add('active');
+  currentShopTab = 'skins';
   displayShop();
+
+  // Tab click listeners
+  const tabContainer = document.getElementById('shopTabs');
+  if (tabContainer) {
+    tabContainer.querySelectorAll('.shopTab').forEach(tab => {
+      tab.onclick = () => {
+        currentShopTab = tab.dataset.category;
+        displayShop();
+      };
+    });
+  }
 }
 
 // ==================== RANKED PAGE ====================

@@ -8,11 +8,6 @@
 </head>
 <body>
   <div class="app">
-    <!-- Title -->
-    <div class="header">
-      <h1>SAM STACKERZ</h1>
-      <p class="subtitle">Web Multiplayer Edition</p>
-    </div>
 
     <!-- Login / Signup Page -->
     <div class="authPage" id="authPage">
@@ -362,8 +357,23 @@
             <span class="coinLabel">coins</span>
           </div>
         </div>
-        <h3 class="shopSectionTitle">Piece Skins</h3>
-        <p class="shopHint">Earn coins by playing games. Buy and equip skins to customize your blocks!</p>
+        <p class="shopHint">Earn coins by playing games. Buy and equip items to customize your experience!</p>
+
+        <!-- Shop Category Tabs -->
+        <div class="shopTabs" id="shopTabs">
+          <button class="shopTab active" data-category="skins">🧩 Piece Skins</button>
+          <button class="shopTab" data-category="boards">🎨 Board Themes</button>
+          <button class="shopTab" data-category="trails">✨ Trail Effects</button>
+          <button class="shopTab" data-category="titles">🏷️ Titles</button>
+          <button class="shopTab" data-category="avatars">😎 Avatars</button>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="shopPreviewBar" id="shopPreviewBar">
+          <canvas id="shopPreviewCanvas" width="200" height="200"></canvas>
+          <div class="shopPreviewLabel">Live Preview</div>
+        </div>
+
         <div class="shopGrid" id="shopGrid"></div>
         <button id="btnBackFromShop" class="btn btn-accent" style="width:100%;margin-top:16px;">Back to Menu</button>
       </div>
