@@ -696,15 +696,15 @@ const PIECE_SKINS = {
 
 // ==================== BOARD THEMES SYSTEM ====================
 const BOARD_THEMES = {
-  default:    { name: 'Default',     price: 0,   desc: 'Standard dark grid',       borderColor: null, bgOverlay: null },
-  midnight:   { name: 'Midnight',    price: 100, desc: 'Deep blue midnight sky',    borderColor: '#3355ff', bgOverlay: 'rgba(20,60,200,0.18)' },
-  sakura:     { name: 'Sakura',      price: 150, desc: 'Soft cherry-blossom pink',  borderColor: '#ff1166', bgOverlay: 'rgba(255,17,102,0.12)' },
-  emerald:    { name: 'Emerald',     price: 150, desc: 'Rich emerald green',        borderColor: '#00ff55', bgOverlay: 'rgba(0,255,85,0.12)' },
-  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Fiery molten lava border',  borderColor: '#ff3300', bgOverlay: 'rgba(255,51,0,0.14)' },
-  arctic:     { name: 'Arctic',      price: 200, desc: 'Cool icy blue tones',       borderColor: '#00ddff', bgOverlay: 'rgba(0,221,255,0.13)' },
-  royal:      { name: 'Royal',       price: 250, desc: 'Purple & gold royalty',      borderColor: '#cc33ff', bgOverlay: 'rgba(204,51,255,0.13)' },
-  hologram:   { name: 'Hologram',    price: 350, desc: 'Iridescent shifting border', borderColor: '#00ffbb', bgOverlay: 'rgba(0,255,187,0.10)' },
-  void:       { name: 'The Void',    price: 500, desc: 'Pure darkness, no gridlines', borderColor: '#000', bgOverlay: null, noGrid: true },
+  default:    { name: 'Default',     price: 0,   desc: 'Standard dark grid',            borderColor: null, bgOverlay: null },
+  midnight:   { name: 'Midnight',    price: 100, desc: 'Twinkling starfield sky',        borderColor: '#3355ff', bgOverlay: 'rgba(20,60,200,0.18)', animate: 'stars' },
+  sakura:     { name: 'Sakura',      price: 150, desc: 'Falling cherry-blossom petals',  borderColor: '#ff1166', bgOverlay: 'rgba(255,17,102,0.12)', animate: 'petals' },
+  emerald:    { name: 'Emerald',     price: 150, desc: 'Rising matrix rain',             borderColor: '#00ff55', bgOverlay: 'rgba(0,255,85,0.12)', animate: 'matrix' },
+  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Rising embers & heat haze',      borderColor: '#ff3300', bgOverlay: 'rgba(255,51,0,0.14)', animate: 'embers' },
+  arctic:     { name: 'Arctic',      price: 200, desc: 'Drifting snow & frost',           borderColor: '#00ddff', bgOverlay: 'rgba(0,221,255,0.13)', animate: 'snow' },
+  royal:      { name: 'Royal',       price: 250, desc: 'Floating golden sparkles',        borderColor: '#cc33ff', bgOverlay: 'rgba(204,51,255,0.13)', animate: 'sparkle' },
+  hologram:   { name: 'Hologram',    price: 350, desc: 'Scanning holographic lines',      borderColor: '#00ffbb', bgOverlay: 'rgba(0,255,187,0.10)', animate: 'scan' },
+  void:       { name: 'The Void',    price: 500, desc: 'Pulsing dark energy vortex',      borderColor: '#000', bgOverlay: null, noGrid: true, animate: 'vortex' },
 };
 
 // ==================== TRAIL EFFECTS SYSTEM ====================
@@ -2714,12 +2714,263 @@ function shadeColor(color, percent) {
 
 function drawGrid(ctx, grid) {
   ctx.drawImage(gridOverlay, 0, 0);
+  drawBoardAnimation(ctx, BOARD_W, BOARD_H);
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const v = grid[r][c];
       if (v !== '.') drawCell(ctx, c, r, v);
     }
   }
+}
+
+// ==================== ANIMATED BOARD THEME EFFECTS ====================
+// Persistent particles for board animations (lazily initialized per-theme)
+let boardAnimParticles = [];
+let boardAnimTheme = null;
+
+function initBoardAnimParticles(w, h, anim) {
+  boardAnimParticles = [];
+  boardAnimTheme = anim;
+  if (!anim) return;
+  const count = {stars: 30, petals: 18, matrix: 14, embers: 22, snow: 25, sparkle: 20, scan: 0, vortex: 0}[anim] || 0;
+  for (let i = 0; i < count; i++) {
+    boardAnimParticles.push(makeBoardParticle(w, h, anim, true));
+  }
+}
+
+function makeBoardParticle(w, h, anim, randomY) {
+  const p = { x: Math.random() * w, y: randomY ? Math.random() * h : -5, size: 0, speed: 0, alpha: 0, hue: 0, char: '', drift: 0 };
+  switch (anim) {
+    case 'stars':
+      p.size = 1 + Math.random() * 2;
+      p.speed = 0;
+      p.alpha = 0.3 + Math.random() * 0.7;
+      p.phase = Math.random() * Math.PI * 2;
+      p.twinkleSpeed = 1 + Math.random() * 3;
+      break;
+    case 'petals':
+      p.size = 3 + Math.random() * 4;
+      p.speed = 15 + Math.random() * 25;
+      p.drift = -10 + Math.random() * 20;
+      p.alpha = 0.4 + Math.random() * 0.4;
+      p.rotation = Math.random() * Math.PI * 2;
+      p.rotSpeed = (Math.random() - 0.5) * 3;
+      p.hue = 330 + Math.random() * 30; // pink range
+      break;
+    case 'matrix':
+      p.x = Math.floor(Math.random() * (w / 10)) * 10;
+      p.speed = 40 + Math.random() * 80;
+      p.alpha = 0.5 + Math.random() * 0.5;
+      p.char = String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96));
+      p.size = 8 + Math.random() * 4;
+      break;
+    case 'embers':
+      p.x = Math.random() * w;
+      p.y = randomY ? Math.random() * h : h + 5;
+      p.size = 2 + Math.random() * 3;
+      p.speed = 20 + Math.random() * 40;
+      p.drift = (Math.random() - 0.5) * 30;
+      p.alpha = 0.5 + Math.random() * 0.5;
+      p.hue = Math.random() * 40; // red-orange-yellow
+      break;
+    case 'snow':
+      p.size = 2 + Math.random() * 3;
+      p.speed = 12 + Math.random() * 20;
+      p.drift = (Math.random() - 0.5) * 15;
+      p.alpha = 0.4 + Math.random() * 0.5;
+      p.wobblePhase = Math.random() * Math.PI * 2;
+      break;
+    case 'sparkle':
+      p.size = 1.5 + Math.random() * 2.5;
+      p.speed = 5 + Math.random() * 12;
+      p.alpha = 0.5 + Math.random() * 0.5;
+      p.phase = Math.random() * Math.PI * 2;
+      p.hue = 40 + Math.random() * 20; // gold
+      break;
+  }
+  return p;
+}
+
+function drawBoardAnimation(ctx, w, h, timeOverride) {
+  const boardTheme = BOARD_THEMES[equippedBoard] || BOARD_THEMES.default;
+  const anim = boardTheme.animate;
+  if (!anim) return;
+
+  // Re-init particles if theme changed
+  if (boardAnimTheme !== anim) initBoardAnimParticles(w, h, anim);
+
+  const t = (timeOverride != null) ? timeOverride : performance.now() / 1000;
+  const dt = 1 / 60; // fixed timestep for smooth animation
+
+  ctx.save();
+
+  switch (anim) {
+    case 'stars': {
+      for (const p of boardAnimParticles) {
+        const twinkle = 0.3 + 0.7 * Math.abs(Math.sin(t * p.twinkleSpeed + p.phase));
+        ctx.fillStyle = `rgba(180,200,255,${p.alpha * twinkle})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * twinkle, 0, Math.PI * 2);
+        ctx.fill();
+        // Occasional cross-sparkle on brightest stars
+        if (p.size > 2 && twinkle > 0.8) {
+          ctx.strokeStyle = `rgba(200,220,255,${p.alpha * twinkle * 0.4})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(p.x - p.size * 2, p.y); ctx.lineTo(p.x + p.size * 2, p.y);
+          ctx.moveTo(p.x, p.y - p.size * 2); ctx.lineTo(p.x, p.y + p.size * 2);
+          ctx.stroke();
+        }
+      }
+      break;
+    }
+    case 'petals': {
+      for (const p of boardAnimParticles) {
+        p.y += p.speed * dt;
+        p.x += p.drift * dt + Math.sin(t * 2 + p.phase) * 8 * dt;
+        p.rotation += p.rotSpeed * dt;
+        if (p.y > h + 10) { Object.assign(p, makeBoardParticle(w, h, 'petals', false)); p.y = -8; }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = `hsl(${p.hue}, 80%, 75%)`;
+        // Petal shape (ellipse)
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.size * 0.4, p.size, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+      break;
+    }
+    case 'matrix': {
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      for (const p of boardAnimParticles) {
+        p.y += p.speed * dt;
+        if (p.y > h + 10) { Object.assign(p, makeBoardParticle(w, h, 'matrix', false)); p.y = -10; }
+        // Fading trail
+        for (let trail = 0; trail < 5; trail++) {
+          const ty = p.y - trail * 12;
+          if (ty < 0 || ty > h) continue;
+          const trailAlpha = p.alpha * (1 - trail * 0.2);
+          ctx.fillStyle = trail === 0 ? `rgba(180,255,180,${trailAlpha})` : `rgba(0,255,60,${trailAlpha * 0.6})`;
+          ctx.fillText(String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96)), p.x + 5, ty);
+        }
+      }
+      break;
+    }
+    case 'embers': {
+      for (const p of boardAnimParticles) {
+        p.y -= p.speed * dt;
+        p.x += p.drift * dt;
+        p.alpha -= dt * 0.3;
+        if (p.y < -10 || p.alpha <= 0) { Object.assign(p, makeBoardParticle(w, h, 'embers', false)); p.y = h + 5; }
+        ctx.shadowColor = `hsl(${p.hue}, 100%, 55%)`;
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${Math.max(0, p.alpha)})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      break;
+    }
+    case 'snow': {
+      for (const p of boardAnimParticles) {
+        p.y += p.speed * dt;
+        p.wobblePhase += dt * 2;
+        p.x += (p.drift + Math.sin(p.wobblePhase) * 10) * dt;
+        if (p.y > h + 5) { Object.assign(p, makeBoardParticle(w, h, 'snow', false)); p.y = -5; }
+        ctx.fillStyle = `rgba(220,240,255,${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
+    case 'sparkle': {
+      for (const p of boardAnimParticles) {
+        p.y -= p.speed * dt;
+        p.phase += dt * 4;
+        if (p.y < -5) { Object.assign(p, makeBoardParticle(w, h, 'sparkle', true)); }
+        const sparkle = 0.3 + 0.7 * Math.abs(Math.sin(p.phase));
+        ctx.fillStyle = `hsla(${p.hue}, 100%, 70%, ${p.alpha * sparkle})`;
+        ctx.shadowColor = `hsla(${p.hue}, 100%, 70%, 0.5)`;
+        ctx.shadowBlur = 4;
+        // 4-point star shape
+        const s = p.size * sparkle;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - s * 2); ctx.lineTo(p.x + s * 0.5, p.y);
+        ctx.lineTo(p.x, p.y + s * 2); ctx.lineTo(p.x - s * 0.5, p.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      break;
+    }
+    case 'scan': {
+      // Holographic scanning line moving down
+      const scanY = (t * 60) % (h + 40) - 20;
+      const grad = ctx.createLinearGradient(0, scanY - 15, 0, scanY + 15);
+      grad.addColorStop(0, 'rgba(0,255,187,0)');
+      grad.addColorStop(0.4, 'rgba(0,255,187,0.12)');
+      grad.addColorStop(0.5, 'rgba(0,255,255,0.25)');
+      grad.addColorStop(0.6, 'rgba(0,255,187,0.12)');
+      grad.addColorStop(1, 'rgba(0,255,187,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, scanY - 15, w, 30);
+      // Horizontal scan line
+      ctx.strokeStyle = `rgba(0,255,200,${0.3 + 0.2 * Math.sin(t * 8)})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, scanY); ctx.lineTo(w, scanY);
+      ctx.stroke();
+      // Subtle grid shimmer around scan line
+      for (let c = 0; c < w; c += CELL) {
+        const dist = Math.abs(c - scanY);
+        if (dist < 40) {
+          ctx.strokeStyle = `rgba(0,255,200,${0.08 * (1 - dist / 40)})`;
+          ctx.strokeRect(c, 0, CELL, h);
+        }
+      }
+      break;
+    }
+    case 'vortex': {
+      // Dark energy vortex with swirling particles
+      const cx = w / 2, cy = h / 2;
+      // Pulsing dark rings
+      for (let ring = 0; ring < 4; ring++) {
+        const radius = 30 + ring * 30 + Math.sin(t * 2 + ring) * 10;
+        const alpha = 0.06 + 0.04 * Math.sin(t * 3 + ring * 0.7);
+        ctx.strokeStyle = `rgba(80,0,120,${alpha})`;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      // Swirling energy dots
+      for (let i = 0; i < 12; i++) {
+        const angle = t * (0.5 + i * 0.1) + i * (Math.PI * 2 / 12);
+        const dist = 20 + (i % 4) * 25 + Math.sin(t + i) * 10;
+        const px = cx + Math.cos(angle) * dist;
+        const py = cy + Math.sin(angle) * dist;
+        if (px < 0 || px > w || py < 0 || py > h) continue;
+        const alpha = 0.3 + 0.3 * Math.sin(t * 2 + i);
+        ctx.fillStyle = `rgba(120,0,180,${alpha})`;
+        ctx.shadowColor = 'rgba(100,0,160,0.5)';
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      break;
+    }
+  }
+
+  ctx.restore();
 }
 
 function drawPiece(ctx, piece) {
@@ -3866,21 +4117,8 @@ function drawShopPreview() {
     equippedSkin = savedSkin;
     ctx.restore();
   } else if (currentShopTab === 'boards') {
-    const bTheme = BOARD_THEMES[previewId] || BOARD_THEMES.default;
-    const theme = THEMES[currentThemeName];
-    ctx.fillStyle = theme.bg;
-    ctx.fillRect(0, 0, 200, 200);
-    if (bTheme.bgOverlay) { ctx.fillStyle = bTheme.bgOverlay; ctx.fillRect(0, 0, 200, 200); }
-    if (!bTheme.noGrid) {
-      ctx.strokeStyle = bTheme.borderColor || theme.grid;
-      const cs = 20;
-      for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) ctx.strokeRect(c * cs, r * cs, cs, cs);
-    }
-    const scale = 200 / (10 * CELL);
-    ctx.save(); ctx.scale(scale, scale);
-    drawCell(ctx, 2, 7, '1'); drawCell(ctx, 3, 7, '1'); drawCell(ctx, 4, 7, '1'); drawCell(ctx, 5, 7, '1');
-    drawCell(ctx, 3, 6, '2'); drawCell(ctx, 4, 6, '2'); drawCell(ctx, 3, 5, '2'); drawCell(ctx, 4, 5, '2');
-    ctx.restore();
+    // Draw animated board preview at 200x200
+    drawBoardCardFrame(ctx, previewId, performance.now(), 200);
   } else if (currentShopTab === 'trails') {
     // Draw animated trail preview scaled to 200x200 using drawTrailCardFrame logic
     ctx.save();
@@ -4059,6 +4297,99 @@ function animateShopTrailPreviews() {
   shopTrailAnimFrame = requestAnimationFrame(animateShopTrailPreviews);
 }
 
+// Draw a single frame of the board card animation
+function drawBoardCardFrame(ctx, boardId, time, size) {
+  const sz = size || 100;
+  ctx.clearRect(0, 0, sz, sz);
+  const bTheme = BOARD_THEMES[boardId] || BOARD_THEMES.default;
+  const theme = THEMES[currentThemeName];
+  // Background
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, sz, sz);
+  if (bTheme.bgOverlay) { ctx.fillStyle = bTheme.bgOverlay; ctx.fillRect(0, 0, sz, sz); }
+  // Grid
+  if (!bTheme.noGrid) {
+    ctx.strokeStyle = bTheme.borderColor || theme.grid;
+    ctx.lineWidth = 0.5;
+    const cs = sz / 10;
+    for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) ctx.strokeRect(c * cs, r * cs, cs, cs);
+    ctx.lineWidth = 1;
+  }
+  // Animated effect layer
+  if (bTheme.animate) {
+    const savedBoard = equippedBoard;
+    equippedBoard = boardId;
+    // Temporarily ensure particles are for this specific theme
+    const savedParticles = boardAnimParticles;
+    const savedTheme = boardAnimTheme;
+    // Use a per-card particle cache keyed by boardId
+    if (!drawBoardCardFrame._cache) drawBoardCardFrame._cache = {};
+    if (!drawBoardCardFrame._cache[boardId]) {
+      const oldP = boardAnimParticles;
+      const oldT = boardAnimTheme;
+      initBoardAnimParticles(sz, sz, bTheme.animate);
+      drawBoardCardFrame._cache[boardId] = { particles: boardAnimParticles, theme: boardAnimTheme };
+      boardAnimParticles = oldP;
+      boardAnimTheme = oldT;
+    }
+    const cache = drawBoardCardFrame._cache[boardId];
+    boardAnimParticles = cache.particles;
+    boardAnimTheme = cache.theme;
+    drawBoardAnimation(ctx, sz, sz, time / 1000);
+    boardAnimParticles = savedParticles;
+    boardAnimTheme = savedTheme;
+    equippedBoard = savedBoard;
+  }
+  // Draw some blocks
+  const savedSkin = equippedSkin;
+  equippedSkin = 'default';
+  const bs = sz / 10;
+  const bsc = bs / CELL;
+  ctx.save();
+  ctx.scale(bsc, bsc);
+  for (let c = 0; c < 10; c++) {
+    if (c !== 3 && c !== 7) drawCell(ctx, c, 8, String((c % 7) + 1));
+  }
+  for (let c = 0; c < 6; c++) drawCell(ctx, c, 7, String((c % 5) + 1));
+  drawCell(ctx, 7, 4, '7'); drawCell(ctx, 7, 5, '7'); drawCell(ctx, 7, 6, '7'); drawCell(ctx, 8, 6, '7');
+  ctx.restore();
+  equippedSkin = savedSkin;
+  // Border glow
+  if (bTheme.borderColor) {
+    ctx.shadowColor = bTheme.borderColor;
+    ctx.shadowBlur = 8;
+    ctx.strokeStyle = bTheme.borderColor + '60';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, 2, sz - 4, sz - 4);
+    ctx.shadowBlur = 0;
+  }
+}
+
+// Animation loop for board preview cards in the shop
+let shopBoardAnimFrame = null;
+function animateShopBoardPreviews() {
+  const canvases = document.querySelectorAll('.shopBoardPreview');
+  if (canvases.length === 0) { shopBoardAnimFrame = null; return; }
+  const time = performance.now();
+  canvases.forEach(canvas => {
+    const ctx = canvas.getContext('2d');
+    drawBoardCardFrame(ctx, canvas.dataset.boardId, time, 100);
+  });
+  shopBoardAnimFrame = requestAnimationFrame(animateShopBoardPreviews);
+}
+
+// Animation loop for board top preview panel
+let shopBoardPreviewAnimFrame = null;
+function animateShopBoardPreview() {
+  const pc = document.getElementById('shopPreviewCanvas');
+  if (!pc || currentShopTab !== 'boards') { shopBoardPreviewAnimFrame = null; return; }
+  const ctx = pc.getContext('2d');
+  const { equipped } = getShopCatalog('boards');
+  const previewId = previewingItem || equipped;
+  drawBoardCardFrame(ctx, previewId, performance.now(), 200);
+  shopBoardPreviewAnimFrame = requestAnimationFrame(animateShopBoardPreview);
+}
+
 function displayShop() {
   if (!shopGrid) return;
   shopGrid.innerHTML = '';
@@ -4135,48 +4466,10 @@ function displayShop() {
       const previewCanvas = document.createElement('canvas');
       previewCanvas.width = 100;
       previewCanvas.height = 100;
-      previewCanvas.className = 'shopItemPreview shopItemPreviewLarge';
+      previewCanvas.className = 'shopItemPreview shopItemPreviewLarge shopBoardPreview';
+      previewCanvas.dataset.boardId = id;
       const pctx = previewCanvas.getContext('2d');
-      const theme = THEMES[currentThemeName];
-      // Draw board background
-      pctx.fillStyle = theme.bg;
-      pctx.fillRect(0, 0, 100, 100);
-      if (item.bgOverlay) { pctx.fillStyle = item.bgOverlay; pctx.fillRect(0, 0, 100, 100); }
-      // Draw grid if applicable
-      if (!item.noGrid) {
-        pctx.strokeStyle = item.borderColor || theme.grid;
-        pctx.lineWidth = 0.5;
-        const gc = 10;
-        for (let r = 0; r < gc; r++) for (let c = 0; c < gc; c++) pctx.strokeRect(c * 10, r * 10, 10, 10);
-      }
-      // Draw some blocks sitting at the bottom to show theme context
-      const savedSkin = equippedSkin;
-      equippedSkin = 'default';
-      const bs = 10;
-      const bsc = bs / CELL;
-      pctx.save();
-      pctx.scale(bsc, bsc);
-      // Row of blocks at bottom
-      for (let c = 0; c < 10; c++) {
-        if (c !== 3 && c !== 7) drawCell(pctx, c, 8, String((c % 7) + 1));
-      }
-      // Partial row
-      for (let c = 0; c < 6; c++) {
-        drawCell(pctx, c, 7, String((c % 5) + 1));
-      }
-      // L-piece dropping
-      drawCell(pctx, 7, 4, '7'); drawCell(pctx, 7, 5, '7'); drawCell(pctx, 7, 6, '7'); drawCell(pctx, 8, 6, '7');
-      pctx.restore();
-      equippedSkin = savedSkin;
-      // Add colored border glow
-      if (item.borderColor) {
-        pctx.shadowColor = item.borderColor;
-        pctx.shadowBlur = 8;
-        pctx.strokeStyle = item.borderColor + '60';
-        pctx.lineWidth = 2;
-        pctx.strokeRect(2, 2, 96, 96);
-        pctx.shadowBlur = 0;
-      }
+      drawBoardCardFrame(pctx, id, 0, 100);
       el.appendChild(previewCanvas);
     } else if (currentShopTab === 'trails') {
       const previewCanvas = document.createElement('canvas');
@@ -4265,12 +4558,19 @@ function displayShop() {
 
   drawShopPreview();
 
-  // Start trail preview animations if on trails tab
+  // Start animations for the active tab, cancel old ones
   if (shopTrailAnimFrame) { cancelAnimationFrame(shopTrailAnimFrame); shopTrailAnimFrame = null; }
   if (shopPreviewAnimFrame) { cancelAnimationFrame(shopPreviewAnimFrame); shopPreviewAnimFrame = null; }
+  if (shopBoardAnimFrame) { cancelAnimationFrame(shopBoardAnimFrame); shopBoardAnimFrame = null; }
+  if (shopBoardPreviewAnimFrame) { cancelAnimationFrame(shopBoardPreviewAnimFrame); shopBoardPreviewAnimFrame = null; }
+  // Clear board card animation cache when switching tabs
+  if (drawBoardCardFrame._cache) drawBoardCardFrame._cache = {};
   if (currentShopTab === 'trails') {
     animateShopTrailPreviews();
     animateShopPreview();
+  } else if (currentShopTab === 'boards') {
+    animateShopBoardPreviews();
+    animateShopBoardPreview();
   }
 }
 
