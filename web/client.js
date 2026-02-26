@@ -4319,95 +4319,214 @@ function drawTrailCardFrame(ctx, trailId, time) {
   ctx.fillRect(0, 0, 100, 100);
 
   if (trailId === 'none') {
-    // Draw a static piece with no trail
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#444';
     ctx.font = '11px Consolas';
     ctx.textAlign = 'center';
     ctx.fillText('No trail', 50, 55);
     return;
   }
 
-  // Animate a piece falling and spawning trail particles
-  const cycleTime = 2000; // 2 second cycle
-  const t = time % cycleTime;
-  const dropPhase = t / cycleTime; // 0..1
-  
-  // Piece position (falls from top to bottom)
-  const pieceY = -10 + dropPhase * 110;
-  const pieceX = 40;
-  const blockSz = 10;
-  
-  // Draw trail particles behind the piece
-  const trailColors = {
-    spark: ['#ffe033', '#ffcc00', '#ffaa00'],
-    flame: ['#ff4400', '#ff2200', '#ff8800', '#ffcc00'],
-    ice_trail: ['#44ddff', '#00bbff', '#88eeff', '#ccf7ff'],
-    confetti: ['#ff1177', '#4466ff', '#33ff88', '#ffcc00', '#dd22ff'],
-    lightning: ['#88ccff', '#5599ff', '#ddeeff', '#ffffff'],
-    stardust: ['#ffee88', '#ffdd44', '#ffcc33', '#ffffff'],
-    toxic: ['#00ff33', '#66ff00', '#44dd00', '#00ff66'],
-    shockwave: ['#00eeff', '#00ffff', '#66ffff', '#00bbdd'],
-  };
-  const colors = trailColors[trailId] || ['#ffffff'];
-  
-  // Spawn trail dots along the path
-  const numParticles = 12;
-  for (let i = 0; i < numParticles; i++) {
-    const particleAge = (dropPhase - i * 0.06);
-    if (particleAge < 0 || particleAge > 0.7) continue;
-    const py = pieceY - (i * 8) + Math.sin(time / 200 + i * 1.3) * 3;
-    const px = pieceX + blockSz / 2 + Math.sin(time / 150 + i * 0.8) * 6;
-    const alpha = Math.max(0, 0.8 - particleAge * 1.5);
-    const size = (3 - particleAge * 3) * (trailId === 'shockwave' ? 1.5 : 1);
-    const col = colors[i % colors.length];
-    
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = col;
-    ctx.shadowColor = col;
-    ctx.shadowBlur = 6;
-    
-    if (trailId === 'lightning') {
-      // Jagged line segments
-      ctx.beginPath();
-      ctx.moveTo(px - 3, py - 2);
-      ctx.lineTo(px + 1, py - 5);
-      ctx.lineTo(px - 1, py + 2);
-      ctx.lineTo(px + 3, py + 5);
-      ctx.strokeStyle = col;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    } else if (trailId === 'confetti') {
-      // Small squares at various angles
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(time / 300 + i);
-      ctx.fillRect(-2, -2, 4, 4);
-      ctx.restore();
-    } else {
-      // Default: circles
-      ctx.beginPath();
-      ctx.arc(px, py, size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.shadowBlur = 0;
+  // Deterministic pseudo-random per particle
+  function prand(i, off) {
+    const x = Math.sin((i + 1) * 127.1 + (off || 0) * 311.7) * 43758.5453;
+    return x - Math.floor(x);
   }
 
-  ctx.globalAlpha = 1;
-  // Draw the falling piece (I-piece vertical)
-  const savedSkin = equippedSkin;
-  equippedSkin = 'default';
-  const bsc = blockSz / CELL;
-  ctx.save();
-  ctx.scale(bsc, bsc);
-  for (let r = 0; r < 4; r++) {
-    const cellY = (pieceY + r * blockSz) / bsc / CELL;
-    const cellX = pieceX / bsc / CELL;
-    if (pieceY + r * blockSz > -blockSz && pieceY + r * blockSz < 100) {
-      drawCell(ctx, Math.round(cellX), Math.round(cellY), '1');
+  const cycleTime = 1300; // fast cycle, minimal dead time
+  const dropTime = 260;   // quick drop
+  const t = time % cycleTime;
+  const groundY = 60;     // aligned to blockSz grid
+  const pieceX = 30;
+  const blockSz = 10;
+  const pieceCols = 4;
+  const pieceW = pieceCols * blockSz;
+  const cx = pieceX + pieceW / 2; // center x of piece
+
+  // Draw subtle ground blocks (existing landed pieces)
+  ctx.globalAlpha = 0.2;
+  for (let gy = groundY + blockSz; gy < 100; gy += blockSz) {
+    for (let gx = 0; gx < 100; gx += blockSz) {
+      if (prand(gx * 13 + gy * 7, 99) > 0.4) {
+        ctx.fillStyle = '#223';
+        ctx.fillRect(gx + 1, gy + 1, blockSz - 2, blockSz - 2);
+      }
     }
   }
-  ctx.restore();
-  equippedSkin = savedSkin;
+  ctx.globalAlpha = 1;
+
+  // Ghost piece on ground during drop
+  if (t < dropTime) {
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#fff';
+    for (let c = 0; c < pieceCols; c++) {
+      ctx.fillRect(pieceX + c * blockSz + 1, groundY + 1, blockSz - 2, blockSz - 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Piece Y: gravity ease-in during drop, then locked at ground
+  let pieceY;
+  let landed = false;
+  if (t < dropTime) {
+    const p = t / dropTime;
+    pieceY = -15 + (groundY + 15) * p * p;
+  } else {
+    pieceY = groundY;
+    landed = true;
+  }
+
+  // Impact flash across landing row
+  if (landed && t - dropTime < 100) {
+    const fa = 1 - (t - dropTime) / 100;
+    ctx.globalAlpha = fa * 0.5;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(pieceX - 5, groundY - 1, pieceW + 10, blockSz + 2);
+    ctx.globalAlpha = 1;
+  }
+
+  // Trail particle burst after impact
+  if (landed) {
+    const impactAge = (t - dropTime) / 1000; // seconds since impact
+    const trailColors = {
+      spark: ['#ffe033', '#ffcc00', '#ffaa00'],
+      flame: ['#ff4400', '#ff2200', '#ff8800', '#ffcc00'],
+      ice_trail: ['#44ddff', '#00bbff', '#88eeff', '#ccf7ff'],
+      confetti: ['#ff1177', '#4466ff', '#33ff88', '#ffcc00', '#dd22ff', '#ff8800'],
+      lightning: ['#88ccff', '#5599ff', '#ddeeff', '#ffffff'],
+      stardust: ['#ffee88', '#ffdd44', '#ffcc33', '#ffffff'],
+      toxic: ['#00ff33', '#66ff00', '#44dd00', '#00ff66'],
+      shockwave: ['#00eeff', '#00ffff', '#66ffff'],
+    };
+    const colors = trailColors[trailId] || ['#ffffff'];
+
+    if (trailId === 'shockwave') {
+      // Expanding ring from center of piece
+      const maxR = 38;
+      const life = 0.85;
+      if (impactAge < life) {
+        const alpha = 1 - impactAge / life;
+        const radius = maxR * (1 - Math.exp(-impactAge * 5));
+        ctx.globalAlpha = alpha * 0.7;
+        ctx.strokeStyle = colors[0];
+        ctx.shadowColor = colors[0];
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 3 * alpha;
+        ctx.beginPath();
+        ctx.arc(cx, groundY + blockSz / 2, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = alpha * 0.35;
+        ctx.strokeStyle = colors[1] || colors[0];
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, groundY + blockSz / 2, radius * 0.55, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 1;
+      }
+    } else {
+      const count = trailId === 'confetti' ? 22 : 15;
+      for (let i = 0; i < count; i++) {
+        const angle = prand(i, 0) * Math.PI * 2;
+        const spd = 30 + prand(i, 1) * 80;
+        const life = 0.55 + prand(i, 2) * 0.35;
+        const startX = cx + (prand(i, 3) - 0.5) * pieceW;
+        const sz = 2.5 + prand(i, 4) * 3;
+        if (impactAge > life) continue;
+        const alpha = Math.max(0, 1 - impactAge / life);
+        const spreadX = Math.cos(angle) * spd * impactAge * 0.5;
+        let spreadY;
+        switch (trailId) {
+          case 'flame':
+            spreadY = -spd * 0.7 * impactAge; break;
+          case 'ice_trail':
+            spreadY = -spd * 0.15 * impactAge + 45 * impactAge * impactAge; break;
+          case 'toxic':
+            spreadY = -spd * 0.5 * impactAge - 8 * impactAge; break;
+          default:
+            spreadY = -spd * 0.5 * impactAge + 55 * impactAge * impactAge; break;
+        }
+        const px = startX + spreadX;
+        const py = groundY + spreadY;
+        if (px < -5 || px > 105 || py < -5 || py > 105) continue;
+        const col = colors[i % colors.length];
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = col;
+        ctx.shadowColor = col;
+        ctx.shadowBlur = 6;
+        switch (trailId) {
+          case 'spark':
+            ctx.fillRect(px - sz * 0.4, py - sz * 0.4, sz * 0.8, sz * 0.8);
+            break;
+          case 'flame':
+            ctx.beginPath();
+            ctx.arc(px, py, sz * alpha, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          case 'ice_trail':
+            ctx.fillRect(px - 1, py - 1, sz * 0.7, sz * 0.7);
+            break;
+          case 'confetti':
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(impactAge * 4 + prand(i, 5) * 6);
+            ctx.fillRect(-sz / 2, -sz / 4, sz, sz / 2);
+            ctx.restore();
+            break;
+          case 'lightning':
+            ctx.strokeStyle = col;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(px + (prand(i, 5) - 0.5) * 12, py - 7 * alpha);
+            ctx.lineTo(px + (prand(i, 6) - 0.5) * 8, py - 14 * alpha);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+            break;
+          case 'stardust':
+            ctx.beginPath();
+            ctx.arc(px, py, sz * alpha * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = alpha * 0.5;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(px - 0.5, py - sz, 1, sz * 2);
+            ctx.fillRect(px - sz, py - 0.5, sz * 2, 1);
+            break;
+          case 'toxic':
+            ctx.beginPath();
+            ctx.arc(px, py, sz * 0.8 * alpha + 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          default:
+            ctx.beginPath();
+            ctx.arc(px, py, sz, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // Draw the piece (horizontal I-piece, 4 blocks wide)
+  const fadeStart = dropTime + 400;
+  const pieceAlpha = t > fadeStart ? Math.max(0, 1 - (t - fadeStart) / 300) : 1;
+  if (pieceAlpha > 0.01 && pieceY > -blockSz && pieceY < 100) {
+    ctx.globalAlpha = pieceAlpha;
+    const savedSkin = equippedSkin;
+    equippedSkin = 'default';
+    const bsc = blockSz / CELL;
+    ctx.save();
+    ctx.scale(bsc, bsc);
+    for (let c = 0; c < pieceCols; c++) {
+      const cellX = (pieceX + c * blockSz) / bsc / CELL;
+      const cellY = pieceY / bsc / CELL;
+      drawCell(ctx, Math.round(cellX), Math.round(cellY), '1');
+    }
+    ctx.restore();
+    equippedSkin = savedSkin;
+    ctx.globalAlpha = 1;
+  }
 }
 
 // Animation loop for trail preview cards in the shop
