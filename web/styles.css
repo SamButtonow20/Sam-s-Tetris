@@ -931,7 +931,7 @@ input:focus {
 
 .leaderboardHeader {
   display: grid;
-  grid-template-columns: 50px 1fr 90px 60px 60px 70px;
+  grid-template-columns: 50px 40px 1fr 90px 60px 70px;
   gap: 10px;
   padding: 12px 16px;
   background: rgba(0, 217, 255, 0.15);
@@ -950,7 +950,7 @@ input:focus {
 
 .leaderboardEntry {
   display: grid;
-  grid-template-columns: 50px 1fr 90px 60px 60px 70px;
+  grid-template-columns: 50px 40px 1fr 90px 60px 70px;
   gap: 10px;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(0, 217, 255, 0.1);
@@ -961,6 +961,10 @@ input:focus {
 
 .leaderboardEntry:hover {
   background: rgba(0, 217, 255, 0.1);
+}
+
+.leaderboardEntry.clickable {
+  cursor: pointer;
 }
 
 .leaderboardEntry.top1 {
@@ -990,10 +994,15 @@ input:focus {
   content: '🥉 ';
 }
 
-.rankCol, .nameCol, .scoreCol, .linesCol, .levelCol, .timeCol {
+.rankCol, .nameCol, .scoreCol, .linesCol, .levelCol, .timeCol, .avatarCol {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.avatarCol {
+  font-size: 1.2rem;
+  text-align: center;
 }
 
 .nameCol {
@@ -2732,6 +2741,8 @@ canvas:hover {
 .shopItem:hover { border-color: var(--color-accent-cyan); transform: translateY(-3px); box-shadow: 0 4px 16px rgba(0, 217, 255, 0.15); }
 .shopItem.owned { border-color: var(--color-accent-green); background: rgba(6, 255, 165, 0.04); }
 .shopItem.equipped { border-color: var(--color-accent-pink); box-shadow: 0 0 16px rgba(255, 0, 110, 0.25); background: rgba(255, 0, 110, 0.04); }
+.shopItem.previewing { border-color: var(--color-accent-cyan); box-shadow: 0 0 16px rgba(0, 217, 255, 0.3); background: rgba(0, 217, 255, 0.06); }
+.shopItem { cursor: pointer; }
 .shopItemPreview {
   width: 56px;
   height: 56px;
@@ -2757,6 +2768,10 @@ canvas:hover {
 }
 .shopItemBtn.buy { background: #ffd54f; color: #000; }
 .shopItemBtn.buy:hover { background: #ffe082; }
+.shopItemBtn.buy.confirming { background: #ff6b6b; color: #fff; animation: confirmPulse 0.6s ease infinite alternate; }
+@keyframes confirmPulse { from { box-shadow: 0 0 4px rgba(255,107,107,0.3); } to { box-shadow: 0 0 12px rgba(255,107,107,0.6); } }
+.shopPreviewLabel { font-size: 0.8rem; color: var(--color-accent-green); font-weight: bold; text-align: center; margin-top: 6px; }
+.shopPreviewLabel.previewing { color: var(--color-accent-cyan); }
 .shopItemBtn.equip { background: var(--color-accent-cyan); color: #000; }
 .shopItemBtn.equip:hover { background: #33e0ff; }
 .shopItemBtn.equipped { background: var(--color-accent-pink); color: #fff; cursor: default; }
@@ -3041,6 +3056,43 @@ canvas:hover {
 .matchEloChange { font-weight: bold; }
 .matchEloChange.positive { color: var(--color-accent-green); }
 .matchEloChange.negative { color: var(--color-accent-pink); }
+
+/* Player Profile Modal (from leaderboard) */
+.playerProfileModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.playerProfileCard {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-accent-cyan);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 450px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 0 30px rgba(0, 217, 255, 0.2);
+  animation: modalSlideIn 0.25s ease;
+}
+.playerProfileTitle {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-top: 2px;
+}
+@keyframes modalSlideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 
 /* ==================== */
 /* MOBILE TOUCH CONTROLS */

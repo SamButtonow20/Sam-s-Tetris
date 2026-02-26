@@ -780,6 +780,7 @@ let equippedAvatar = loadEquipped('tetrisEquippedAvatar', 'default');
 
 // Current shop tab
 let currentShopTab = 'skins';
+let previewingItem = null; // id of item being previewed (click-to-preview)
 
 function buyShopItem(category, id) {
   const catalogs = { skins: PIECE_SKINS, boards: BOARD_THEMES, trails: TRAIL_EFFECTS, titles: PLAYER_TITLES, avatars: PLAYER_AVATARS };
@@ -3021,6 +3022,14 @@ async function syncProfileToServer() {
       coins: loadCoins(),
       ownedSkins: ownedSkins,
       equippedSkin: equippedSkin,
+      ownedBoards: ownedBoards,
+      equippedBoard: equippedBoard,
+      ownedTrails: ownedTrails,
+      equippedTrail: equippedTrail,
+      ownedTitles: ownedTitles,
+      equippedTitle: equippedTitle,
+      ownedAvatars: ownedAvatars,
+      equippedAvatar: equippedAvatar,
       stats: loadStats(),
       ranked: loadRankedData(),
       achievements: loadAchievements(),
@@ -3040,6 +3049,14 @@ function loadProfileFromServer(profile) {
   if (typeof profile.coins === 'number') saveCoins(profile.coins);
   if (Array.isArray(profile.ownedSkins)) { ownedSkins = profile.ownedSkins; saveOwnedSkins(ownedSkins); }
   if (profile.equippedSkin) { equippedSkin = profile.equippedSkin; saveEquippedSkin(equippedSkin); }
+  if (Array.isArray(profile.ownedBoards)) { ownedBoards = profile.ownedBoards; saveOwned('tetrisOwnedBoards', ownedBoards); }
+  if (profile.equippedBoard) { equippedBoard = profile.equippedBoard; saveEquipped('tetrisEquippedBoard', equippedBoard); }
+  if (Array.isArray(profile.ownedTrails)) { ownedTrails = profile.ownedTrails; saveOwned('tetrisOwnedTrails', ownedTrails); }
+  if (profile.equippedTrail) { equippedTrail = profile.equippedTrail; saveEquipped('tetrisEquippedTrail', equippedTrail); }
+  if (Array.isArray(profile.ownedTitles)) { ownedTitles = profile.ownedTitles; saveOwned('tetrisOwnedTitles', ownedTitles); }
+  if (profile.equippedTitle) { equippedTitle = profile.equippedTitle; saveEquipped('tetrisEquippedTitle', equippedTitle); }
+  if (Array.isArray(profile.ownedAvatars)) { ownedAvatars = profile.ownedAvatars; saveOwned('tetrisOwnedAvatars', ownedAvatars); }
+  if (profile.equippedAvatar) { equippedAvatar = profile.equippedAvatar; saveEquipped('tetrisEquippedAvatar', equippedAvatar); }
   if (profile.stats) saveStats(profile.stats);
   if (profile.ranked) saveRankedData(profile.ranked);
   if (profile.achievements) localStorage.setItem('tetrisAchievements', JSON.stringify(profile.achievements));
@@ -3216,19 +3233,22 @@ function displayLeaderboard() {
       leaderboardEntries.innerHTML = '';
       data.leaderboard.forEach((entry, idx) => {
         const div = document.createElement('div');
-        div.className = 'leaderboardEntry';
+        div.className = 'leaderboardEntry clickable';
         if (idx === 0) div.classList.add('top1');
         else if (idx === 1) div.classList.add('top2');
         else if (idx === 2) div.classList.add('top3');
         const isYou = entry.name === authUsername;
+        const avatarEmoji = (PLAYER_AVATARS[entry.avatar] || PLAYER_AVATARS.default).emoji;
         div.innerHTML = `
           <div class="rankCol">${idx + 1}</div>
+          <div class="avatarCol">${avatarEmoji}</div>
           <div class="nameCol"${isYou ? ' style="color:var(--color-accent-cyan);font-weight:bold;"' : ''}>${entry.name}${isYou ? ' (You)' : ''}</div>
           <div class="scoreCol">${entry.score.toLocaleString()}</div>
           <div class="linesCol">${entry.lines || '-'}</div>
           <div class="levelCol">ELO ${entry.elo || '-'}</div>
-          <div class="timeCol">${entry.games}G</div>
         `;
+        // Click to view profile
+        div.addEventListener('click', () => viewPlayerProfile(entry.name));
         leaderboardEntries.appendChild(div);
       });
     } else {
@@ -3251,11 +3271,11 @@ function displayLeaderboard() {
       else if (idx === 2) div.classList.add('top3');
       div.innerHTML = `
         <div class="rankCol">${idx + 1}</div>
+        <div class="avatarCol">👤</div>
         <div class="nameCol">${entry.name || 'Anonymous'}</div>
         <div class="scoreCol">${entry.score.toLocaleString()}</div>
         <div class="linesCol">${entry.lines}</div>
         <div class="levelCol">${entry.level || '-'}</div>
-        <div class="timeCol">${entry.time}</div>
       `;
       leaderboardEntries.appendChild(div);
     });
@@ -3274,6 +3294,112 @@ function hideLeaderboard() {
   leaderboardPage.classList.remove('active');
   welcomePage.classList.add('active');
   gameContainer.style.display = 'none';
+}
+
+// ==================== VIEW OTHER PLAYER PROFILE ====================
+async function viewPlayerProfile(username) {
+  // If it's the current user, show own profile page
+  if (username === authUsername) {
+    leaderboardPage.classList.remove('active');
+    showProfilePage();
+    return;
+  }
+  
+  // Fetch public profile from server
+  try {
+    const res = await fetch(`/api/profile/${encodeURIComponent(username)}`);
+    const data = await res.json();
+    if (!res.ok || !data.publicProfile) {
+      showPlayerProfileModal(username, null);
+      return;
+    }
+    showPlayerProfileModal(data.username, data.publicProfile);
+  } catch (e) {
+    showPlayerProfileModal(username, null);
+  }
+}
+
+function showPlayerProfileModal(username, profile) {
+  // Remove any existing modal
+  const existing = document.getElementById('playerProfileModal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'playerProfileModal';
+  modal.className = 'playerProfileModal';
+  
+  if (!profile) {
+    modal.innerHTML = `
+      <div class="playerProfileCard">
+        <h3>👤 ${username}</h3>
+        <p style="color:var(--color-text-dim);text-align:center;">Profile data unavailable</p>
+        <button class="btn btn-accent" onclick="document.getElementById('playerProfileModal').remove()">Close</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    return;
+  }
+
+  const stats = profile.stats || {};
+  const rd = profile.ranked || { elo: 1000, wins: 0, losses: 0, history: [] };
+  const rank = getRankForElo(rd.elo);
+  const achs = profile.achievements || {};
+  const avatarEmoji = (PLAYER_AVATARS[profile.equippedAvatar] || PLAYER_AVATARS.default).emoji;
+  const titleData = PLAYER_TITLES[profile.equippedTitle];
+  const titleStr = (titleData && profile.equippedTitle !== 'none') ? `<div class="playerProfileTitle" style="color:${titleData.color};text-shadow:0 0 8px ${titleData.color};">${titleData.name}</div>` : '';
+
+  const badgesHtml = ACHIEVEMENTS.map(a => {
+    const earned = !!achs[a.id];
+    return `<span class="profileBadge ${earned ? 'earned' : 'locked'}">${a.icon} ${a.name}</span>`;
+  }).join('');
+
+  const historyHtml = rd.history && rd.history.length > 0
+    ? rd.history.slice(0, 10).map(m => {
+        const date = new Date(m.date).toLocaleDateString();
+        return `<div class="matchRow">
+          <span class="matchResult ${m.result}">${m.result === 'win' ? 'W' : 'L'}</span>
+          <span class="matchOpponent">vs ${m.opponent}</span>
+          <span class="matchEloChange ${m.eloChange >= 0 ? 'positive' : 'negative'}">${m.eloChange >= 0 ? '+' : ''}${m.eloChange}</span>
+          <span style="font-size:0.75rem;color:var(--color-text-dim);margin-left:8px;">${date}</span>
+        </div>`;
+      }).join('')
+    : '<div style="text-align:center;color:var(--color-text-dim);padding:8px;">No matches yet</div>';
+
+  modal.innerHTML = `
+    <div class="playerProfileCard">
+      <div class="profileHeader">
+        <div class="profileAvatar" style="font-size:2.5rem;">${avatarEmoji}</div>
+        <div class="profileNameSection">
+          <h3>${username}</h3>
+          ${titleStr}
+          <span class="profileRank">${rank.icon} ${rank.name} (${rd.elo})</span>
+        </div>
+      </div>
+      <div class="profileStats">
+        ${[
+          ['Games Played', stats.gamesPlayed || 0],
+          ['Best Score', (stats.bestScore || 0).toLocaleString()],
+          ['Total Lines', stats.totalLines || 0],
+          ['Best Combo', stats.bestCombo || 0],
+          ['Total Tetrises', stats.totalTetris || 0],
+          ['Total T-Spins', stats.totalTSpins || 0],
+          ['Ranked W/L', `${rd.wins}/${rd.losses}`],
+        ].map(([l, v]) => `<div class="profileStatItem"><span class="profileStatValue">${v}</span><span class="profileStatLabel">${l}</span></div>`).join('')}
+      </div>
+      <h4 style="color:var(--color-accent-cyan);margin:12px 0 6px;">🏅 Badges</h4>
+      <div class="profileBadges">${badgesHtml}</div>
+      <h4 style="color:var(--color-accent-cyan);margin:12px 0 6px;">📜 Recent Matches</h4>
+      <div class="matchHistory">${historyHtml}</div>
+      <button class="btn btn-accent" style="width:100%;margin-top:12px;" onclick="document.getElementById('playerProfileModal').remove()">Close</button>
+    </div>
+  `;
+  
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+  
+  document.body.appendChild(modal);
 }
 
 // ==================== AI MODE ====================
@@ -3591,23 +3717,27 @@ function drawShopPreview() {
   const ctx = pc.getContext('2d');
   ctx.clearRect(0, 0, pc.width, pc.height);
 
+  // Use previewing item if set, otherwise fall back to equipped
+  const { equipped } = getShopCatalog(currentShopTab);
+  const previewId = previewingItem || equipped;
+
   if (currentShopTab === 'skins') {
-    // Draw a 4x4 T-piece preview with the current equipped skin
+    // Draw a 4x4 T-piece preview with the previewed skin
     const scale = 200 / (5 * CELL);
     ctx.save();
     ctx.scale(scale, scale);
-    // Draw dark bg
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, 5 * CELL, 5 * CELL);
-    // Draw T-piece shape
     const shape = [['.','1','.'],['.','.','.'],['1','1','1'],['.','.','.']];
+    const savedSkin = equippedSkin;
+    equippedSkin = previewId;
     for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
       if (shape[r][c] !== '.') drawCell(ctx, c + 1, r + 0.5, shape[r][c]);
     }
+    equippedSkin = savedSkin;
     ctx.restore();
   } else if (currentShopTab === 'boards') {
-    // Draw a mini grid preview
-    const bTheme = BOARD_THEMES[equippedBoard] || BOARD_THEMES.default;
+    const bTheme = BOARD_THEMES[previewId] || BOARD_THEMES.default;
     const theme = THEMES[currentThemeName];
     ctx.fillStyle = theme.bg;
     ctx.fillRect(0, 0, 200, 200);
@@ -3617,7 +3747,6 @@ function drawShopPreview() {
       const cs = 20;
       for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++) ctx.strokeRect(c * cs, r * cs, cs, cs);
     }
-    // Draw some sample pieces
     const scale = 200 / (10 * CELL);
     ctx.save(); ctx.scale(scale, scale);
     drawCell(ctx, 2, 7, '1'); drawCell(ctx, 3, 7, '1'); drawCell(ctx, 4, 7, '1'); drawCell(ctx, 5, 7, '1');
@@ -3630,8 +3759,7 @@ function drawShopPreview() {
     ctx.font = '14px Consolas';
     ctx.textAlign = 'center';
     ctx.fillText('Trail shows on hard drop', 100, 100);
-    // Draw some sample trail particles
-    const effect = equippedTrail;
+    const effect = previewId;
     if (effect !== 'none') {
       const t = performance.now() / 1000;
       for (let i = 0; i < 8; i++) {
@@ -3655,8 +3783,8 @@ function drawShopPreview() {
   } else if (currentShopTab === 'titles') {
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, 200, 200);
-    const titleData = PLAYER_TITLES[equippedTitle];
-    if (titleData && equippedTitle !== 'none') {
+    const titleData = PLAYER_TITLES[previewId];
+    if (titleData && previewId !== 'none') {
       ctx.font = 'bold 22px Consolas';
       ctx.textAlign = 'center';
       ctx.fillStyle = titleData.color;
@@ -3666,7 +3794,7 @@ function drawShopPreview() {
       ctx.shadowBlur = 0;
       ctx.font = '14px Consolas';
       ctx.fillStyle = '#aaa';
-      ctx.fillText('Your display title', 100, 120);
+      ctx.fillText(previewingItem ? 'Preview' : 'Your display title', 100, 120);
     } else {
       ctx.font = '14px Consolas';
       ctx.textAlign = 'center';
@@ -3676,7 +3804,7 @@ function drawShopPreview() {
   } else if (currentShopTab === 'avatars') {
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, 200, 200);
-    const avatarData = PLAYER_AVATARS[equippedAvatar];
+    const avatarData = PLAYER_AVATARS[previewId];
     if (avatarData) {
       ctx.font = '64px sans-serif';
       ctx.textAlign = 'center';
@@ -3685,8 +3813,15 @@ function drawShopPreview() {
       ctx.font = '14px Consolas';
       ctx.fillStyle = '#aaa';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText(avatarData.name, 100, 140);
+      ctx.fillText(previewingItem ? 'Preview: ' + avatarData.name : avatarData.name, 100, 140);
     }
+  }
+
+  // Show preview label
+  const previewLabel = document.getElementById('shopPreviewLabel');
+  if (previewLabel) {
+    previewLabel.textContent = previewingItem ? '👁 Previewing' : '✓ Equipped';
+    previewLabel.className = 'shopPreviewLabel' + (previewingItem ? ' previewing' : '');
   }
 }
 
@@ -3797,6 +3932,17 @@ function displayShop() {
     }
 
     el.innerHTML += `<div class="shopItemName">${item.name}</div><div class="shopItemDesc">${item.desc}</div><div class="shopItemPrice${item.price === 0 ? ' free' : ''}">${item.price === 0 ? 'Free' : '🪙 ' + item.price}</div>${btnHtml}`;
+    
+    // Click-to-preview: clicking the item card (not the button) shows a preview
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.shopItemBtn')) return; // don't trigger on button clicks
+      previewingItem = id;
+      // Update visual highlight
+      shopGrid.querySelectorAll('.shopItem').forEach(si => si.classList.remove('previewing'));
+      el.classList.add('previewing');
+      drawShopPreview();
+    });
+
     shopGrid.appendChild(el);
   }
 
@@ -3804,8 +3950,26 @@ function displayShop() {
   shopGrid.querySelectorAll('.shopItemBtn.buy').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      // Confirm before buying
+      if (btn.dataset.confirming !== 'true') {
+        btn.dataset.confirming = 'true';
+        btn.dataset.origText = btn.textContent;
+        btn.textContent = '✓ Confirm?';
+        btn.classList.add('confirming');
+        // Auto-reset after 3 seconds
+        setTimeout(() => {
+          if (btn.dataset.confirming === 'true') {
+            btn.dataset.confirming = 'false';
+            btn.textContent = btn.dataset.origText;
+            btn.classList.remove('confirming');
+          }
+        }, 3000);
+        return;
+      }
+      // Confirmed — buy it
       const cat = btn.dataset.cat;
       const id = btn.dataset.id;
+      btn.dataset.confirming = 'false';
       if (buyShopItem(cat, id)) { equipShopItem(cat, id); displayShop(); }
     });
   });
@@ -3824,6 +3988,7 @@ function showShopPage() {
   welcomePage.classList.remove('active');
   shopPage.classList.add('active');
   currentShopTab = 'skins';
+  previewingItem = null;
   displayShop();
 
   // Tab click listeners
@@ -3832,6 +3997,7 @@ function showShopPage() {
     tabContainer.querySelectorAll('.shopTab').forEach(tab => {
       tab.onclick = () => {
         currentShopTab = tab.dataset.category;
+        previewingItem = null;
         displayShop();
       };
     });
@@ -4087,9 +4253,23 @@ function displayProfile() {
   const ps = document.getElementById('profileStats');
   const pb = document.getElementById('profileBadges');
   const mh = document.getElementById('matchHistory');
+  const pa = document.getElementById('profileAvatar');
+  const pt = document.getElementById('profileTitle');
 
   if (pn) pn.textContent = name;
   if (prb) prb.textContent = `${rank.icon} ${rank.name} (${rd.elo})`;
+  if (pa) pa.textContent = (PLAYER_AVATARS[equippedAvatar] || PLAYER_AVATARS.default).emoji;
+  if (pt) {
+    const titleData = PLAYER_TITLES[equippedTitle];
+    if (titleData && equippedTitle !== 'none') {
+      pt.textContent = titleData.name;
+      pt.style.color = titleData.color;
+      pt.style.textShadow = `0 0 8px ${titleData.color}`;
+      pt.style.display = 'block';
+    } else {
+      pt.style.display = 'none';
+    }
+  }
 
   if (ps) {
     ps.innerHTML = [

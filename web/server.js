@@ -260,6 +260,14 @@ const server = http.createServer(async (req, res) => {
           if (typeof profile.coins === 'number') prof.coins = Math.max(0, profile.coins);
           if (Array.isArray(profile.ownedSkins)) prof.ownedSkins = profile.ownedSkins;
           if (typeof profile.equippedSkin === 'string') prof.equippedSkin = profile.equippedSkin;
+          if (Array.isArray(profile.ownedBoards)) prof.ownedBoards = profile.ownedBoards;
+          if (typeof profile.equippedBoard === 'string') prof.equippedBoard = profile.equippedBoard;
+          if (Array.isArray(profile.ownedTrails)) prof.ownedTrails = profile.ownedTrails;
+          if (typeof profile.equippedTrail === 'string') prof.equippedTrail = profile.equippedTrail;
+          if (Array.isArray(profile.ownedTitles)) prof.ownedTitles = profile.ownedTitles;
+          if (typeof profile.equippedTitle === 'string') prof.equippedTitle = profile.equippedTitle;
+          if (Array.isArray(profile.ownedAvatars)) prof.ownedAvatars = profile.ownedAvatars;
+          if (typeof profile.equippedAvatar === 'string') prof.equippedAvatar = profile.equippedAvatar;
           if (profile.stats && typeof profile.stats === 'object') prof.stats = profile.stats;
           if (profile.ranked && typeof profile.ranked === 'object') prof.ranked = profile.ranked;
           if (profile.achievements && typeof profile.achievements === 'object') prof.achievements = profile.achievements;
@@ -276,6 +284,14 @@ const server = http.createServer(async (req, res) => {
           if (typeof profile.coins === 'number') userEntry.profile.coins = Math.max(0, profile.coins);
           if (Array.isArray(profile.ownedSkins)) userEntry.profile.ownedSkins = profile.ownedSkins;
           if (typeof profile.equippedSkin === 'string') userEntry.profile.equippedSkin = profile.equippedSkin;
+          if (Array.isArray(profile.ownedBoards)) userEntry.profile.ownedBoards = profile.ownedBoards;
+          if (typeof profile.equippedBoard === 'string') userEntry.profile.equippedBoard = profile.equippedBoard;
+          if (Array.isArray(profile.ownedTrails)) userEntry.profile.ownedTrails = profile.ownedTrails;
+          if (typeof profile.equippedTrail === 'string') userEntry.profile.equippedTrail = profile.equippedTrail;
+          if (Array.isArray(profile.ownedTitles)) userEntry.profile.ownedTitles = profile.ownedTitles;
+          if (typeof profile.equippedTitle === 'string') userEntry.profile.equippedTitle = profile.equippedTitle;
+          if (Array.isArray(profile.ownedAvatars)) userEntry.profile.ownedAvatars = profile.ownedAvatars;
+          if (typeof profile.equippedAvatar === 'string') userEntry.profile.equippedAvatar = profile.equippedAvatar;
           if (profile.stats && typeof profile.stats === 'object') userEntry.profile.stats = profile.stats;
           if (profile.ranked && typeof profile.ranked === 'object') userEntry.profile.ranked = profile.ranked;
           if (profile.achievements && typeof profile.achievements === 'object') userEntry.profile.achievements = profile.achievements;
@@ -313,7 +329,7 @@ const server = http.createServer(async (req, res) => {
         const rows = await dbGetLeaderboard();
         const board = rows
           .filter(r => r.profile && r.profile.stats && r.profile.stats.gamesPlayed > 0)
-          .map(r => ({ name: r.username, score: r.profile.stats.bestScore, lines: r.profile.stats.bestLines, games: r.profile.stats.gamesPlayed, elo: (r.profile.ranked || {}).elo || 1000 }))
+          .map(r => ({ name: r.username, score: r.profile.stats.bestScore, lines: r.profile.stats.bestLines, games: r.profile.stats.gamesPlayed, elo: (r.profile.ranked || {}).elo || 1000, avatar: r.profile.equippedAvatar || 'default', title: r.profile.equippedTitle || 'none' }))
           .sort((a, b) => b.score - a.score)
           .slice(0, 50);
         return sendJSON(res, 200, { leaderboard: board });
@@ -321,12 +337,83 @@ const server = http.createServer(async (req, res) => {
         const users = loadUsersFile();
         const board = Object.values(users)
           .filter(u => u.profile.stats.gamesPlayed > 0)
-          .map(u => ({ name: u.username, score: u.profile.stats.bestScore, lines: u.profile.stats.bestLines, games: u.profile.stats.gamesPlayed, elo: u.profile.ranked.elo }))
+          .map(u => ({ name: u.username, score: u.profile.stats.bestScore, lines: u.profile.stats.bestLines, games: u.profile.stats.gamesPlayed, elo: u.profile.ranked.elo, avatar: u.profile.equippedAvatar || 'default', title: u.profile.equippedTitle || 'none' }))
           .sort((a, b) => b.score - a.score)
           .slice(0, 50);
         return sendJSON(res, 200, { leaderboard: board });
       }
     } catch (e) { return sendJSON(res, 500, { error: 'Leaderboard error' }); }
+  }
+
+  // GET /api/profile/:username — public profile lookup by username
+  const profileMatch = req.url.match(/^\/api\/profile\/([^/?]+)/);
+  if (req.method === 'GET' && profileMatch) {
+    try {
+      const targetUser = decodeURIComponent(profileMatch[1]).toLowerCase();
+      if (useDB) {
+        const row = await dbGetUser(targetUser);
+        if (!row) return sendJSON(res, 404, { error: 'User not found' });
+        const p = row.profile || {};
+        return sendJSON(res, 200, {
+          ok: true,
+          username: row.username,
+          publicProfile: {
+            stats: p.stats || {},
+            ranked: p.ranked || { elo: 1000, wins: 0, losses: 0, history: [] },
+            achievements: p.achievements || {},
+            equippedAvatar: p.equippedAvatar || 'default',
+            equippedTitle: p.equippedTitle || 'none',
+            equippedSkin: p.equippedSkin || 'default'
+          }
+        });
+      } else {
+        const users = loadUsersFile();
+        const userEntry = users[targetUser];
+        if (!userEntry) return sendJSON(res, 404, { error: 'User not found' });
+        const p = userEntry.profile || {};
+        return sendJSON(res, 200, {
+          ok: true,
+          username: userEntry.username,
+          publicProfile: {
+            stats: p.stats || {},
+            ranked: p.ranked || { elo: 1000, wins: 0, losses: 0, history: [] },
+            achievements: p.achievements || {},
+            equippedAvatar: p.equippedAvatar || 'default',
+            equippedTitle: p.equippedTitle || 'none',
+            equippedSkin: p.equippedSkin || 'default'
+          }
+        });
+      }
+    } catch (e) { return sendJSON(res, 500, { error: 'Profile lookup error' }); }
+  }
+
+  // POST /api/admin/give-coins — give coins to a user (requires admin auth)
+  if (req.method === 'POST' && req.url === '/api/admin/give-coins') {
+    try {
+      const body = await parseBody(req);
+      const { username, amount, adminKey } = body;
+      // Simple admin key check (set via ADMIN_KEY env var, defaults to 'samstackerz-admin')
+      const expectedKey = process.env.ADMIN_KEY || 'samstackerz-admin';
+      if (adminKey !== expectedKey) return sendJSON(res, 403, { error: 'Unauthorized' });
+      if (!username || typeof amount !== 'number') return sendJSON(res, 400, { error: 'username and amount required' });
+      const nameLower = String(username).trim().toLowerCase();
+
+      if (useDB) {
+        const row = await dbGetUser(nameLower);
+        if (!row) return sendJSON(res, 404, { error: 'User not found' });
+        let prof = row.profile || {};
+        prof.coins = (prof.coins || 0) + amount;
+        await dbUpdateProfile(nameLower, prof);
+        return sendJSON(res, 200, { ok: true, username: row.username, newBalance: prof.coins });
+      } else {
+        const users = loadUsersFile();
+        const userEntry = users[nameLower];
+        if (!userEntry) return sendJSON(res, 404, { error: 'User not found' });
+        userEntry.profile.coins = (userEntry.profile.coins || 0) + amount;
+        saveUsersFile(users);
+        return sendJSON(res, 200, { ok: true, username: userEntry.username, newBalance: userEntry.profile.coins });
+      }
+    } catch (e) { return sendJSON(res, 400, { error: e.message }); }
   }
 
   // ==================== STATIC FILE SERVER ====================

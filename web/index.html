@@ -274,11 +274,11 @@
         <div class="leaderboardTable">
           <div class="leaderboardHeader">
             <div class="rankCol">Rank</div>
+            <div class="avatarCol"></div>
             <div class="nameCol">Player</div>
             <div class="scoreCol">Score</div>
             <div class="linesCol">Lines</div>
-            <div class="levelCol">Level</div>
-            <div class="timeCol">Time</div>
+            <div class="levelCol">ELO</div>
           </div>
           <div id="leaderboardEntries" class="leaderboardEntries"></div>
         </div>
@@ -371,7 +371,7 @@
         <!-- Live Preview -->
         <div class="shopPreviewBar" id="shopPreviewBar">
           <canvas id="shopPreviewCanvas" width="200" height="200"></canvas>
-          <div class="shopPreviewLabel">Live Preview</div>
+          <div class="shopPreviewLabel" id="shopPreviewLabel">✓ Equipped</div>
         </div>
 
         <div class="shopGrid" id="shopGrid"></div>
@@ -421,6 +421,7 @@
             <div class="profileAvatar" id="profileAvatar">👤</div>
             <div class="profileNameSection">
               <h3 id="profileName">Player</h3>
+              <div id="profileTitle" class="playerProfileTitle" style="display:none;"></div>
               <span class="profileRank" id="profileRankBadge">🥉 Bronze (1000)</span>
             </div>
           </div>
