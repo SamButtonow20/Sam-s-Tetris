@@ -50,35 +50,24 @@ const THEMES = {
 let currentThemeName = localStorage.getItem('tetrisTheme') || 'neon';
 let COLORS = { ...THEMES[currentThemeName].colors };
 
-// ==================== THEME SOUNDTRACK DEFINITIONS ====================
-const THEME_MUSIC = {
-  neon: {
-    // Synthwave driving bassline — dark & pulsing
+// ==================== BOARD SOUNDTRACK DEFINITIONS ====================
+// Each board theme can have its own soundtrack (synth or WAV file)
+const BOARD_MUSIC = {
+  default: {
+    // Synthwave driving bassline — dark & pulsing (matches neon default)
     notes: [82, 82, 110, 131, 110, 82, 98, 131, 82, 82, 110, 131, 147, 131, 110, 98],
     type: 'sawtooth',
-    tempo: 180,       // ms per note
-    noteLen: 0.16,    // seconds
-    volume: 0.10,
-    // Add a sub-bass layer for that synthwave thump
+    tempo: 180, noteLen: 0.16, volume: 0.10,
     subBass: true,
     subNotes: [41, 41, 55, 65, 55, 41, 49, 65, 41, 41, 55, 65, 73, 65, 55, 49],
     subVol: 0.06
   },
-  retro: {
-    // Korobeiniki-inspired melody — the classic Tetris vibe (8-bit)
-    notes: [
-      330, 247, 262, 294, 262, 247, 220, 220, 262, 330, 294, 262,
-      247, 262, 294, 330, 262, 220, 220, 220,
-      294, 349, 440, 392, 349, 330, 262, 330, 294, 262,
-      247, 262, 294, 330, 262, 220, 220, 0
-    ],
-    type: 'square',
-    tempo: 150,
-    noteLen: 0.13,
-    volume: 0.07,
-    subBass: false
+  midnight: {
+    // Dreamy ambient — slow twinkling arpeggios
+    notes: [262, 330, 392, 523, 392, 330, 262, 0, 294, 370, 440, 587, 440, 370, 294, 0],
+    type: 'sine', tempo: 320, noteLen: 0.30, volume: 0.06, subBass: false
   },
-  pastel: {
+  sakura: {
     // Gentle music-box melody — soft & dreamy
     notes: [
       523, 659, 784, 1047, 784, 659, 523, 0,
@@ -86,25 +75,48 @@ const THEME_MUSIC = {
       523, 784, 1047, 1319, 1047, 784, 659, 0,
       440, 523, 659, 784, 659, 523, 440, 0
     ],
-    type: 'sine',
-    tempo: 280,
-    noteLen: 0.25,
-    volume: 0.06,
-    subBass: false
-  },
-  monochrome: {
-    // Minimal ambient — sparse, haunting, slow
-    notes: [131, 0, 156, 0, 196, 0, 262, 0, 196, 0, 156, 0, 131, 0, 0, 0],
-    type: 'triangle',
-    tempo: 500,
-    noteLen: 0.45,
-    volume: 0.05,
-    subBass: false
+    type: 'sine', tempo: 280, noteLen: 0.25, volume: 0.06, subBass: false
   },
   ocean: {
-    // Custom WAV file — loaded separately
+    // Custom WAV file — oceanic soundtrack
     file: 'TerrariaMusic.wav',
     volume: 0.35
+  },
+  volcanic: {
+    // Heavy, menacing bass — rumbling embers
+    notes: [65, 0, 82, 65, 0, 55, 65, 82, 98, 82, 65, 0, 55, 0, 65, 0],
+    type: 'sawtooth', tempo: 220, noteLen: 0.20, volume: 0.09,
+    subBass: true,
+    subNotes: [33, 0, 41, 33, 0, 28, 33, 41, 49, 41, 33, 0, 28, 0, 33, 0],
+    subVol: 0.07
+  },
+  arctic: {
+    // Haunting, sparse ambient — icy and desolate
+    notes: [196, 0, 262, 0, 330, 0, 392, 0, 330, 0, 262, 0, 196, 0, 0, 0],
+    type: 'triangle', tempo: 500, noteLen: 0.45, volume: 0.05, subBass: false
+  },
+  royal: {
+    // Regal fanfare — majestic waltz
+    notes: [392, 494, 587, 784, 587, 494, 392, 330, 392, 440, 523, 659, 523, 440, 392, 0],
+    type: 'triangle', tempo: 250, noteLen: 0.22, volume: 0.07, subBass: false
+  },
+  hologram: {
+    // Korobeiniki-inspired 8-bit melody — the classic vibe
+    notes: [
+      330, 247, 262, 294, 262, 247, 220, 220, 262, 330, 294, 262,
+      247, 262, 294, 330, 262, 220, 220, 220,
+      294, 349, 440, 392, 349, 330, 262, 330, 294, 262,
+      247, 262, 294, 330, 262, 220, 220, 0
+    ],
+    type: 'square', tempo: 150, noteLen: 0.13, volume: 0.07, subBass: false
+  },
+  void: {
+    // Dark, ominous drone — unsettling low pulsing
+    notes: [55, 0, 49, 0, 55, 62, 0, 49, 55, 0, 0, 42, 49, 0, 55, 0],
+    type: 'sawtooth', tempo: 400, noteLen: 0.35, volume: 0.08,
+    subBass: true,
+    subNotes: [28, 0, 25, 0, 28, 31, 0, 25, 28, 0, 0, 21, 25, 0, 28, 0],
+    subVol: 0.06
   }
 };
 
@@ -118,13 +130,18 @@ class SoundManager {
     this.musicInterval = null;
     this.initialized = false;
     this.masterGain = null;
-    // Ocean WAV playback state
-    this.oceanBuffer = null;
-    this.oceanSource = null;
-    this.oceanGain = null;
-    this.oceanLoading = false;
-    // Track which theme's music is currently playing
-    this.currentMusicTheme = null;
+    // WAV playback state (for file-based soundtracks like ocean)
+    this.wavBuffer = null;
+    this.wavSource = null;
+    this.wavGain = null;
+    this.wavLoading = false;
+    this.wavFile = null; // which file is loaded
+    // Track which board's music is currently playing
+    this.currentMusicBoard = null;
+    // Preview state
+    this.previewInterval = null;
+    this.previewWavSource = null;
+    this.previewWavGain = null;
   }
   init() {
     if (this.initialized) return;
@@ -134,18 +151,24 @@ class SoundManager {
       this.masterGain.gain.value = this.volume;
       this.masterGain.connect(this.ctx.destination);
       this.initialized = true;
-      // Pre-load ocean WAV in background
-      this._preloadOceanAudio();
+      // Pre-load any WAV soundtracks
+      this._preloadWavAudio();
     } catch (e) { console.warn('Web Audio not supported'); }
   }
-  _preloadOceanAudio() {
-    if (this.oceanBuffer || this.oceanLoading) return;
-    this.oceanLoading = true;
-    fetch(THEME_MUSIC.ocean.file)
-      .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.arrayBuffer(); })
-      .then(buf => this.ctx.decodeAudioData(buf))
-      .then(decoded => { this.oceanBuffer = decoded; this.oceanLoading = false; console.log('Ocean soundtrack loaded'); })
-      .catch(e => { console.warn('Could not load ocean soundtrack:', e); this.oceanLoading = false; });
+  _preloadWavAudio() {
+    // Find all board music entries with a 'file' property and preload them
+    for (const [id, cfg] of Object.entries(BOARD_MUSIC)) {
+      if (cfg.file && !this.wavBuffer) {
+        this.wavLoading = true;
+        this.wavFile = cfg.file;
+        fetch(cfg.file)
+          .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.arrayBuffer(); })
+          .then(buf => this.ctx.decodeAudioData(buf))
+          .then(decoded => { this.wavBuffer = decoded; this.wavLoading = false; console.log('WAV soundtrack loaded:', cfg.file); })
+          .catch(e => { console.warn('Could not load WAV soundtrack:', e); this.wavLoading = false; });
+        break; // only one WAV file for now
+      }
+    }
   }
   resume() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
   tone(freq, duration, type = 'square', vol = 0.3) {
@@ -202,38 +225,38 @@ class SoundManager {
   playGarbage() { this.noise(0.15, 0.2); this.tone(60, 0.2, 'sine', 0.25); }
   playAchievement() { [660, 880, 1100].forEach((f, i) => setTimeout(() => this.tone(f, 0.2, 'triangle', 0.2), i * 100)); }
 
-  // ---------- Ocean WAV playback ----------
-  _startOceanMusic() {
-    if (!this.ctx || !this.oceanBuffer) return;
-    this._stopOceanMusic();
-    this.oceanGain = this.ctx.createGain();
-    this.oceanGain.gain.value = THEME_MUSIC.ocean.volume * this.volume;
-    this.oceanGain.connect(this.masterGain);
-    this.oceanSource = this.ctx.createBufferSource();
-    this.oceanSource.buffer = this.oceanBuffer;
-    this.oceanSource.loop = true;
-    this.oceanSource.connect(this.oceanGain);
-    this.oceanSource.start(0, 10); // skip first 10s of silence
+  // ---------- WAV file playback ----------
+  _startWavMusic(boardId) {
+    const cfg = BOARD_MUSIC[boardId];
+    if (!this.ctx || !cfg || !cfg.file || !this.wavBuffer) return;
+    this._stopWavMusic();
+    this.wavGain = this.ctx.createGain();
+    this.wavGain.gain.value = cfg.volume * this.volume;
+    this.wavGain.connect(this.masterGain);
+    this.wavSource = this.ctx.createBufferSource();
+    this.wavSource.buffer = this.wavBuffer;
+    this.wavSource.loop = true;
+    this.wavSource.connect(this.wavGain);
+    this.wavSource.start(0, 10); // skip first 10s of silence
   }
-  _stopOceanMusic() {
-    if (this.oceanSource) {
-      try { this.oceanSource.stop(); } catch (e) { /* already stopped */ }
-      this.oceanSource.disconnect();
-      this.oceanSource = null;
+  _stopWavMusic() {
+    if (this.wavSource) {
+      try { this.wavSource.stop(); } catch (e) { /* already stopped */ }
+      this.wavSource.disconnect();
+      this.wavSource = null;
     }
-    if (this.oceanGain) { this.oceanGain.disconnect(); this.oceanGain = null; }
+    if (this.wavGain) { this.wavGain.disconnect(); this.wavGain = null; }
   }
 
   // ---------- Procedural synth music ----------
-  _startSynthMusic(themeName) {
-    const cfg = THEME_MUSIC[themeName];
+  _startSynthMusic(boardId) {
+    const cfg = BOARD_MUSIC[boardId];
     if (!cfg || !cfg.notes || !this.ctx) return;
     let noteIdx = 0;
     const playNote = () => {
       if (!this.musicEnabled || !this.ctx) { this.stopMusic(); return; }
       const freq = cfg.notes[noteIdx % cfg.notes.length];
       if (freq > 0) {
-        // Main melody voice
         const osc = this.ctx.createOscillator();
         osc.type = cfg.type;
         osc.frequency.value = freq;
@@ -245,7 +268,6 @@ class SoundManager {
         osc.start();
         osc.stop(this.ctx.currentTime + cfg.noteLen);
       }
-      // Optional sub-bass layer (neon synthwave thump)
       if (cfg.subBass && cfg.subNotes) {
         const subFreq = cfg.subNotes[noteIdx % cfg.subNotes.length];
         if (subFreq > 0) {
@@ -267,39 +289,39 @@ class SoundManager {
     this.musicInterval = setInterval(playNote, cfg.tempo);
   }
 
-  // ---------- Public music API ----------
+  // ---------- Public music API (board-based) ----------
   startMusic() {
     if (!this.ctx || !this.musicEnabled) return;
-    // If music is already playing for the current theme, don't restart
-    if (this.currentMusicTheme === currentThemeName && (this.musicInterval || this.oceanSource)) return;
+    const boardId = equippedBoard || 'default';
+    // If music is already playing for this board, don't restart
+    if (this.currentMusicBoard === boardId && (this.musicInterval || this.wavSource)) return;
     this.stopMusic();
     this.resume();
-    this.currentMusicTheme = currentThemeName;
+    this.currentMusicBoard = boardId;
+    const cfg = BOARD_MUSIC[boardId] || BOARD_MUSIC.default;
 
-    if (currentThemeName === 'ocean') {
-      if (this.oceanBuffer) {
-        this._startOceanMusic();
+    if (cfg.file) {
+      if (this.wavBuffer) {
+        this._startWavMusic(boardId);
       } else {
-        // WAV still loading — retry when loaded
         const checkLoad = setInterval(() => {
-          if (this.oceanBuffer) {
+          if (this.wavBuffer) {
             clearInterval(checkLoad);
-            if (this.musicEnabled && currentThemeName === 'ocean' && !this.oceanSource) {
-              this._startOceanMusic();
+            if (this.musicEnabled && this.currentMusicBoard === boardId && !this.wavSource) {
+              this._startWavMusic(boardId);
             }
           }
         }, 500);
-        // Give up after 30s
         setTimeout(() => clearInterval(checkLoad), 30000);
       }
     } else {
-      this._startSynthMusic(currentThemeName);
+      this._startSynthMusic(boardId);
     }
   }
   stopMusic() {
     if (this.musicInterval) { clearInterval(this.musicInterval); this.musicInterval = null; }
-    this._stopOceanMusic();
-    this.currentMusicTheme = null;
+    this._stopWavMusic();
+    this.currentMusicBoard = null;
   }
   pauseMusic() {
     if (this.ctx && this.ctx.state === 'running') this.ctx.suspend();
@@ -307,20 +329,88 @@ class SoundManager {
   resumeMusic() {
     if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
   }
-  /** Call when theme changes — seamlessly switches the soundtrack */
-  switchThemeMusic() {
+  /** Call when board theme changes — seamlessly switches the soundtrack */
+  switchBoardMusic() {
     if (!this.musicEnabled) return;
-    // Only restart if music is supposed to be playing
-    const wasPlaying = this.musicInterval || this.oceanSource;
+    const wasPlaying = this.musicInterval || this.wavSource;
     this.stopMusic();
     if (wasPlaying) this.startMusic();
   }
+
+  // ---------- Shop preview: play a board's soundtrack briefly ----------
+  previewBoardMusic(boardId) {
+    if (!this.ctx) return;
+    this.stopPreview();
+    this.resume();
+    const cfg = BOARD_MUSIC[boardId] || BOARD_MUSIC.default;
+    if (cfg.file) {
+      if (!this.wavBuffer) return;
+      this.previewWavGain = this.ctx.createGain();
+      this.previewWavGain.gain.value = cfg.volume * this.volume;
+      this.previewWavGain.connect(this.masterGain);
+      this.previewWavSource = this.ctx.createBufferSource();
+      this.previewWavSource.buffer = this.wavBuffer;
+      this.previewWavSource.loop = false;
+      this.previewWavSource.connect(this.previewWavGain);
+      this.previewWavSource.start(0, 10, 8); // play 8 seconds starting from 10s
+    } else if (cfg.notes) {
+      let noteIdx = 0;
+      const playNote = () => {
+        if (!this.ctx || noteIdx > cfg.notes.length * 2) { this.stopPreview(); return; }
+        const freq = cfg.notes[noteIdx % cfg.notes.length];
+        if (freq > 0) {
+          const osc = this.ctx.createOscillator();
+          osc.type = cfg.type;
+          osc.frequency.value = freq;
+          const g = this.ctx.createGain();
+          g.gain.value = this.volume * cfg.volume;
+          g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + cfg.noteLen);
+          osc.connect(g);
+          g.connect(this.masterGain);
+          osc.start();
+          osc.stop(this.ctx.currentTime + cfg.noteLen);
+        }
+        if (cfg.subBass && cfg.subNotes) {
+          const subFreq = cfg.subNotes[noteIdx % cfg.subNotes.length];
+          if (subFreq > 0) {
+            const osc2 = this.ctx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.value = subFreq;
+            const g2 = this.ctx.createGain();
+            g2.gain.value = this.volume * cfg.subVol;
+            g2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + cfg.noteLen * 1.2);
+            osc2.connect(g2);
+            g2.connect(this.masterGain);
+            osc2.start();
+            osc2.stop(this.ctx.currentTime + cfg.noteLen * 1.2);
+          }
+        }
+        noteIdx++;
+      };
+      playNote();
+      this.previewInterval = setInterval(playNote, cfg.tempo);
+      // Auto-stop preview after ~5 seconds
+      setTimeout(() => { if (this.previewInterval) this.stopPreview(); }, 5000);
+    }
+  }
+  stopPreview() {
+    if (this.previewInterval) { clearInterval(this.previewInterval); this.previewInterval = null; }
+    if (this.previewWavSource) {
+      try { this.previewWavSource.stop(); } catch(e) {}
+      this.previewWavSource.disconnect();
+      this.previewWavSource = null;
+    }
+    if (this.previewWavGain) { this.previewWavGain.disconnect(); this.previewWavGain = null; }
+  }
+
   setVolume(v) {
     this.volume = v;
     localStorage.setItem('tetrisVolume', String(v));
     if (this.masterGain) this.masterGain.gain.value = v;
-    // Update ocean gain node in real-time
-    if (this.oceanGain) this.oceanGain.gain.value = THEME_MUSIC.ocean.volume * v;
+    if (this.wavGain) {
+      const boardCfg = BOARD_MUSIC[this.currentMusicBoard];
+      if (boardCfg && boardCfg.file) this.wavGain.gain.value = boardCfg.volume * v;
+    }
   }
   toggleSound() { this.enabled = !this.enabled; localStorage.setItem('tetrisSoundEnabled', String(this.enabled)); return this.enabled; }
   toggleMusic() {
@@ -696,15 +786,15 @@ const PIECE_SKINS = {
 
 // ==================== BOARD THEMES SYSTEM ====================
 const BOARD_THEMES = {
-  default:    { name: 'Default',     price: 0,   desc: 'Standard dark grid',            borderColor: null, bgOverlay: null },
-  midnight:   { name: 'Midnight',    price: 100, desc: 'Twinkling starfield sky',        borderColor: '#3355ff', bgOverlay: 'rgba(20,60,200,0.18)', animate: 'stars' },
-  sakura:     { name: 'Sakura',      price: 150, desc: 'Falling cherry-blossom petals',  borderColor: '#ff1166', bgOverlay: 'rgba(255,17,102,0.12)', animate: 'petals' },
-  emerald:    { name: 'Emerald',     price: 150, desc: 'Rising matrix rain',             borderColor: '#00ff55', bgOverlay: 'rgba(0,255,85,0.12)', animate: 'matrix' },
-  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Rising embers & heat haze',      borderColor: '#ff3300', bgOverlay: 'rgba(255,51,0,0.14)', animate: 'embers' },
-  arctic:     { name: 'Arctic',      price: 200, desc: 'Drifting snow & frost',           borderColor: '#00ddff', bgOverlay: 'rgba(0,221,255,0.13)', animate: 'snow' },
-  royal:      { name: 'Royal',       price: 250, desc: 'Floating golden sparkles',        borderColor: '#cc33ff', bgOverlay: 'rgba(204,51,255,0.13)', animate: 'sparkle' },
-  hologram:   { name: 'Hologram',    price: 350, desc: 'Scanning holographic lines',      borderColor: '#00ffbb', bgOverlay: 'rgba(0,255,187,0.10)', animate: 'scan' },
-  void:       { name: 'The Void',    price: 500, desc: 'Pulsing dark energy vortex',      borderColor: '#000', bgOverlay: null, noGrid: true, animate: 'vortex' },
+  default:    { name: 'Default',     price: 0,   desc: 'Standard dark grid • Synthwave beats',            borderColor: null, bgOverlay: null },
+  midnight:   { name: 'Midnight',    price: 100, desc: 'Twinkling starfield • Dreamy arpeggios',          borderColor: '#3355ff', bgOverlay: 'rgba(20,60,200,0.18)', animate: 'stars' },
+  sakura:     { name: 'Sakura',      price: 150, desc: 'Cherry-blossom petals • Music box melody',        borderColor: '#ff1166', bgOverlay: 'rgba(255,17,102,0.12)', animate: 'petals' },
+  ocean:      { name: 'Ocean',       price: 150, desc: 'Deep ocean bubbles • Oceanic soundtrack',         borderColor: '#0088cc', bgOverlay: 'rgba(0,100,200,0.14)', animate: 'ocean' },
+  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Rising embers • Heavy rumbling bass',             borderColor: '#ff3300', bgOverlay: 'rgba(255,51,0,0.14)', animate: 'embers' },
+  arctic:     { name: 'Arctic',      price: 200, desc: 'Drifting snow & frost • Haunting ambient',        borderColor: '#00ddff', bgOverlay: 'rgba(0,221,255,0.13)', animate: 'snow' },
+  royal:      { name: 'Royal',       price: 250, desc: 'Golden sparkles • Regal fanfare waltz',           borderColor: '#cc33ff', bgOverlay: 'rgba(204,51,255,0.13)', animate: 'sparkle' },
+  hologram:   { name: 'Hologram',    price: 350, desc: 'Holographic scan lines • Classic 8-bit melody',   borderColor: '#00ffbb', bgOverlay: 'rgba(0,255,187,0.10)', animate: 'scan' },
+  void:       { name: 'The Void',    price: 500, desc: 'Dark energy vortex • Ominous drone',              borderColor: '#000', bgOverlay: null, noGrid: true, animate: 'vortex' },
 };
 
 // ==================== TRAIL EFFECTS SYSTEM ====================
@@ -767,7 +857,13 @@ let ownedSkins  = loadOwnedSkins();
 let equippedSkin = loadEquippedSkin();
 
 let ownedBoards   = loadOwned('tetrisOwnedBoards',  ['default']);
+// Migrate emerald → ocean for existing players
+if (ownedBoards.includes('emerald')) {
+  ownedBoards = ownedBoards.map(b => b === 'emerald' ? 'ocean' : b);
+  saveOwned('tetrisOwnedBoards', ownedBoards);
+}
 let equippedBoard  = loadEquipped('tetrisEquippedBoard', 'default');
+if (equippedBoard === 'emerald') { equippedBoard = 'ocean'; saveEquipped('tetrisEquippedBoard', 'ocean'); }
 
 let ownedTrails   = loadOwned('tetrisOwnedTrails',  ['none']);
 let equippedTrail  = loadEquipped('tetrisEquippedTrail', 'none');
@@ -802,7 +898,7 @@ function equipShopItem(category, id) {
   switch(category) {
     case 'skins':  equippedSkin  = id; saveEquippedSkin(id); break;
     case 'boards': equippedBoard = id; saveEquipped('tetrisEquippedBoard', id);
-      gridOverlay = buildGridOverlay(); break;
+      gridOverlay = buildGridOverlay(); initBoardAnimParticles(BOARD_W, BOARD_H, (BOARD_THEMES[id] || BOARD_THEMES.default).animate); sound.switchBoardMusic(); break;
     case 'trails': equippedTrail = id; saveEquipped('tetrisEquippedTrail', id); break;
     case 'titles': equippedTitle = id; saveEquipped('tetrisEquippedTitle', id); break;
     case 'avatars': equippedAvatar = id; saveEquipped('tetrisEquippedAvatar', id); break;
@@ -1522,8 +1618,8 @@ const chatPanel = document.getElementById('chatPanel');
 const spectatorCheck = document.getElementById('spectatorCheck');
 const spectatorBanner = document.getElementById('spectatorBanner');
 
-// Theme selector
-const themeOptions = document.getElementById('themeOptions');
+// Theme selector removed — using neon as default theme
+// const themeOptions = document.getElementById('themeOptions');
 
 // New feature DOM elements
 const cardAI = document.getElementById('cardAI');
@@ -1650,9 +1746,6 @@ function applyTheme(name) {
 
   // Update piece stats colors
   updatePieceStatsColors();
-
-  // Switch soundtrack to match this theme
-  sound.switchThemeMusic();
 
   // Reinitialize background particles for new theme
   initBgParticles();
@@ -2731,7 +2824,7 @@ function initBoardAnimParticles(w, h, anim) {
   boardAnimParticles = [];
   boardAnimTheme = anim;
   if (!anim) return;
-  const count = {stars: 30, petals: 18, matrix: 14, embers: 22, snow: 25, sparkle: 20, scan: 0, vortex: 0}[anim] || 0;
+  const count = {stars: 30, petals: 18, matrix: 14, embers: 22, snow: 25, sparkle: 20, scan: 0, vortex: 0, ocean: 20}[anim] || 0;
   for (let i = 0; i < count; i++) {
     boardAnimParticles.push(makeBoardParticle(w, h, anim, true));
   }
@@ -2785,6 +2878,14 @@ function makeBoardParticle(w, h, anim, randomY) {
       p.alpha = 0.5 + Math.random() * 0.5;
       p.phase = Math.random() * Math.PI * 2;
       p.hue = 40 + Math.random() * 20; // gold
+      break;
+    case 'ocean':
+      p.size = 2 + Math.random() * 4;
+      p.speed = 8 + Math.random() * 15;
+      p.drift = (Math.random() - 0.5) * 20;
+      p.alpha = 0.3 + Math.random() * 0.4;
+      p.phase = Math.random() * Math.PI * 2;
+      p.hue = 180 + Math.random() * 40; // cyan-blue
       break;
   }
   return p;
@@ -2934,6 +3035,34 @@ function drawBoardAnimation(ctx, w, h, timeOverride) {
           ctx.strokeRect(c, 0, CELL, h);
         }
       }
+      break;
+    }
+    case 'ocean': {
+      // Rising bubbles + gentle wave overlay
+      for (const p of boardAnimParticles) {
+        p.y -= p.speed * dt;
+        p.x += p.drift * dt + Math.sin(t * 1.5 + p.phase) * 12 * dt;
+        p.phase += dt;
+        if (p.y < -10) { Object.assign(p, makeBoardParticle(w, h, 'ocean', false)); p.y = h + 5; }
+        // Bubble
+        ctx.strokeStyle = `hsla(${p.hue}, 70%, 65%, ${p.alpha * 0.7})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.stroke();
+        // Inner highlight
+        ctx.fillStyle = `hsla(${p.hue}, 80%, 80%, ${p.alpha * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(p.x - p.size * 0.25, p.y - p.size * 0.25, p.size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Wave shimmer at top
+      const waveY = 10 + Math.sin(t * 0.8) * 5;
+      const waveGrad = ctx.createLinearGradient(0, 0, 0, waveY + 20);
+      waveGrad.addColorStop(0, 'rgba(0,150,255,0.08)');
+      waveGrad.addColorStop(1, 'rgba(0,150,255,0)');
+      ctx.fillStyle = waveGrad;
+      ctx.fillRect(0, 0, w, waveY + 20);
       break;
     }
     case 'vortex': {
@@ -4470,6 +4599,28 @@ function displayShop() {
       const pctx = previewCanvas.getContext('2d');
       drawBoardCardFrame(pctx, id, 0, 100);
       el.appendChild(previewCanvas);
+      // Audio preview button for board soundtrack
+      if (BOARD_MUSIC[id]) {
+        const audioBtn = document.createElement('button');
+        audioBtn.className = 'shopAudioPreviewBtn';
+        audioBtn.textContent = '🔊 Preview';
+        audioBtn.dataset.boardId = id;
+        audioBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          sound.init();
+          // Toggle: if already previewing this board, stop it
+          const allBtns = shopGrid.querySelectorAll('.shopAudioPreviewBtn');
+          const wasPlaying = audioBtn.classList.contains('playing');
+          allBtns.forEach(b => { b.classList.remove('playing'); b.textContent = '🔊 Preview'; });
+          sound.stopPreview();
+          if (!wasPlaying) {
+            audioBtn.classList.add('playing');
+            audioBtn.textContent = '⏹ Stop';
+            sound.previewBoardMusic(id);
+          }
+        });
+        el.appendChild(audioBtn);
+      }
     } else if (currentShopTab === 'trails') {
       const previewCanvas = document.createElement('canvas');
       previewCanvas.width = 100;
@@ -4562,6 +4713,8 @@ function displayShop() {
   if (shopPreviewAnimFrame) { cancelAnimationFrame(shopPreviewAnimFrame); shopPreviewAnimFrame = null; }
   if (shopBoardAnimFrame) { cancelAnimationFrame(shopBoardAnimFrame); shopBoardAnimFrame = null; }
   if (shopBoardPreviewAnimFrame) { cancelAnimationFrame(shopBoardPreviewAnimFrame); shopBoardPreviewAnimFrame = null; }
+  // Stop any audio previews when switching tabs
+  sound.stopPreview();
   // Clear board card animation cache when switching tabs
   if (drawBoardCardFrame._cache) drawBoardCardFrame._cache = {};
   if (currentShopTab === 'trails') {
@@ -5089,7 +5242,7 @@ const btnBackFromProfile = document.getElementById('btnBackFromProfile');
 
 if (btnBackFromSettings) btnBackFromSettings.addEventListener('click', () => { settingsPage.classList.remove('active'); welcomePage.classList.add('active'); });
 if (btnResetKeybinds) btnResetKeybinds.addEventListener('click', () => { keybinds = { ...DEFAULT_KEYBINDS }; saveKeybinds(keybinds); displayKeybinds(); updateControlsDisplay(); });
-if (btnBackFromShop) btnBackFromShop.addEventListener('click', () => { if (shopTrailAnimFrame) { cancelAnimationFrame(shopTrailAnimFrame); shopTrailAnimFrame = null; } shopPage.classList.remove('active'); welcomePage.classList.add('active'); });
+if (btnBackFromShop) btnBackFromShop.addEventListener('click', () => { if (shopTrailAnimFrame) { cancelAnimationFrame(shopTrailAnimFrame); shopTrailAnimFrame = null; } if (shopBoardAnimFrame) { cancelAnimationFrame(shopBoardAnimFrame); shopBoardAnimFrame = null; } sound.stopPreview(); shopPage.classList.remove('active'); welcomePage.classList.add('active'); });
 if (btnBackFromRanked) btnBackFromRanked.addEventListener('click', () => { cancelRankedQueue(); rankedPage.classList.remove('active'); welcomePage.classList.add('active'); });
 if (btnFindRankedMatch) btnFindRankedMatch.addEventListener('click', findRankedMatch);
 if (btnCancelQueue) btnCancelQueue.addEventListener('click', cancelRankedQueue);
@@ -5205,15 +5358,8 @@ btnPlayAgain.addEventListener('click', playAgain);
 btnGameOverBackToMenu.addEventListener('click', gameOverBackToMenu);
 btnLeaderboardGameOver.addEventListener('click', showLeaderboardFromGameOver);
 
-// Theme selector
-if (themeOptions) {
-  themeOptions.addEventListener('click', (e) => {
-    const btn = e.target.closest('.themeBtn');
-    if (btn && btn.dataset.theme) {
-      applyTheme(btn.dataset.theme);
-    }
-  });
-}
+// Theme selector removed — boards now have individual soundtracks via the shop
+// (themeOptions event listener removed)
 
 // Chat event listeners
 if (lobbyChatSend) lobbyChatSend.addEventListener('click', () => sendChat(lobbyChatInput));

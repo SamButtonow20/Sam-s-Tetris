@@ -2784,6 +2784,32 @@ canvas:hover {
 .shopItemBtn.equipped { background: var(--color-accent-pink); color: #fff; cursor: default; }
 .shopItemBtn.locked { background: #333; color: #666; cursor: not-allowed; }
 
+/* Audio Preview Button for Board Themes */
+.shopAudioPreviewBtn {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  margin-top: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: rgba(0, 217, 255, 0.08);
+  color: var(--color-accent-cyan);
+  font-family: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+.shopAudioPreviewBtn:hover {
+  background: rgba(0, 217, 255, 0.18);
+  border-color: var(--color-accent-cyan);
+}
+.shopAudioPreviewBtn.playing {
+  background: rgba(255, 0, 110, 0.15);
+  border-color: var(--color-accent-pink);
+  color: var(--color-accent-pink);
+}
+
 /* Shop Category Tabs */
 .shopTabs {
   display: flex;
