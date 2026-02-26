@@ -1,12 +1,12 @@
 # Deploy to Railway.app (Free & Easy!)
 
-Railway.app is the simplest way to host your multiplayer Tetris game for your friend.
+Railway.app is the simplest way to host your multiplayer Sam Stackerz game for your friend.
 
 ## Step-by-Step Instructions
 
 ### 1. Prepare Your GitHub Repository
 
-First, push your Tetris project to GitHub:
+First, push your Sam Stackerz project to GitHub:
 
 ```bash
 git init

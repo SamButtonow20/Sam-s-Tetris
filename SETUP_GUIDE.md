@@ -1,4 +1,4 @@
-# Tetris - Multiplayer Setup Guide
+# Sam Stackerz - Multiplayer Setup Guide
 
 ## Option 1: Web Version (Easiest for Online Play) ⚡
 

@@ -28,7 +28,7 @@ COLORS_MAP = {
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Tetris - Web Version (Desktop)')
+pygame.display.set_caption('Sam Stackerz - Desktop')
 clock = pygame.time.Clock()
 font_small = pygame.font.SysFont('Consolas', 16)
 font_medium = pygame.font.SysFont('Consolas', 20)
@@ -371,7 +371,7 @@ def main():
         # Draw info panel
         info_x = BOARD_W + 20
         texts = [
-            ("TETRIS", 24, (255, 255, 255)),
+            ("SAM STACKERZ", 24, (255, 255, 255)),
             ("", 16, (255, 255, 255)),
             (f"Score: {game.score}", 16, (0, 255, 255)),
             (f"Lines: {game.lines}", 16, (0, 255, 255)),

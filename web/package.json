@@ -1,7 +1,7 @@
 {
-  "name": "sam-tetris-web",
+  "name": "sam-stackerz-web",
   "version": "1.0.0",
-  "description": "Multiplayer Tetris game",
+  "description": "Multiplayer Sam Stackerz game",
   "private": true,
   "type": "commonjs",
   "engines": {

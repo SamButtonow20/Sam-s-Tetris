@@ -1,6 +1,6 @@
-# Complete Guide: Play Tetris Online with Your Friend
+# Complete Guide: Play Sam Stackerz Online with Your Friend
 
-This guide will help you share your Tetris game with your friend in another state.
+This guide will help you share your Sam Stackerz game with your friend in another state.
 
 ## 📋 Overview
 

@@ -25,7 +25,7 @@ WINDOW_H = BOARD_H
 
 pygame.init()
 screen = pygame.display.set_mode((WINDOW_W, WINDOW_H))
-pygame.display.set_caption("Tetris VS AI")
+pygame.display.set_caption("Sam Stackerz VS AI")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("Consolas", 20)
 big_font = pygame.font.SysFont("Consolas", 34)
@@ -1379,7 +1379,7 @@ def main():
         border_col = (120, 80, 255) if state != STATE_GAMEOVER else (255, 80, 80)
 
         if state == STATE_START:
-            draw_center_overlay(screen, "TETRIS", "Modes ↑/↓ | AI diff ←/→ | Enter start")
+            draw_center_overlay(screen, "SAM STACKERZ", "Modes ↑/↓ | AI diff ←/→ | Enter start")
             y0 = WINDOW_H // 2 + 30
             for i, mode in enumerate(menu_modes):
                 selected = (i == menu_idx)

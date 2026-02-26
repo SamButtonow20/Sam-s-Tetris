@@ -542,7 +542,7 @@ wss.on('connection', (ws) => {
     useDB = false;
   }
   server.listen(PORT, HOST, () => {
-    console.log(`Sam Tetris Web running at http://127.0.0.1:${PORT}`);
+    console.log(`Sam Stackerz Web running at http://127.0.0.1:${PORT}`);
     console.log(`WebSocket endpoint: ws://127.0.0.1:${PORT}`);
   });
 })();

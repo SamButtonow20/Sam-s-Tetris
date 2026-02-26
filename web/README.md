@@ -1,4 +1,4 @@
-# Sam Tetris Web (Browser Version)
+# Sam Stackerz Web (Browser Version)
 
 This is a browser-based version with:
 - Classic single-player mode

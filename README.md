@@ -1,6 +1,6 @@
-# Tetris (Pygame)
+# Sam Stackerz (Pygame)
 
-Simple Tetris implemented with Pygame.
+Sam Stackerz — a block-stacking game built with Pygame. Play at samstackerz.com
 
 Requirements
 - Python 3.8+

@@ -149,7 +149,7 @@ def serve(host: str, port: int):
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((host, port))
     server.listen(64)
-    print(f"Tetris online server listening on {host}:{port}")
+    print(f"Sam Stackerz online server listening on {host}:{port}")
 
     try:
         while True:
@@ -163,7 +163,7 @@ def serve(host: str, port: int):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Tetris online relay server")
+    parser = argparse.ArgumentParser(description="Sam Stackerz online relay server")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()

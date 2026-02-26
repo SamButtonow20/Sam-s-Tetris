@@ -1,6 +1,6 @@
 # 📦 Distribution Checklist
 
-Use this checklist to prepare your Tetris game for sharing.
+Use this checklist to prepare your Sam Stackerz game for sharing.
 
 ## ✅ Pre-Distribution Checks
 

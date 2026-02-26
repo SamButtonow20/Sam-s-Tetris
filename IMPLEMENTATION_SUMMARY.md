@@ -2,7 +2,7 @@
 
 ## What's Ready
 
-Your Tetris game now has **complete multiplayer online support** with documentation for distribution.
+Your Sam Stackerz game now has **complete multiplayer online support** with documentation for distribution.
 
 ### ✅ Features Implemented
 

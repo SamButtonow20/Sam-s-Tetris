@@ -1,8 +1,8 @@
-# 🎉 Your Tetris Game is Ready for Online Multiplayer!
+# 🎉 Your Sam Stackerz Game is Ready for Online Multiplayer!
 
 ## What I've Set Up For You
 
-I've created everything you need to play Tetris online with your friend. Here's what you now have:
+I've created everything you need to play Sam Stackerz online with your friend. Here's what you now have:
 
 ### 📚 Complete Documentation
 

@@ -1,7 +1,7 @@
-# Tetris Desktop Build Script for Windows
+# Sam Stackerz Desktop Build Script for Windows
 
 Write-Host "======================================" -ForegroundColor Cyan
-Write-Host "Tetris Desktop Build Script" -ForegroundColor Cyan
+Write-Host "Sam Stackerz Desktop Build Script" -ForegroundColor Cyan
 Write-Host "======================================" -ForegroundColor Cyan
 
 # Check if virtual environment exists
