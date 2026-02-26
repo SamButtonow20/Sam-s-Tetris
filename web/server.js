@@ -257,7 +257,7 @@ const server = http.createServer(async (req, res) => {
         let prof = row.profile || {};
         const { profile } = body;
         if (profile) {
-          if (typeof profile.coins === 'number') prof.coins = Math.max(0, profile.coins);
+          if (typeof profile.coins === 'number') prof.coins = Math.max(prof.coins || 0, profile.coins);
           if (Array.isArray(profile.ownedSkins)) prof.ownedSkins = profile.ownedSkins;
           if (typeof profile.equippedSkin === 'string') prof.equippedSkin = profile.equippedSkin;
           if (Array.isArray(profile.ownedBoards)) prof.ownedBoards = profile.ownedBoards;
@@ -281,7 +281,7 @@ const server = http.createServer(async (req, res) => {
         if (!userEntry) return sendJSON(res, 401, { error: 'Invalid session' });
         const { profile } = body;
         if (profile) {
-          if (typeof profile.coins === 'number') userEntry.profile.coins = Math.max(0, profile.coins);
+          if (typeof profile.coins === 'number') userEntry.profile.coins = Math.max(userEntry.profile.coins || 0, profile.coins);
           if (Array.isArray(profile.ownedSkins)) userEntry.profile.ownedSkins = profile.ownedSkins;
           if (typeof profile.equippedSkin === 'string') userEntry.profile.equippedSkin = profile.equippedSkin;
           if (Array.isArray(profile.ownedBoards)) userEntry.profile.ownedBoards = profile.ownedBoards;

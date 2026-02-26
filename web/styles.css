@@ -2723,7 +2723,7 @@ canvas:hover {
 
 .shopGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 14px;
 }
 .shopItem {
@@ -2750,6 +2750,13 @@ canvas:hover {
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.2);
   image-rendering: pixelated;
+}
+.shopItemPreview.shopItemPreviewLarge {
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
+  background: #0a0e20;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .shopItemName { font-weight: bold; color: #fff; margin-bottom: 2px; font-size: 0.9rem; }
 .shopItemDesc { color: var(--color-text-dim); font-size: 0.72rem; margin-bottom: 6px; min-height: 2em; }

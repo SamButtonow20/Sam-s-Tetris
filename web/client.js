@@ -677,21 +677,21 @@ function earnGameCoins(g, won = false) {
 
 // ==================== PIECE SKINS SYSTEM ====================
 const PIECE_SKINS = {
-  default:   { name: 'Default',    price: 0,   style: 'flat',      desc: 'Classic flat blocks' },
-  rounded:   { name: 'Rounded',    price: 50,  style: 'rounded',   desc: 'Smooth rounded corners' },
-  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro pixel art style' },
-  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Neon glow effect' },
-  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Smooth color gradients' },
-  glass:     { name: 'Glass',      price: 150, style: 'glass',     desc: 'Transparent glass look' },
-  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Shiny metal finish' },
-  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting rainbow colors' },
-  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Polka-dot pattern overlay' },
-  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'Hollow outline blocks' },
-  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Sweet candy swirl effect' },
-  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'Smoldering hot blocks' },
-  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Frozen crystalline look' },
-  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Swirling cosmic dust' },
-  gold:      { name: '24K Gold',   price: 500, style: 'gold',      desc: 'Luxurious solid gold' },
+  default:   { name: 'Default',    price: 0,   style: 'flat',      desc: 'Classic flat blocks',            color1: null, color2: null },
+  rounded:   { name: 'Rounded',    price: 50,  style: 'rounded',   desc: 'Smooth rounded corners',         color1: '#42a5f5', color2: '#66bb6a' },
+  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro 8-bit pixel art',          color1: '#e53935', color2: '#43a047' },
+  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Vibrant neon glow',              color1: '#00e5ff', color2: '#76ff03' },
+  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Smooth color fades',             color1: '#ab47bc', color2: '#26c6da' },
+  glass:     { name: 'Glass',      price: 150, style: 'glass',     desc: 'Transparent crystal look',       color1: '#80deea', color2: '#ce93d8' },
+  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Polished chrome finish',         color1: '#b0bec5', color2: '#90a4ae' },
+  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting spectrum colors',       color1: '#ff1744', color2: '#651fff' },
+  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Funky polka-dot pattern',        color1: '#ff9100', color2: '#ffea00' },
+  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'Hollow wireframe blocks',        color1: '#69f0ae', color2: '#40c4ff' },
+  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Sweet bubblegum swirls',         color1: '#f06292', color2: '#ba68c8' },
+  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'Molten lava core',               color1: '#ff3d00', color2: '#ff6e40' },
+  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Frozen arctic crystal',          color1: '#4fc3f7', color2: '#b3e5fc' },
+  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Swirling cosmic nebula',         color1: '#7c4dff', color2: '#ea80fc' },
+  gold:      { name: '24K Gold',   price: 500, style: 'gold',      desc: 'Luxurious solid gold',           color1: '#ffd700', color2: '#ffab00' },
 };
 
 // ==================== BOARD THEMES SYSTEM ====================
@@ -3825,6 +3825,117 @@ function drawShopPreview() {
   }
 }
 
+// Draw a single frame of the trail card animation
+function drawTrailCardFrame(ctx, trailId, time) {
+  ctx.clearRect(0, 0, 100, 100);
+  ctx.fillStyle = '#0a0e20';
+  ctx.fillRect(0, 0, 100, 100);
+
+  if (trailId === 'none') {
+    // Draw a static piece with no trail
+    ctx.fillStyle = '#333';
+    ctx.font = '11px Consolas';
+    ctx.textAlign = 'center';
+    ctx.fillText('No trail', 50, 55);
+    return;
+  }
+
+  // Animate a piece falling and spawning trail particles
+  const cycleTime = 2000; // 2 second cycle
+  const t = time % cycleTime;
+  const dropPhase = t / cycleTime; // 0..1
+  
+  // Piece position (falls from top to bottom)
+  const pieceY = -10 + dropPhase * 110;
+  const pieceX = 40;
+  const blockSz = 10;
+  
+  // Draw trail particles behind the piece
+  const trailColors = {
+    spark: ['#ffe066', '#ffcc00', '#ff9900'],
+    flame: ['#ff6600', '#ff3300', '#ff9900', '#ffcc00'],
+    ice_trail: ['#80d8ff', '#40c4ff', '#b3e5fc', '#e0f7fa'],
+    confetti: ['#ff4081', '#536dfe', '#69f0ae', '#ffd740', '#e040fb'],
+    lightning: ['#b3e5fc', '#82b1ff', '#e8eaf6', '#ffffff'],
+    stardust: ['#fff9c4', '#fff59d', '#ffe082', '#ffffff'],
+    toxic: ['#00ff41', '#76ff03', '#64dd17', '#00e676'],
+    shockwave: ['#00e5ff', '#18ffff', '#84ffff', '#00b8d4'],
+  };
+  const colors = trailColors[trailId] || ['#ffffff'];
+  
+  // Spawn trail dots along the path
+  const numParticles = 12;
+  for (let i = 0; i < numParticles; i++) {
+    const particleAge = (dropPhase - i * 0.06);
+    if (particleAge < 0 || particleAge > 0.7) continue;
+    const py = pieceY - (i * 8) + Math.sin(time / 200 + i * 1.3) * 3;
+    const px = pieceX + blockSz / 2 + Math.sin(time / 150 + i * 0.8) * 6;
+    const alpha = Math.max(0, 0.8 - particleAge * 1.5);
+    const size = (3 - particleAge * 3) * (trailId === 'shockwave' ? 1.5 : 1);
+    const col = colors[i % colors.length];
+    
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 6;
+    
+    if (trailId === 'lightning') {
+      // Jagged line segments
+      ctx.beginPath();
+      ctx.moveTo(px - 3, py - 2);
+      ctx.lineTo(px + 1, py - 5);
+      ctx.lineTo(px - 1, py + 2);
+      ctx.lineTo(px + 3, py + 5);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    } else if (trailId === 'confetti') {
+      // Small squares at various angles
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(time / 300 + i);
+      ctx.fillRect(-2, -2, 4, 4);
+      ctx.restore();
+    } else {
+      // Default: circles
+      ctx.beginPath();
+      ctx.arc(px, py, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.globalAlpha = 1;
+  // Draw the falling piece (I-piece vertical)
+  const savedSkin = equippedSkin;
+  equippedSkin = 'default';
+  const bsc = blockSz / CELL;
+  ctx.save();
+  ctx.scale(bsc, bsc);
+  for (let r = 0; r < 4; r++) {
+    const cellY = (pieceY + r * blockSz) / bsc / CELL;
+    const cellX = pieceX / bsc / CELL;
+    if (pieceY + r * blockSz > -blockSz && pieceY + r * blockSz < 100) {
+      drawCell(ctx, Math.round(cellX), Math.round(cellY), '1');
+    }
+  }
+  ctx.restore();
+  equippedSkin = savedSkin;
+}
+
+// Animation loop for trail preview cards in the shop
+let shopTrailAnimFrame = null;
+function animateShopTrailPreviews() {
+  const canvases = document.querySelectorAll('.shopTrailPreview');
+  if (canvases.length === 0) { shopTrailAnimFrame = null; return; }
+  const time = performance.now();
+  canvases.forEach(canvas => {
+    const ctx = canvas.getContext('2d');
+    drawTrailCardFrame(ctx, canvas.dataset.trailId, time);
+  });
+  shopTrailAnimFrame = requestAnimationFrame(animateShopTrailPreviews);
+}
+
 function displayShop() {
   if (!shopGrid) return;
   shopGrid.innerHTML = '';
@@ -3849,63 +3960,110 @@ function displayShop() {
     // Create preview
     if (currentShopTab === 'skins') {
       const previewCanvas = document.createElement('canvas');
-      previewCanvas.width = 60;
-      previewCanvas.height = 60;
-      previewCanvas.className = 'shopItemPreview';
+      previewCanvas.width = 100;
+      previewCanvas.height = 100;
+      previewCanvas.className = 'shopItemPreview shopItemPreviewLarge';
       const pctx = previewCanvas.getContext('2d');
+      // Draw dark background
+      pctx.fillStyle = '#0a0e20';
+      pctx.fillRect(0, 0, 100, 100);
+      // Draw a T-piece shape using this skin
       const savedSkin = equippedSkin;
       equippedSkin = id;
-      const sampleColors = ['1', '2', '3', '4'];
-      for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) {
-        pctx.save();
-        pctx.scale(60 / (2 * CELL), 60 / (2 * CELL));
-        drawCell(pctx, c, r, sampleColors[(r * 2 + c) % 4]);
-        pctx.restore();
+      // Use the skin's signature colors, or fallback to theme colors
+      const skinData = PIECE_SKINS[id];
+      const skinCol1 = skinData.color1 || COLORS['3'] || '#dc3cff';
+      const skinCol2 = skinData.color2 || COLORS['1'] || '#00ffff';
+      const saveCols = { ...COLORS };
+      // Temporarily override colors to show skin's palette
+      if (skinData.color1) {
+        COLORS['1'] = skinData.color1;
+        COLORS['2'] = skinData.color2 || skinData.color1;
+        COLORS['3'] = skinData.color1;
+        COLORS['4'] = skinData.color2 || skinData.color1;
       }
+      // Scale and center a T-piece
+      const cellSz = 22;
+      const offsetX = (100 - 3 * cellSz) / 2;
+      const offsetY = (100 - 2 * cellSz) / 2;
+      pctx.save();
+      const sc = cellSz / CELL;
+      pctx.translate(offsetX, offsetY);
+      pctx.scale(sc, sc);
+      // T-piece: row0=[.X.], row1=[XXX]
+      drawCell(pctx, 1, 0, '3');
+      drawCell(pctx, 0, 1, '3');
+      drawCell(pctx, 1, 1, '3');
+      drawCell(pctx, 2, 1, '3');
+      pctx.restore();
       equippedSkin = savedSkin;
+      Object.assign(COLORS, saveCols);
+      // Add subtle border glow using skin color
+      if (skinData.color1) {
+        pctx.shadowColor = skinData.color1;
+        pctx.shadowBlur = 12;
+        pctx.strokeStyle = skinData.color1 + '40';
+        pctx.lineWidth = 2;
+        pctx.strokeRect(4, 4, 92, 92);
+        pctx.shadowBlur = 0;
+      }
       el.appendChild(previewCanvas);
     } else if (currentShopTab === 'boards') {
       const previewCanvas = document.createElement('canvas');
-      previewCanvas.width = 60;
-      previewCanvas.height = 60;
-      previewCanvas.className = 'shopItemPreview';
+      previewCanvas.width = 100;
+      previewCanvas.height = 100;
+      previewCanvas.className = 'shopItemPreview shopItemPreviewLarge';
       const pctx = previewCanvas.getContext('2d');
       const theme = THEMES[currentThemeName];
+      // Draw board background
       pctx.fillStyle = theme.bg;
-      pctx.fillRect(0, 0, 60, 60);
-      if (item.bgOverlay) { pctx.fillStyle = item.bgOverlay; pctx.fillRect(0, 0, 60, 60); }
+      pctx.fillRect(0, 0, 100, 100);
+      if (item.bgOverlay) { pctx.fillStyle = item.bgOverlay; pctx.fillRect(0, 0, 100, 100); }
+      // Draw grid if applicable
       if (!item.noGrid) {
         pctx.strokeStyle = item.borderColor || theme.grid;
-        for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) pctx.strokeRect(c * 10, r * 10, 10, 10);
+        pctx.lineWidth = 0.5;
+        const gc = 10;
+        for (let r = 0; r < gc; r++) for (let c = 0; c < gc; c++) pctx.strokeRect(c * 10, r * 10, 10, 10);
+      }
+      // Draw some blocks sitting at the bottom to show theme context
+      const savedSkin = equippedSkin;
+      equippedSkin = 'default';
+      const bs = 10;
+      const bsc = bs / CELL;
+      pctx.save();
+      pctx.scale(bsc, bsc);
+      // Row of blocks at bottom
+      for (let c = 0; c < 10; c++) {
+        if (c !== 3 && c !== 7) drawCell(pctx, c, 8, String((c % 7) + 1));
+      }
+      // Partial row
+      for (let c = 0; c < 6; c++) {
+        drawCell(pctx, c, 7, String((c % 5) + 1));
+      }
+      // L-piece dropping
+      drawCell(pctx, 7, 4, '7'); drawCell(pctx, 7, 5, '7'); drawCell(pctx, 7, 6, '7'); drawCell(pctx, 8, 6, '7');
+      pctx.restore();
+      equippedSkin = savedSkin;
+      // Add colored border glow
+      if (item.borderColor) {
+        pctx.shadowColor = item.borderColor;
+        pctx.shadowBlur = 8;
+        pctx.strokeStyle = item.borderColor + '60';
+        pctx.lineWidth = 2;
+        pctx.strokeRect(2, 2, 96, 96);
+        pctx.shadowBlur = 0;
       }
       el.appendChild(previewCanvas);
     } else if (currentShopTab === 'trails') {
       const previewCanvas = document.createElement('canvas');
-      previewCanvas.width = 60;
-      previewCanvas.height = 60;
-      previewCanvas.className = 'shopItemPreview';
+      previewCanvas.width = 100;
+      previewCanvas.height = 100;
+      previewCanvas.className = 'shopItemPreview shopItemPreviewLarge shopTrailPreview';
+      previewCanvas.dataset.trailId = id;
       const pctx = previewCanvas.getContext('2d');
-      pctx.fillStyle = '#111';
-      pctx.fillRect(0, 0, 60, 60);
-      if (id !== 'none') {
-        for (let i = 0; i < 5; i++) {
-          const alpha = 0.3 + i * 0.14;
-          const px = 10 + i * 10;
-          const py = 20 + Math.sin(i * 1.2) * 8;
-          switch(id) {
-            case 'spark': pctx.fillStyle = `rgba(255,220,100,${alpha})`; break;
-            case 'flame': pctx.fillStyle = `rgba(255,120,0,${alpha})`; break;
-            case 'ice_trail': pctx.fillStyle = `rgba(150,220,255,${alpha})`; break;
-            case 'confetti': pctx.fillStyle = `hsla(${i*72},90%,60%,${alpha})`; break;
-            case 'lightning': pctx.fillStyle = `rgba(180,200,255,${alpha})`; break;
-            case 'stardust': pctx.fillStyle = `rgba(255,255,200,${alpha})`; break;
-            case 'toxic': pctx.fillStyle = `rgba(0,255,60,${alpha})`; break;
-            case 'shockwave': pctx.fillStyle = `rgba(0,200,255,${alpha})`; break;
-            default: pctx.fillStyle = `rgba(255,255,255,${alpha})`;
-          }
-          pctx.beginPath(); pctx.arc(px, py, 3, 0, Math.PI * 2); pctx.fill();
-        }
-      }
+      // Draw initial frame
+      drawTrailCardFrame(pctx, id, 0);
       el.appendChild(previewCanvas);
     } else if (currentShopTab === 'titles') {
       const titlePreview = document.createElement('div');
@@ -3982,6 +4140,12 @@ function displayShop() {
   });
 
   drawShopPreview();
+
+  // Start trail preview animations if on trails tab
+  if (shopTrailAnimFrame) { cancelAnimationFrame(shopTrailAnimFrame); shopTrailAnimFrame = null; }
+  if (currentShopTab === 'trails') {
+    animateShopTrailPreviews();
+  }
 }
 
 function showShopPage() {
@@ -4500,7 +4664,7 @@ const btnBackFromProfile = document.getElementById('btnBackFromProfile');
 
 if (btnBackFromSettings) btnBackFromSettings.addEventListener('click', () => { settingsPage.classList.remove('active'); welcomePage.classList.add('active'); });
 if (btnResetKeybinds) btnResetKeybinds.addEventListener('click', () => { keybinds = { ...DEFAULT_KEYBINDS }; saveKeybinds(keybinds); displayKeybinds(); updateControlsDisplay(); });
-if (btnBackFromShop) btnBackFromShop.addEventListener('click', () => { shopPage.classList.remove('active'); welcomePage.classList.add('active'); });
+if (btnBackFromShop) btnBackFromShop.addEventListener('click', () => { if (shopTrailAnimFrame) { cancelAnimationFrame(shopTrailAnimFrame); shopTrailAnimFrame = null; } shopPage.classList.remove('active'); welcomePage.classList.add('active'); });
 if (btnBackFromRanked) btnBackFromRanked.addEventListener('click', () => { cancelRankedQueue(); rankedPage.classList.remove('active'); welcomePage.classList.add('active'); });
 if (btnFindRankedMatch) btnFindRankedMatch.addEventListener('click', findRankedMatch);
 if (btnCancelQueue) btnCancelQueue.addEventListener('click', cancelRankedQueue);
