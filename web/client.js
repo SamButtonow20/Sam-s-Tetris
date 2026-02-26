@@ -1198,6 +1198,10 @@ class Game {
     this.softDrop = false;
     this.lastMoveWasRotate = false;
     this.elapsedMs = 0; // Track total game time for difficulty progression
+    // Visual interpolation state (purely cosmetic, no gameplay impact)
+    this.visualYOffset = 0; // pixel offset that decays toward 0
+    this.visualXOffset = 0;
+    this.rotAnim = null; // { progress: 0..1, cells: [{fx,fy,tx,ty,v}] }
   }
 
   nextKind() {
@@ -1224,6 +1228,9 @@ class Game {
     this.current = piece;
     this.lastMoveWasRotate = false;
     this.groundedMs = 0;
+    this.visualYOffset = 0;
+    this.visualXOffset = 0;
+    this.rotAnim = null;
     if (this.pieceStats[piece.kind] !== undefined) this.pieceStats[piece.kind]++;
     if (this.collide(this.current, 0, 0)) this.gameOver = true;
   }
@@ -1249,10 +1256,12 @@ class Game {
 
   move(dx, dy) {
     if (!this.collide(this.current, dx, dy)) {
+      if (dx !== 0) this.visualXOffset -= dx * CELL;
       this.current.x += dx;
       this.current.y += dy;
       this.groundedMs = 0;
       this.lastMoveWasRotate = false;
+      this.rotAnim = null;
       if (dx !== 0) sound.playMove();
       if (replayRecorder && dx !== 0) replayRecorder.record(dx < 0 ? 'left' : 'right');
       return true;
@@ -1261,6 +1270,12 @@ class Game {
   }
 
   rotateCurrent() {
+    // Capture old cell positions for smooth rotation animation
+    const oldCells = [];
+    const oldShape = this.shape(this.current);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+      if (oldShape[r][c] !== '.') oldCells.push({ x: this.current.x + c, y: this.current.y + r, v: oldShape[r][c] });
+    }
     const newRot = (this.current.rotation + 1) % 4;
     const kicks = [[0, 0], [-1, 0], [1, 0], [-2, 0], [2, 0], [0, -1]];
     for (const [dx, dy] of kicks) {
@@ -1270,6 +1285,18 @@ class Game {
         this.current.rotation = newRot;
         this.lastMoveWasRotate = true;
         this.groundedMs = 0;
+        // Build rotation animation: lerp old cells -> new cells
+        const newCells = [];
+        const newShape = this.shape(this.current);
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+          if (newShape[r][c] !== '.') newCells.push({ x: this.current.x + c, y: this.current.y + r, v: newShape[r][c] });
+        }
+        this.rotAnim = { progress: 0, cells: [] };
+        for (let i = 0; i < Math.min(oldCells.length, newCells.length); i++) {
+          this.rotAnim.cells.push({ fx: oldCells[i].x, fy: oldCells[i].y, tx: newCells[i].x, ty: newCells[i].y, v: newCells[i].v });
+        }
+        this.visualXOffset = 0;
+        this.visualYOffset = 0;
         sound.playRotate();
         if (replayRecorder) replayRecorder.record('rotate');
         return true;
@@ -1281,6 +1308,9 @@ class Game {
   hardDrop() {
     while (!this.collide(this.current, 0, 1)) this.current.y += 1;
     this.groundedMs = this.lockDelayMs;
+    this.visualYOffset = 0; // instant snap for hard drop
+    this.visualXOffset = 0;
+    this.rotAnim = null;
     sound.playDrop();
     if (replayRecorder) replayRecorder.record('drop');
   }
@@ -1459,6 +1489,7 @@ class Game {
       this.fallMs -= speed;
       if (!this.collide(this.current, 0, 1)) {
         this.current.y += 1;
+        this.visualYOffset -= CELL; // smooth visual drop
         this.groundedMs = 0;
       } else {
         this.groundedMs += speed;
@@ -1467,6 +1498,20 @@ class Game {
           break;
         }
       }
+    }
+  }
+
+  // Decay visual offsets toward 0 each render frame (called outside of game logic)
+  lerpVisuals(dt) {
+    const factor = Math.pow(0.0001, dt / 100); // fast decay: ~3 frames to resolve
+    this.visualYOffset *= factor;
+    this.visualXOffset *= factor;
+    if (Math.abs(this.visualYOffset) < 0.5) this.visualYOffset = 0;
+    if (Math.abs(this.visualXOffset) < 0.5) this.visualXOffset = 0;
+    // Advance rotation animation
+    if (this.rotAnim) {
+      this.rotAnim.progress += dt / 80; // 80ms total duration
+      if (this.rotAnim.progress >= 1) this.rotAnim = null;
     }
   }
 
@@ -3099,14 +3144,28 @@ function drawBoardAnimation(ctx, w, h, timeOverride) {
   ctx.restore();
 }
 
-function drawPiece(ctx, piece) {
+function drawPiece(ctx, piece, gameRef) {
+  // If rotation animation is active, draw interpolated cells
+  if (gameRef && gameRef.rotAnim && gameRef.rotAnim.progress < 1) {
+    const t = gameRef.rotAnim.progress;
+    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // ease-in-out
+    for (const c of gameRef.rotAnim.cells) {
+      const x = c.fx + (c.tx - c.fx) * ease;
+      const y = c.fy + (c.ty - c.fy) * ease;
+      if (y >= 0) drawCell(ctx, x, y, c.v);
+    }
+    return;
+  }
+  // Apply visual offsets for smooth drop/move
+  const xOff = gameRef ? gameRef.visualXOffset / CELL : 0;
+  const yOff = gameRef ? gameRef.visualYOffset / CELL : 0;
   const shape = piece.rotations[piece.rotation];
   for (let r = 0; r < 4; r++) {
     for (let c = 0; c < 4; c++) {
       const v = shape[r][c];
       if (v === '.') continue;
-      const x = piece.x + c;
-      const y = piece.y + r;
+      const x = piece.x + c + xOff;
+      const y = piece.y + r + yOff;
       if (y >= 0) drawCell(ctx, x, y, v);
     }
   }
@@ -3318,8 +3377,12 @@ function loop(ts) {
   // Determine which game to render (replay mode uses replayPlayer.game)
   const renderGame = mode === 'replay' && replayPlayer ? replayPlayer.game : game;
 
+  // Smoothly decay visual offsets for interpolated movement
+  renderGame.lerpVisuals(dt);
+  if (aiGame) aiGame.lerpVisuals(dt);
+
   drawGrid(bctx, renderGame.grid);
-  if (!renderGame.gameOver) drawPiece(bctx, renderGame.current);
+  if (!renderGame.gameOver) drawPiece(bctx, renderGame.current, renderGame);
   drawParticles(bctx);
   drawTrailParticles(bctx);
   drawFloatingTexts(bctx);
@@ -3339,7 +3402,7 @@ function loop(ts) {
     }
   } else if (mode === 'ai' && aiGame) {
     drawGrid(octxes[0], aiGame.grid);
-    if (!aiGame.gameOver) drawPiece(octxes[0], aiGame.current);
+    if (!aiGame.gameOver) drawPiece(octxes[0], aiGame.current, aiGame);
     drawNextPiece(nextCtxes[1], aiGame.next, next2Canvas.width, next2Canvas.height);
     oppScoreEls[0].textContent = aiGame.score;
     oppLinesEls[0].textContent = aiGame.lines;
