@@ -679,18 +679,18 @@ function earnGameCoins(g, won = false) {
 const PIECE_SKINS = {
   default:   { name: 'Default',    price: 0,   style: 'flat',      desc: 'Classic flat blocks',            color1: null, color2: null },
   rounded:   { name: 'Rounded',    price: 50,  style: 'rounded',   desc: 'Smooth rounded corners',         color1: '#0088ff', color2: '#00ffbb' },
-  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro 8-bit pixel art',          color1: '#00ff00', color2: '#ffaa00' },
-  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Vibrant neon glow',              color1: '#ff00ff', color2: '#00ffff' },
-  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Smooth color fades',             color1: '#ff6600', color2: '#9900ff' },
+  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro 8-bit pixel art',          color1: '#aaff00', color2: '#ff00aa' },
+  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Pulsing neon glow',              color1: '#ffff00', color2: '#ff00ff' },
+  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Blood-to-gold fire fade',        color1: '#ff0000', color2: '#ffd700' },
   glass:     { name: 'Glass',      price: 150, style: 'glass',     desc: 'Transparent crystal look',       color1: '#ffffff', color2: '#dd88ff' },
-  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Polished chrome finish',         color1: '#c0c0c0', color2: '#4488bb' },
-  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting spectrum colors',       color1: '#ff0000', color2: '#0000ff' },
-  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Funky polka-dot pattern',        color1: '#ffee00', color2: '#ff4466' },
-  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'Hollow wireframe blocks',        color1: '#39ff14', color2: '#ffffff' },
-  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Sweet bubblegum swirls',         color1: '#ff66b2', color2: '#66ccff' },
-  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'Molten lava core',               color1: '#ffff00', color2: '#cc0000' },
-  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Frozen arctic crystal',          color1: '#eeffff', color2: '#0099dd' },
-  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Swirling cosmic nebula',         color1: '#bb00ff', color2: '#ff0099' },
+  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Rose gold & platinum luxury',    color1: '#ffaa88', color2: '#ccddee' },
+  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting holographic prism',     color1: '#ff3300', color2: '#00ff88' },
+  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Neon polka-dot pop art',         color1: '#00ffcc', color2: '#ff2255' },
+  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'TRON-style wireframe',           color1: '#ffffff', color2: '#00ff00' },
+  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Bubblegum & mint swirl',         color1: '#ff44cc', color2: '#44ffaa' },
+  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'White-hot molten core',          color1: '#ff4400', color2: '#ffee00' },
+  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Cracked frozen crystal',         color1: '#aaeeff', color2: '#0066cc' },
+  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Vivid nebula starfield',         color1: '#ff0088', color2: '#00eeff' },
   gold:      { name: '24K Gold',   price: 500, style: 'gold',      desc: 'Luxurious solid gold',           color1: '#ffd700', color2: '#ff8800' },
 };
 
@@ -2361,27 +2361,48 @@ function drawCell(ctx, x, y, v) {
     case 'pixelated': {
       ctx.fillStyle = color;
       ctx.fillRect(px, py, sz, sz);
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      // Bold pixel grid with scanline effect
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
       const ps = sz / 3;
       for (let gx = 0; gx < 3; gx++) for (let gy = 0; gy < 3; gy++) {
-        ctx.fillRect(px + gx * ps + ps - 0.5, py + gy * ps, 0.5, ps);
-        ctx.fillRect(px + gx * ps, py + gy * ps + ps - 0.5, ps, 0.5);
+        ctx.fillRect(px + gx * ps + ps - 1, py + gy * ps, 1, ps);
+        ctx.fillRect(px + gx * ps, py + gy * ps + ps - 1, ps, 1);
       }
+      // CRT scanline overlay
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      for (let sl = 0; sl < sz; sl += 3) {
+        ctx.fillRect(px, py + sl, sz, 1);
+      }
+      // Bright pixel highlight in center
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillRect(px + ps, py + ps, ps, ps);
       break;
     }
-    case 'glowing':
+    case 'glowing': {
+      // Pulsing outer glow + bright center
+      const pulse = 0.7 + 0.3 * Math.sin(performance.now() / 200 + x * 2 + y * 3);
       ctx.shadowColor = color;
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 12 * pulse;
       ctx.fillStyle = color;
       ctx.fillRect(px, py, sz, sz);
       ctx.shadowBlur = 0;
+      // White-hot inner glow
+      ctx.fillStyle = `rgba(255,255,255,${0.15 + 0.15 * pulse})`;
+      ctx.fillRect(px + 3, py + 3, sz - 6, sz - 6);
       break;
+    }
     case 'gradient': {
+      // Dramatic diagonal fire gradient
       const grad = ctx.createLinearGradient(px, py, px + sz, py + sz);
-      grad.addColorStop(0, color);
-      grad.addColorStop(1, shadeColor(color, -40));
+      grad.addColorStop(0, '#ff0000');
+      grad.addColorStop(0.4, color);
+      grad.addColorStop(0.7, '#ffd700');
+      grad.addColorStop(1, '#ff4400');
       ctx.fillStyle = grad;
       ctx.fillRect(px, py, sz, sz);
+      // Hot sheen line
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(px + 1, py + 1, sz - 2, 2);
       break;
     }
     case 'glass':
@@ -2393,93 +2414,177 @@ function drawCell(ctx, x, y, v) {
       ctx.fillRect(px + 1, py + 1, sz - 2, sz / 3);
       break;
     case 'metallic': {
-      ctx.fillStyle = color;
-      ctx.fillRect(px, py, sz, sz);
-      const mg = ctx.createLinearGradient(px, py, px, py + sz);
-      mg.addColorStop(0, 'rgba(255,255,255,0.35)');
-      mg.addColorStop(0.5, 'rgba(255,255,255,0.05)');
-      mg.addColorStop(1, 'rgba(0,0,0,0.2)');
+      // Rose gold / platinum luxury with diagonal sheen
+      const mg = ctx.createLinearGradient(px, py, px + sz, py + sz);
+      mg.addColorStop(0, '#ffccaa');
+      mg.addColorStop(0.25, color);
+      mg.addColorStop(0.5, '#ffeecc');
+      mg.addColorStop(0.75, '#ddbb99');
+      mg.addColorStop(1, color);
       ctx.fillStyle = mg;
       ctx.fillRect(px, py, sz, sz);
+      // Bright sheen stripe
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.beginPath();
+      ctx.moveTo(px, py + sz * 0.6);
+      ctx.lineTo(px + sz * 0.4, py);
+      ctx.lineTo(px + sz * 0.6, py);
+      ctx.lineTo(px, py + sz * 0.8);
+      ctx.fill();
+      // Bottom shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(px, py + sz - 3, sz, 3);
       break;
     }
     case 'rainbow': {
-      const hue = ((x * 37 + y * 53 + performance.now() / 20) % 360);
-      ctx.fillStyle = `hsl(${hue}, 80%, 55%)`;
+      // Holographic prism with shimmer
+      const hue = ((x * 37 + y * 53 + performance.now() / 15) % 360);
+      ctx.fillStyle = `hsl(${hue}, 100%, 55%)`;
       ctx.fillRect(px, py, sz, sz);
+      // Prismatic overlay streaks
+      const hue2 = (hue + 90) % 360;
+      ctx.fillStyle = `hsla(${hue2}, 100%, 75%, 0.25)`;
+      ctx.fillRect(px, py, sz * 0.5, sz);
+      // Sparkle shimmer
+      ctx.fillStyle = `rgba(255,255,255,${0.2 + 0.2 * Math.sin(performance.now() / 150 + x + y)})`;
+      ctx.fillRect(px + 2, py + 2, 3, 3);
+      ctx.fillRect(px + sz - 5, py + sz - 5, 3, 3);
       break;
     }
     case 'dotted': {
+      // Bold pop-art dots
       ctx.fillStyle = color;
       ctx.fillRect(px, py, sz, sz);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      const dotR = sz * 0.15;
+      // Big contrasting dots
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      const dotR = sz * 0.2;
       ctx.beginPath();
       ctx.arc(px + sz * 0.3, py + sz * 0.3, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
       ctx.arc(px + sz * 0.7, py + sz * 0.7, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      // Tiny accent dot
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.beginPath();
+      ctx.arc(px + sz * 0.7, py + sz * 0.25, dotR * 0.6, 0, Math.PI * 2);
       ctx.fill();
       break;
     }
-    case 'outline':
+    case 'outline': {
+      // TRON wireframe with inner glow
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 6;
+      ctx.lineWidth = 2.5;
       ctx.strokeRect(px + 1, py + 1, sz - 2, sz - 2);
+      ctx.shadowBlur = 0;
       ctx.lineWidth = 1;
+      // Inner cross
+      ctx.strokeStyle = `rgba(255,255,255,0.12)`;
+      ctx.beginPath();
+      ctx.moveTo(px + sz * 0.3, py + sz * 0.3);
+      ctx.lineTo(px + sz * 0.7, py + sz * 0.7);
+      ctx.moveTo(px + sz * 0.7, py + sz * 0.3);
+      ctx.lineTo(px + sz * 0.3, py + sz * 0.7);
+      ctx.stroke();
       break;
+    }
     case 'candy': {
+      // Bubblegum & mint with bold stripes
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(px, py, sz, sz, 6);
       ctx.fill();
-      // Swirl highlight
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      // Colorful diagonal stripes
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(px, py, sz, sz, 6);
+      ctx.clip();
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      for (let s = -sz; s < sz * 2; s += 6) {
+        ctx.fillRect(px + s, py, 3, sz);
+      }
+      ctx.restore();
+      // Big shine dot
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.beginPath();
+      ctx.arc(px + sz * 0.3, py + sz * 0.3, 3, 0, Math.PI * 2);
+      ctx.fill();
+      // Swirl
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(px + sz / 2, py + sz / 2, sz * 0.25, 0, Math.PI * 1.5);
+      ctx.arc(px + sz / 2, py + sz / 2, sz * 0.2, 0, Math.PI * 1.5);
       ctx.stroke();
       ctx.lineWidth = 1;
-      // Shine dot
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.beginPath();
-      ctx.arc(px + sz * 0.3, py + sz * 0.3, 2, 0, Math.PI * 2);
-      ctx.fill();
       break;
     }
     case 'ember': {
-      ctx.fillStyle = color;
-      ctx.fillRect(px, py, sz, sz);
-      // Hot gradient overlay
-      const eg = ctx.createRadialGradient(px + sz / 2, py + sz / 2, 0, px + sz / 2, py + sz / 2, sz);
-      eg.addColorStop(0, 'rgba(255,200,0,0.3)');
-      eg.addColorStop(0.6, 'rgba(255,80,0,0.15)');
-      eg.addColorStop(1, 'rgba(0,0,0,0.1)');
+      // White-hot molten core with flicker
+      const flicker = 0.8 + 0.2 * Math.sin(performance.now() / 100 + x * 5 + y * 7);
+      const eg = ctx.createRadialGradient(px + sz / 2, py + sz / 2, 0, px + sz / 2, py + sz / 2, sz * 0.8);
+      eg.addColorStop(0, '#ffffff');
+      eg.addColorStop(0.2, '#ffee00');
+      eg.addColorStop(0.5, '#ff6600');
+      eg.addColorStop(0.8, '#cc2200');
+      eg.addColorStop(1, '#440000');
       ctx.fillStyle = eg;
       ctx.fillRect(px, py, sz, sz);
+      // Flickering glow
+      ctx.shadowColor = '#ff4400';
+      ctx.shadowBlur = 6 * flicker;
+      ctx.fillStyle = `rgba(255,238,0,${0.15 * flicker})`;
+      ctx.fillRect(px, py, sz, sz);
+      ctx.shadowBlur = 0;
       break;
     }
     case 'ice': {
-      ctx.fillStyle = color;
+      // Cracked frozen crystal with fracture lines
+      const ig = ctx.createLinearGradient(px, py, px + sz, py + sz);
+      ig.addColorStop(0, '#eeffff');
+      ig.addColorStop(0.3, '#88ddff');
+      ig.addColorStop(0.6, '#aaeeff');
+      ig.addColorStop(1, '#0088cc');
+      ctx.fillStyle = ig;
       ctx.fillRect(px, py, sz, sz);
-      // Frost overlay
-      ctx.fillStyle = 'rgba(180,230,255,0.25)';
-      ctx.fillRect(px, py, sz, sz * 0.4);
-      ctx.fillStyle = 'rgba(255,255,255,0.15)';
-      ctx.fillRect(px + 2, py + 2, 3, 3);
-      ctx.fillRect(px + sz - 5, py + sz * 0.5, 2, 4);
+      // Frost shine
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(px + 1, py + 1, sz * 0.6, sz * 0.3);
+      // Fracture/crack lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(px + sz * 0.2, py + sz * 0.1);
+      ctx.lineTo(px + sz * 0.5, py + sz * 0.5);
+      ctx.lineTo(px + sz * 0.4, py + sz * 0.9);
+      ctx.moveTo(px + sz * 0.5, py + sz * 0.5);
+      ctx.lineTo(px + sz * 0.85, py + sz * 0.6);
+      ctx.stroke();
+      ctx.lineWidth = 1;
       break;
     }
     case 'galaxy': {
-      const hue2 = ((x * 47 + y * 31 + performance.now() / 30) % 360);
-      const gg = ctx.createRadialGradient(px + sz / 2, py + sz / 2, 0, px + sz / 2, py + sz / 2, sz);
-      gg.addColorStop(0, `hsl(${hue2}, 90%, 70%)`);
-      gg.addColorStop(0.5, color);
-      gg.addColorStop(1, `hsl(${(hue2 + 120) % 360}, 70%, 20%)`);
+      // Vivid nebula with bright stars and color-shifting background
+      const hue2 = ((x * 47 + y * 31 + performance.now() / 20) % 360);
+      const gg = ctx.createRadialGradient(px + sz * 0.3, py + sz * 0.3, 0, px + sz / 2, py + sz / 2, sz);
+      gg.addColorStop(0, '#ff0088');
+      gg.addColorStop(0.3, `hsl(${hue2}, 100%, 60%)`);
+      gg.addColorStop(0.6, '#0066ff');
+      gg.addColorStop(1, '#00eeff');
       ctx.fillStyle = gg;
       ctx.fillRect(px, py, sz, sz);
-      // Tiny stars
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.fillRect(px + sz * 0.2, py + sz * 0.2, 1, 1);
-      ctx.fillRect(px + sz * 0.7, py + sz * 0.6, 1, 1);
+      // Glowing stars
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 3;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillRect(px + sz * 0.2, py + sz * 0.2, 1.5, 1.5);
+      ctx.fillRect(px + sz * 0.75, py + sz * 0.55, 1.5, 1.5);
+      ctx.fillRect(px + sz * 0.5, py + sz * 0.8, 1, 1);
+      ctx.shadowBlur = 0;
+      // Nebula haze
+      ctx.fillStyle = `rgba(255,0,136,${0.08 + 0.05 * Math.sin(performance.now() / 300 + x)})`;
+      ctx.fillRect(px, py, sz, sz * 0.5);
       break;
     }
     case 'gold': {
