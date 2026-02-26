@@ -678,32 +678,32 @@ function earnGameCoins(g, won = false) {
 // ==================== PIECE SKINS SYSTEM ====================
 const PIECE_SKINS = {
   default:   { name: 'Default',    price: 0,   style: 'flat',      desc: 'Classic flat blocks',            color1: null, color2: null },
-  rounded:   { name: 'Rounded',    price: 50,  style: 'rounded',   desc: 'Smooth rounded corners',         color1: '#00bfff', color2: '#00ff80' },
-  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro 8-bit pixel art',          color1: '#ff2222', color2: '#22ee22' },
-  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Vibrant neon glow',              color1: '#00ffff', color2: '#7fff00' },
-  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Smooth color fades',             color1: '#cc00ff', color2: '#00e5ff' },
-  glass:     { name: 'Glass',      price: 150, style: 'glass',     desc: 'Transparent crystal look',       color1: '#66ffff', color2: '#ff66ff' },
-  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Polished chrome finish',         color1: '#c0d8e8', color2: '#8899aa' },
-  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting spectrum colors',       color1: '#ff0044', color2: '#7700ff' },
-  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Funky polka-dot pattern',        color1: '#ff8800', color2: '#ffee00' },
-  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'Hollow wireframe blocks',        color1: '#39ff14', color2: '#00ccff' },
-  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Sweet bubblegum swirls',         color1: '#ff3388', color2: '#cc44ff' },
-  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'Molten lava core',               color1: '#ff3300', color2: '#ff7700' },
-  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Frozen arctic crystal',          color1: '#00ddff', color2: '#aaeeff' },
-  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Swirling cosmic nebula',         color1: '#8833ff', color2: '#ff44dd' },
-  gold:      { name: '24K Gold',   price: 500, style: 'gold',      desc: 'Luxurious solid gold',           color1: '#ffd700', color2: '#ffaa00' },
+  rounded:   { name: 'Rounded',    price: 50,  style: 'rounded',   desc: 'Smooth rounded corners',         color1: '#0088ff', color2: '#00ffbb' },
+  pixelated: { name: 'Pixelated',  price: 75,  style: 'pixelated', desc: 'Retro 8-bit pixel art',          color1: '#ff1100', color2: '#33ff00' },
+  glowing:   { name: 'Glowing',    price: 100, style: 'glowing',   desc: 'Vibrant neon glow',              color1: '#00ffff', color2: '#ccff00' },
+  gradient:  { name: 'Gradient',   price: 120, style: 'gradient',  desc: 'Smooth color fades',             color1: '#ff00aa', color2: '#5500ff' },
+  glass:     { name: 'Glass',      price: 150, style: 'glass',     desc: 'Transparent crystal look',       color1: '#ffffff', color2: '#dd88ff' },
+  metallic:  { name: 'Metallic',   price: 200, style: 'metallic',  desc: 'Polished chrome finish',         color1: '#e0e8f0', color2: '#7799cc' },
+  rainbow:   { name: 'Rainbow',    price: 300, style: 'rainbow',   desc: 'Shifting spectrum colors',       color1: '#ff0033', color2: '#3300ff' },
+  dotted:    { name: 'Dotted',     price: 80,  style: 'dotted',    desc: 'Funky polka-dot pattern',        color1: '#ff5500', color2: '#ffdd00' },
+  outline:   { name: 'Outline',    price: 60,  style: 'outline',   desc: 'Hollow wireframe blocks',        color1: '#00ff44', color2: '#0066ff' },
+  candy:     { name: 'Candy',      price: 160, style: 'candy',     desc: 'Sweet bubblegum swirls',         color1: '#ff0088', color2: '#cc00ff' },
+  ember:     { name: 'Ember',      price: 250, style: 'ember',     desc: 'Molten lava core',               color1: '#ff2200', color2: '#ffcc00' },
+  ice:       { name: 'Ice',        price: 220, style: 'ice',       desc: 'Frozen arctic crystal',          color1: '#00ddff', color2: '#eeffff' },
+  galaxy:    { name: 'Galaxy',     price: 400, style: 'galaxy',    desc: 'Swirling cosmic nebula',         color1: '#7700ff', color2: '#ff00dd' },
+  gold:      { name: '24K Gold',   price: 500, style: 'gold',      desc: 'Luxurious solid gold',           color1: '#ffd700', color2: '#ff8800' },
 };
 
 // ==================== BOARD THEMES SYSTEM ====================
 const BOARD_THEMES = {
   default:    { name: 'Default',     price: 0,   desc: 'Standard dark grid',       borderColor: null, bgOverlay: null },
-  midnight:   { name: 'Midnight',    price: 100, desc: 'Deep blue midnight sky',    borderColor: '#2244cc', bgOverlay: 'rgba(13,71,161,0.12)' },
-  sakura:     { name: 'Sakura',      price: 150, desc: 'Soft cherry-blossom pink',  borderColor: '#ff2277', bgOverlay: 'rgba(255,34,119,0.07)' },
-  emerald:    { name: 'Emerald',     price: 150, desc: 'Rich emerald green',        borderColor: '#00ff66', bgOverlay: 'rgba(0,255,102,0.07)' },
-  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Fiery molten lava border',  borderColor: '#ff4400', bgOverlay: 'rgba(255,68,0,0.09)' },
-  arctic:     { name: 'Arctic',      price: 200, desc: 'Cool icy blue tones',       borderColor: '#00ccff', bgOverlay: 'rgba(0,204,255,0.08)' },
-  royal:      { name: 'Royal',       price: 250, desc: 'Purple & gold royalty',      borderColor: '#bb44ff', bgOverlay: 'rgba(187,68,255,0.08)' },
-  hologram:   { name: 'Hologram',    price: 350, desc: 'Iridescent shifting border', borderColor: '#00ffcc', bgOverlay: 'rgba(0,255,204,0.06)' },
+  midnight:   { name: 'Midnight',    price: 100, desc: 'Deep blue midnight sky',    borderColor: '#3355ff', bgOverlay: 'rgba(20,60,200,0.18)' },
+  sakura:     { name: 'Sakura',      price: 150, desc: 'Soft cherry-blossom pink',  borderColor: '#ff1166', bgOverlay: 'rgba(255,17,102,0.12)' },
+  emerald:    { name: 'Emerald',     price: 150, desc: 'Rich emerald green',        borderColor: '#00ff55', bgOverlay: 'rgba(0,255,85,0.12)' },
+  volcanic:   { name: 'Volcanic',    price: 200, desc: 'Fiery molten lava border',  borderColor: '#ff3300', bgOverlay: 'rgba(255,51,0,0.14)' },
+  arctic:     { name: 'Arctic',      price: 200, desc: 'Cool icy blue tones',       borderColor: '#00ddff', bgOverlay: 'rgba(0,221,255,0.13)' },
+  royal:      { name: 'Royal',       price: 250, desc: 'Purple & gold royalty',      borderColor: '#cc33ff', bgOverlay: 'rgba(204,51,255,0.13)' },
+  hologram:   { name: 'Hologram',    price: 350, desc: 'Iridescent shifting border', borderColor: '#00ffbb', bgOverlay: 'rgba(0,255,187,0.10)' },
   void:       { name: 'The Void',    price: 500, desc: 'Pure darkness, no gridlines', borderColor: '#000', bgOverlay: null, noGrid: true },
 };
 
@@ -3732,18 +3732,32 @@ function drawShopPreview() {
   const previewId = previewingItem || equipped;
 
   if (currentShopTab === 'skins') {
-    // Draw a 4x4 T-piece preview with the previewed skin
-    const scale = 200 / (5 * CELL);
+    // Draw a rich preview with multiple pieces using the previewed skin
+    const scale = 200 / (8 * CELL);
     ctx.save();
     ctx.scale(scale, scale);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, 5 * CELL, 5 * CELL);
-    const shape = [['.','1','.'],['.','.','.'],['1','1','1'],['.','.','.']];
+    ctx.fillStyle = '#0a0e20';
+    ctx.fillRect(0, 0, 8 * CELL, 8 * CELL);
     const savedSkin = equippedSkin;
     equippedSkin = previewId;
-    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
-      if (shape[r][c] !== '.') drawCell(ctx, c + 1, r + 0.5, shape[r][c]);
+    const skinData = PIECE_SKINS[previewId];
+    const saveCols = { ...COLORS };
+    if (skinData && skinData.color1) {
+      COLORS['1'] = skinData.color1;
+      COLORS['2'] = skinData.color2 || skinData.color1;
+      COLORS['3'] = skinData.color1;
+      COLORS['4'] = skinData.color2 || skinData.color1;
+      COLORS['5'] = skinData.color1;
+      COLORS['6'] = skinData.color2 || skinData.color1;
+      COLORS['7'] = skinData.color1;
     }
+    // T-piece (centered top)
+    drawCell(ctx, 3, 1, '1'); drawCell(ctx, 2, 2, '2'); drawCell(ctx, 3, 2, '1'); drawCell(ctx, 4, 2, '2');
+    // L-piece (bottom left)
+    drawCell(ctx, 1, 4, '2'); drawCell(ctx, 1, 5, '1'); drawCell(ctx, 2, 5, '1'); drawCell(ctx, 3, 5, '2');
+    // S-piece (bottom right)
+    drawCell(ctx, 5, 5, '1'); drawCell(ctx, 6, 5, '2'); drawCell(ctx, 4, 6, '2'); drawCell(ctx, 5, 6, '1');
+    Object.assign(COLORS, saveCols);
     equippedSkin = savedSkin;
     ctx.restore();
   } else if (currentShopTab === 'boards') {
@@ -3768,10 +3782,6 @@ function drawShopPreview() {
     ctx.scale(2, 2); // drawTrailCardFrame draws in 100x100, scale up to 200x200
     drawTrailCardFrame(ctx, previewId, performance.now());
     ctx.restore();
-    // Start animation loop for trail top preview
-    if (!shopPreviewAnimFrame) {
-      animateShopPreview();
-    }
   } else if (currentShopTab === 'titles') {
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, 200, 200);
@@ -3998,11 +4008,11 @@ function displayShop() {
       const sc = cellSz / CELL;
       pctx.translate(offsetX, offsetY);
       pctx.scale(sc, sc);
-      // T-piece: row0=[.X.], row1=[XXX]
-      drawCell(pctx, 1, 0, '3');
-      drawCell(pctx, 0, 1, '3');
-      drawCell(pctx, 1, 1, '3');
-      drawCell(pctx, 2, 1, '3');
+      // T-piece: row0=[.X.], row1=[XXX] — use mixed color values to show both colors
+      drawCell(pctx, 1, 0, '1');
+      drawCell(pctx, 0, 1, '2');
+      drawCell(pctx, 1, 1, '1');
+      drawCell(pctx, 2, 1, '2');
       pctx.restore();
       equippedSkin = savedSkin;
       Object.assign(COLORS, saveCols);
