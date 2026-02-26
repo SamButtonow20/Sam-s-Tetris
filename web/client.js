@@ -1306,9 +1306,11 @@ class Game {
   }
 
   hardDrop() {
+    const startY = this.current.y;
     while (!this.collide(this.current, 0, 1)) this.current.y += 1;
+    const dropDist = this.current.y - startY;
     this.groundedMs = this.lockDelayMs;
-    this.visualYOffset = 0; // instant snap for hard drop
+    this.visualYOffset = -dropDist * CELL; // fast swoosh from start to landing
     this.visualXOffset = 0;
     this.rotAnim = null;
     sound.playDrop();
@@ -1503,9 +1505,11 @@ class Game {
 
   // Decay visual offsets toward 0 each render frame (called outside of game logic)
   lerpVisuals(dt) {
-    const factor = Math.pow(0.0001, dt / 100); // fast decay: ~3 frames to resolve
+    // Use faster decay for large offsets (hard drops) so the swoosh is quick
+    const bigMove = Math.abs(this.visualYOffset) > CELL * 2;
+    const factor = bigMove ? Math.pow(0.00001, dt / 60) : Math.pow(0.0001, dt / 100);
     this.visualYOffset *= factor;
-    this.visualXOffset *= factor;
+    this.visualXOffset *= Math.pow(0.0001, dt / 100);
     if (Math.abs(this.visualYOffset) < 0.5) this.visualYOffset = 0;
     if (Math.abs(this.visualXOffset) < 0.5) this.visualXOffset = 0;
     // Advance rotation animation
