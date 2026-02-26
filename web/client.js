@@ -3308,7 +3308,7 @@ function loop(ts) {
   // Update floating texts and screen shake
   updateFloatingTexts(dt);
   updateBgParticles(dt);
-  updateTrailParticles(dt);
+  updateTrailParticles(dt / 1000);
   drawBgParticles();
 
   // Apply screen shake to main canvas
