@@ -1189,18 +1189,6 @@ class Game {
     this.groundedMs = this.lockDelayMs;
     sound.playDrop();
     if (replayRecorder) replayRecorder.record('drop');
-    // Trail effect at landing position
-    if (equippedTrail !== 'none') {
-      const shape = this.shape(this.current);
-      let minC = 10, maxC = 0, maxR = 0;
-      for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
-        if (shape[r][c] !== '.') { minC = Math.min(minC, c); maxC = Math.max(maxC, c); maxR = Math.max(maxR, r); }
-      }
-      const bx = (this.current.x + minC) * CELL;
-      const by = (this.current.y + maxR + 1) * CELL;
-      const cols = maxC - minC + 1;
-      spawnTrailEffect(bx, by, cols);
-    }
   }
 
   detectTSpin() {
@@ -1219,6 +1207,17 @@ class Game {
   lockPiece() {
     this.lastAttack = 0;
     const s = this.shape(this.current);
+    // Trail effect on any piece lock (gravity or hard drop)
+    if (equippedTrail !== 'none') {
+      let minC = 10, maxC = 0, maxR = 0;
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+        if (s[r][c] !== '.') { minC = Math.min(minC, c); maxC = Math.max(maxC, c); maxR = Math.max(maxR, r); }
+      }
+      const bx = (this.current.x + minC) * CELL;
+      const by = (this.current.y + maxR + 1) * CELL;
+      const cols = maxC - minC + 1;
+      spawnTrailEffect(bx, by, cols);
+    }
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
         const v = s[r][c];
