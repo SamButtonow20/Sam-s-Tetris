@@ -350,13 +350,13 @@ class SoundManager {
       this.previewWavGain.connect(this.masterGain);
       this.previewWavSource = this.ctx.createBufferSource();
       this.previewWavSource.buffer = this.wavBuffer;
-      this.previewWavSource.loop = false;
+      this.previewWavSource.loop = true;
       this.previewWavSource.connect(this.previewWavGain);
-      this.previewWavSource.start(0, 10, 8); // play 8 seconds starting from 10s
+      this.previewWavSource.start(0, 10); // start from 10s, loop until stopped
     } else if (cfg.notes) {
       let noteIdx = 0;
       const playNote = () => {
-        if (!this.ctx || noteIdx > cfg.notes.length * 2) { this.stopPreview(); return; }
+        if (!this.ctx) { this.stopPreview(); return; }
         const freq = cfg.notes[noteIdx % cfg.notes.length];
         if (freq > 0) {
           const osc = this.ctx.createOscillator();
@@ -389,8 +389,6 @@ class SoundManager {
       };
       playNote();
       this.previewInterval = setInterval(playNote, cfg.tempo);
-      // Auto-stop preview after ~5 seconds
-      setTimeout(() => { if (this.previewInterval) this.stopPreview(); }, 5000);
     }
   }
   stopPreview() {
